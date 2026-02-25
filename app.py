@@ -16,36 +16,48 @@ DB_PATH = "news.db"
 # ─────────────────────────────────────────────
 FEEDS = {
     # MAINSTREAM ITALIANE
-    "ANSA": "https://www.ansa.it/sito/notizie/mondo/mondo_rss.xml",
+    "ANSA Mondo": "https://www.ansa.it/sito/notizie/mondo/mondo_rss.xml",
     "Repubblica Esteri": "https://www.repubblica.it/rss/esteri/rss2.0.xml",
     "Corriere Esteri": "https://xml2.corriereobjects.it/rss/esteri.xml",
     "Il Sole 24 Ore Mondo": "https://www.ilsole24ore.com/rss/mondo.xml",
+    "Il Fatto Quotidiano Esteri": "https://www.ilfattoquotidiano.it/category/esteri/feed/",
+    "Scenari Economici": "https://scenarieconomici.it/feed/",
 
     # MAINSTREAM INTERNAZIONALI
     "BBC World": "http://feeds.bbci.co.uk/news/world/rss.xml",
     "Reuters World": "https://feeds.reuters.com/reuters/worldNews",
     "Al Jazeera English": "https://www.aljazeera.com/xml/rss/all.xml",
     "The Guardian World": "https://www.theguardian.com/world/rss",
+    "AP News": "https://feeds.apnews.com/rss/APNewsTop25Stories",
+    "DW World": "https://rss.dw.com/rdf/rss-en-world",
+    "France24 EN": "https://www.france24.com/en/rss",
+    "Euronews EN": "https://www.euronews.com/rss",
+
+    # PROSPETTIVA EST
+    "TASS English": "https://tass.com/rss/v2.xml",
+    "Xinhua EN": "http://www.xinhuanet.com/english/rss/worldrss.xml",
+    "RT World": "https://www.rt.com/rss/news/",
 
     # GEOPOLITICA SPECIALIZZATA
-    "ISW (Istituto per la Guerra)": "https://www.understandingwar.org/rss.xml",
+    "ISW": "https://www.understandingwar.org/rss.xml",
     "Foreign Affairs": "https://www.foreignaffairs.com/rss.xml",
     "The Diplomat": "https://thediplomat.com/feed/",
     "Defense One": "https://www.defenseone.com/rss/all/",
     "War on the Rocks": "https://warontherocks.com/feed/",
+    "Limes": "https://www.limesonline.com/feed",
+    "Geopolitical Futures": "https://geopoliticalfutures.com/feed/",
+    "Responsible Statecraft": "https://responsiblestatecraft.org/feed/",
 
     # ALTERNATIVE / MULTIPOLARE
     "The Cradle": "https://thecradle.co/feed",
     "MintPress News": "https://www.mintpressnews.com/feed/",
-    "Scenari Economici": "https://scenarieconomici.it/feed/",
-    "Il Fatto Quotidiano Esteri": "https://www.ilfattoquotidiano.it/category/esteri/feed/",
-
-    # LIMES
-    "Limes Rivista": "https://www.limesonline.com/feed",
+    "Multipolarista": "https://multipolarista.com/feed/",
+    "Consortium News": "https://consortiumnews.com/feed/",
+    "Antiwar.com": "https://www.antiwar.com/blog/feed/",
 }
 
 # ─────────────────────────────────────────────
-# KEYWORD FILTER (guerra & geopolitica)
+# KEYWORD FILTER
 # ─────────────────────────────────────────────
 KEYWORDS_IT = [
     "guerra", "conflitto", "militare", "esercito", "nato", "ucraina", "russia",
@@ -53,7 +65,7 @@ KEYWORDS_IT = [
     "geopolitica", "sanzioni", "missili", "bombe", "attacco", "offensiva", "difesa",
     "diplomazia", "accordo", "trattato", "embargo", "cremlino", "zelensky", "putin",
     "brics", "g7", "g20", "balcani", "africa", "sahel", "houthi", "hezbollah",
-    "armi", "nucleare", "droni", "esercitazione"
+    "armi", "nucleare", "droni", "esercitazione", "invasione", "truppe", "fronte",
 ]
 KEYWORDS_EN = [
     "war", "conflict", "military", "army", "nato", "ukraine", "russia",
@@ -62,16 +74,17 @@ KEYWORDS_EN = [
     "diplomacy", "treaty", "embargo", "kremlin", "zelensky", "putin",
     "brics", "g7", "g20", "balkans", "africa", "sahel", "houthi", "hezbollah",
     "weapons", "nuclear", "drone", "exercise", "troops", "forces", "invasion",
-    "ceasefire", "peace talks", "coup", "airstrike"
+    "ceasefire", "peace talks", "coup", "airstrike", "frontline", "casualties",
+    "geopolitical", "security council", "pentagon", "nato", "warfare",
 ]
 ALL_KEYWORDS = set(KEYWORDS_IT + KEYWORDS_EN)
 
 CATEGORY_TAGS = {
-    "🔴 Russia-Ucraina": ["ucraina", "ukraine", "russia", "zelensky", "putin", "donbass", "kharkiv", "kherson"],
-    "🟠 Medio Oriente": ["israel", "israele", "palestin", "gaza", "hamas", "hezbollah", "iran", "libano", "lebanon", "houthi", "yemen"],
-    "🟡 Cina & Indo-Pacifico": ["china", "cina", "taiwan", "asia", "indo-pacific", "south china sea", "japan", "corea", "korea"],
-    "🟢 Africa & Sahel": ["africa", "sahel", "mali", "niger", "sudan", "ethiopia", "somalia", "congo"],
-    "🔵 NATO & Occidente": ["nato", "g7", "eu", "ue", "europa", "europe", "difesa", "defense", "allean"],
+    "🔴 Russia-Ucraina": ["ucraina", "ukraine", "russia", "zelensky", "putin", "donbass", "kharkiv", "kherson", "zaporizhzhia", "crimea", "mosca", "kiev", "kyiv"],
+    "🟠 Medio Oriente": ["israel", "israele", "palestin", "gaza", "hamas", "hezbollah", "iran", "libano", "lebanon", "houthi", "yemen", "siria", "syria", "netanyahu"],
+    "🟡 Cina & Indo-Pacifico": ["china", "cina", "taiwan", "asia", "indo-pacific", "south china sea", "japan", "giappone", "corea", "korea", "beijing", "pechino", "xi jinping"],
+    "🟢 Africa & Sahel": ["africa", "sahel", "mali", "niger", "sudan", "ethiopia", "somalia", "congo", "burkina", "mozambico", "mozambique"],
+    "🔵 NATO & Occidente": ["nato", "g7", "eu", "ue", "europa", "europe", "difesa", "defense", "allean", "pentagon", "washington", "bruxelles", "brussels"],
     "⚪ Altro": [],
 }
 
@@ -155,7 +168,7 @@ def fetch_all():
                 count += 1
         except Exception as e:
             print(f"Error fetching {source}: {e}")
-    print(f"Saved {count} relevant articles.")
+    print(f"[DONE] Saved {count} relevant articles.")
 
 
 # ─────────────────────────────────────────────
@@ -236,7 +249,7 @@ def api_sources():
 
 
 # ─────────────────────────────────────────────
-# SCHEDULER
+# SCHEDULER + STARTUP
 # ─────────────────────────────────────────────
 def start_scheduler():
     scheduler = BackgroundScheduler()
@@ -245,9 +258,13 @@ def start_scheduler():
     return scheduler
 
 
+# Questo viene eseguito sia con `python app.py` che con gunicorn
+init_db()
+_startup_thread = threading.Thread(target=fetch_all)
+_startup_thread.daemon = True
+_startup_thread.start()
+_scheduler = start_scheduler()
+
 if __name__ == "__main__":
-    init_db()
-    fetch_all()  # primo fetch immediato
-    scheduler = start_scheduler()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
