@@ -1,5 +1,4 @@
 import feedparser
-import sqlite3
 import threading
 import os
 import re
@@ -8,13 +7,85 @@ from datetime import datetime, timezone
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
 import urllib.request
-import urllib.error
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "theatrum-belli-secret-2026")
-DB_PATH = "news.db"
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "theatrum2026")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+# ─────────────────────────────────────────────
+# DATABASE POSTGRES
+# ─────────────────────────────────────────────
+def get_conn():
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
+
+
+def init_db():
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS articles (
+            id SERIAL PRIMARY KEY,
+            source TEXT,
+            title TEXT,
+            link TEXT UNIQUE,
+            summary TEXT,
+            published TEXT,
+            category TEXT,
+            fetched_at TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS analyses (
+            id SERIAL PRIMARY KEY,
+            keywords TEXT,
+            article_count INTEGER,
+            geopolitical TEXT,
+            ethical TEXT,
+            legal TEXT,
+            narrative TEXT,
+            instagram_script TEXT,
+            created_at TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def save_article(source, title, link, summary, published, category):
+    conn = get_conn()
+    c = conn.cursor()
+    try:
+        c.execute("""
+            INSERT INTO articles (source, title, link, summary, published, category, fetched_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (link) DO NOTHING
+        """, (source, title, link[:500] if link else "",
+              summary[:500] if summary else "",
+              published, category,
+              datetime.now(timezone.utc).isoformat()))
+        conn.commit()
+    except Exception as e:
+        print(f"DB error: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+
+def save_analysis(keywords, article_count, geopolitical, ethical, legal, narrative, instagram_script):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO analyses (keywords, article_count, geopolitical, ethical, legal, narrative, instagram_script, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """, (keywords, article_count, geopolitical, ethical, legal, narrative, instagram_script,
+          datetime.now(timezone.utc).isoformat()))
+    conn.commit()
+    conn.close()
+
 
 # ─────────────────────────────────────────────
 # FONTI RSS
@@ -99,69 +170,7 @@ def is_relevant(title, summary=""):
 
 
 # ─────────────────────────────────────────────
-# DATABASE
-# ─────────────────────────────────────────────
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS articles (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            source TEXT,
-            title TEXT,
-            link TEXT UNIQUE,
-            summary TEXT,
-            published TEXT,
-            category TEXT,
-            fetched_at TEXT
-        )
-    """)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS analyses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            keywords TEXT,
-            article_count INTEGER,
-            geopolitical TEXT,
-            ethical TEXT,
-            legal TEXT,
-            instagram_script TEXT,
-            created_at TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-
-def save_article(source, title, link, summary, published, category):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    try:
-        c.execute("""
-            INSERT OR IGNORE INTO articles (source, title, link, summary, published, category, fetched_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (source, title, link, summary[:500] if summary else "", published, category,
-              datetime.now(timezone.utc).isoformat()))
-        conn.commit()
-    except Exception as e:
-        print(f"DB error: {e}")
-    finally:
-        conn.close()
-
-
-def save_analysis(keywords, article_count, geopolitical, ethical, legal, instagram_script):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""
-        INSERT INTO analyses (keywords, article_count, geopolitical, ethical, legal, instagram_script, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (keywords, article_count, geopolitical, ethical, legal, instagram_script,
-          datetime.now(timezone.utc).isoformat()))
-    conn.commit()
-    conn.close()
-
-
-# ─────────────────────────────────────────────
-# FETCH
+# FETCH RSS
 # ─────────────────────────────────────────────
 def fetch_all():
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Fetching feeds...")
@@ -192,13 +201,11 @@ def fetch_all():
 def call_claude(prompt):
     if not ANTHROPIC_API_KEY:
         return "API key non configurata."
-
     data = json.dumps({
         "model": "claude-opus-4-6",
-        "max_tokens": 2000,
+        "max_tokens": 2500,
         "messages": [{"role": "user", "content": prompt}]
     }).encode("utf-8")
-
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages",
         data=data,
@@ -217,35 +224,45 @@ def call_claude(prompt):
         return f"Errore API: {e}"
 
 
-def generate_analysis(keywords_list, articles):
+def generate_analysis(keywords_list, articles, previous_analyses=None):
     articles_text = ""
     for i, a in enumerate(articles[:20], 1):
         articles_text += f"\n[{i}] FONTE: {a['source']}\nTITOLO: {a['title']}\nRIEPILOGO: {a['summary'][:200]}\n"
 
     keywords_str = ", ".join(keywords_list)
 
+    history_context = ""
+    if previous_analyses:
+        history_context = "\n\nCONTESTO STORICO (analisi precedenti sugli stessi temi):\n"
+        for pa in previous_analyses[:3]:
+            history_context += f"\n--- {pa['created_at'][:10]} ---\n{pa['geopolitical'][:300]}...\n"
+
     prompt = f"""Sei un analista geopolitico senior con expertise in diritto internazionale ed etica delle relazioni internazionali.
 
-Hai raccolto {len(articles)} articoli da fonti diverse (mainstream, alternative, occidentali, orientali) sui seguenti temi: {keywords_str}
+Hai raccolto {len(articles)} articoli da fonti diverse (mainstream, alternative, occidentali, orientali) sui temi: {keywords_str}
+{history_context}
 
-Ecco gli articoli:
+Articoli recenti:
 {articles_text}
 
-Produci un'analisi strutturata in 4 sezioni:
+Produci un'analisi in 5 sezioni:
 
 ## 1. ANALISI GEOPOLITICA
-Sintetizza in modo critico e bilanciato cosa sta succedendo. Identifica gli attori principali, i loro interessi reali, le dinamiche di potere sottostanti. Considera prospettive diverse (occidentale, russa, cinese, del Sud Globale). Max 300 parole.
+Cosa sta succedendo realmente. Attori principali, interessi reali, dinamiche di potere. Prospettive multiple (occidentale, russa, cinese, Sud Globale). Max 300 parole.
 
 ## 2. DIMENSIONE ETICA E MORALE
-Analizza le implicazioni etiche e morali degli eventi. Chi sono le vittime? Quali valori vengono violati o difesi? Quali sono le responsabilità morali degli attori coinvolti? Max 200 parole.
+Vittime, valori violati o difesi, responsabilità morali. Max 200 parole.
 
 ## 3. PROSPETTIVA DEL DIRITTO INTERNAZIONALE
-Valuta gli eventi alla luce del diritto internazionale: Carta ONU, Convenzioni di Ginevra, diritto umanitario, precedenti giuridici. Indica eventuali violazioni o zone grigie. Max 200 parole.
+Carta ONU, Convenzioni di Ginevra, diritto umanitario, eventuali violazioni. Max 200 parole.
 
-## 4. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)
-Scrivi uno script per un avatar AI che racconta questa analisi su Instagram Reels. Tono: autorevole ma accessibile, mai di parte. Struttura: hook 5 sec → contesto 15 sec → analisi 30 sec → conclusione 10 sec. Prima in italiano, poi in inglese. Max 150 parole per lingua.
+## 4. FILO NARRATIVO
+Collega gli eventi attuali a quelli passati (se esistono analisi precedenti). Come si è evoluta la situazione? Cosa è cambiato? Se è la prima analisi su questo tema, stabilisci i punti di riferimento per il futuro. Max 150 parole.
 
-Rispondi SOLO con le 4 sezioni, senza introduzioni."""
+## 5. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)
+Script per avatar AI su Instagram Reels. Tono autorevole ma accessibile. Struttura: hook 5 sec → contesto 15 sec → analisi 30 sec → conclusione 10 sec. Prima italiano, poi inglese. Max 150 parole per lingua.
+
+Rispondi SOLO con le 5 sezioni."""
 
     return call_claude(prompt)
 
@@ -264,33 +281,27 @@ def api_news():
     source = request.args.get("source", "all")
     limit = int(request.args.get("limit", 60))
     offset = int(request.args.get("offset", 0))
-
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
+    conn = get_conn()
+    c = conn.cursor(cursor_factory=RealDictCursor)
     query = "SELECT source, title, link, summary, published, category, fetched_at FROM articles WHERE 1=1"
     params = []
     if category != "all":
-        query += " AND category = ?"
+        query += " AND category = %s"
         params.append(category)
     if source != "all":
-        query += " AND source = ?"
+        query += " AND source = %s"
         params.append(source)
-    query += " ORDER BY fetched_at DESC LIMIT ? OFFSET ?"
+    query += " ORDER BY fetched_at DESC LIMIT %s OFFSET %s"
     params.extend([limit, offset])
     c.execute(query, params)
-    rows = c.fetchall()
+    rows = [dict(r) for r in c.fetchall()]
     conn.close()
-
-    return jsonify([
-        {"source": r[0], "title": r[1], "link": r[2],
-         "summary": r[3], "published": r[4], "category": r[5], "fetched_at": r[6]}
-        for r in rows
-    ])
+    return jsonify(rows)
 
 
 @app.route("/api/stats")
 def api_stats():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_conn()
     c = conn.cursor()
     c.execute("SELECT COUNT(*) FROM articles")
     total = c.fetchone()[0]
@@ -323,7 +334,7 @@ def api_sources():
 
 
 # ─────────────────────────────────────────────
-# ROUTES ADMIN (PRIVATE)
+# ROUTES ADMIN
 # ─────────────────────────────────────────────
 @app.route("/admin")
 def admin():
@@ -353,40 +364,43 @@ def admin_logout():
 def api_analyze():
     if not session.get("admin"):
         return jsonify({"error": "Non autorizzato"}), 403
-
     data = request.json
     keywords = [k.strip().lower() for k in data.get("keywords", []) if k.strip()]
     if not keywords:
         return jsonify({"error": "Inserisci almeno una keyword"}), 400
 
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    conditions = " OR ".join(["(LOWER(title) LIKE ? OR LOWER(summary) LIKE ?)" for _ in keywords])
+    conn = get_conn()
+    c = conn.cursor(cursor_factory=RealDictCursor)
+    conditions = " OR ".join(["(LOWER(title) LIKE %s OR LOWER(summary) LIKE %s)" for _ in keywords])
     params = []
     for kw in keywords:
         params.extend([f"%{kw}%", f"%{kw}%"])
     c.execute(f"SELECT source, title, link, summary, published, category FROM articles WHERE {conditions} ORDER BY fetched_at DESC LIMIT 30", params)
-    rows = c.fetchall()
-    conn.close()
+    articles = [dict(r) for r in c.fetchall()]
 
-    articles = [{"source": r[0], "title": r[1], "link": r[2], "summary": r[3], "published": r[4], "category": r[5]} for r in rows]
+    kw_conditions = " OR ".join(["LOWER(keywords) LIKE %s" for _ in keywords])
+    kw_params = [f"%{kw}%" for kw in keywords]
+    c.execute(f"SELECT geopolitical, created_at FROM analyses WHERE {kw_conditions} ORDER BY created_at DESC LIMIT 3", kw_params)
+    previous = [dict(r) for r in c.fetchall()]
+    conn.close()
 
     if not articles:
         return jsonify({"error": f"Nessun articolo trovato per: {', '.join(keywords)}"}), 404
 
-    raw = generate_analysis(keywords, articles)
+    raw = generate_analysis(keywords, articles, previous)
 
     def extract_section(text, title):
         pattern = rf"## {re.escape(title)}\n(.*?)(?=\n## |\Z)"
         match = re.search(pattern, text, re.DOTALL)
-        return match.group(1).strip() if match else raw
+        return match.group(1).strip() if match else ""
 
     geopolitical = extract_section(raw, "1. ANALISI GEOPOLITICA")
     ethical = extract_section(raw, "2. DIMENSIONE ETICA E MORALE")
     legal = extract_section(raw, "3. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
-    instagram = extract_section(raw, "4. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)")
+    narrative = extract_section(raw, "4. FILO NARRATIVO")
+    instagram = extract_section(raw, "5. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)")
 
-    save_analysis(", ".join(keywords), len(articles), geopolitical, ethical, legal, instagram)
+    save_analysis(", ".join(keywords), len(articles), geopolitical, ethical, legal, narrative, instagram)
 
     return jsonify({
         "keywords": keywords,
@@ -395,7 +409,9 @@ def api_analyze():
         "geopolitical": geopolitical,
         "ethical": ethical,
         "legal": legal,
+        "narrative": narrative,
         "instagram_script": instagram,
+        "has_history": len(previous) > 0
     })
 
 
@@ -403,30 +419,26 @@ def api_analyze():
 def api_analyses_history():
     if not session.get("admin"):
         return jsonify({"error": "Non autorizzato"}), 403
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
+    conn = get_conn()
+    c = conn.cursor(cursor_factory=RealDictCursor)
     c.execute("SELECT id, keywords, article_count, created_at FROM analyses ORDER BY created_at DESC LIMIT 20")
-    rows = c.fetchall()
+    rows = [dict(r) for r in c.fetchall()]
     conn.close()
-    return jsonify([{"id": r[0], "keywords": r[1], "article_count": r[2], "created_at": r[3]} for r in rows])
+    return jsonify(rows)
 
 
 @app.route("/api/admin/analyses/<int:analysis_id>")
 def api_analysis_detail(analysis_id):
     if not session.get("admin"):
         return jsonify({"error": "Non autorizzato"}), 403
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT * FROM analyses WHERE id = ?", (analysis_id,))
+    conn = get_conn()
+    c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM analyses WHERE id = %s", (analysis_id,))
     row = c.fetchone()
     conn.close()
     if not row:
         return jsonify({"error": "Non trovata"}), 404
-    return jsonify({
-        "id": row[0], "keywords": row[1], "article_count": row[2],
-        "geopolitical": row[3], "ethical": row[4], "legal": row[5],
-        "instagram_script": row[6], "created_at": row[7]
-    })
+    return jsonify(dict(row))
 
 
 # ─────────────────────────────────────────────
