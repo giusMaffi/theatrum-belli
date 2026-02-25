@@ -3,3 +3,4 @@ feedparser==6.0.11
 apscheduler==3.10.4
 gunicorn==22.0.0
 psycopg2-binary==2.9.9
+gevent==24.2.1
