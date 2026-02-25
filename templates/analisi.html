@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THEATRUM BELLI — Intelligence Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b; --surface: #111114; --surface2: #18181c;
+    --border: #242428; --accent: #c8a96e; --accent2: #e05c4b;
+    --text: #d4d0c8; --text-muted: #6a6860; --text-dim: #4a4845;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.15em; color: var(--accent); }
+  .logo span { color: var(--accent2); }
+  .logo-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.15em; margin-top: 2px; }
+  .header-right { display: flex; gap: 1rem; align-items: center; }
+  .btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.8rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-radius: 2px; text-decoration: none; display: inline-block; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { border-color: var(--accent); color: var(--accent); }
+  .btn-primary:hover { background: var(--accent); color: var(--bg); }
+  .btn-danger { border-color: var(--accent2); color: var(--accent2); }
+
+  .layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 60px); }
+
+  /* SIDEBAR */
+  aside { border-right: 1px solid var(--border); padding: 1.5rem; overflow-y: auto; }
+  .sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+
+  /* KEYWORD INPUT */
+  .keyword-area { margin-bottom: 1.5rem; }
+  .keyword-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; min-height: 36px; }
+  .tag {
+    background: var(--surface2); border: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+    padding: 0.25rem 0.6rem; border-radius: 2px; display: flex; align-items: center; gap: 0.4rem;
+    color: var(--accent);
+  }
+  .tag button { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0; }
+  .keyword-input-row { display: flex; gap: 0.5rem; }
+  input[type="text"] {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+    padding: 0.5rem 0.8rem; outline: none; border-radius: 2px;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  .hint { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-dim); margin-top: 0.5rem; line-height: 1.5; }
+
+  .analyze-btn {
+    width: 100%; background: var(--accent); border: none; color: var(--bg);
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em;
+    text-transform: uppercase; padding: 0.8rem; cursor: pointer; transition: all 0.2s;
+    border-radius: 2px; margin-top: 0.5rem;
+  }
+  .analyze-btn:hover { background: #d4b97e; }
+  .analyze-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* HISTORY */
+  .history-item {
+    padding: 0.7rem; border: 1px solid var(--border); margin-bottom: 0.5rem;
+    cursor: pointer; transition: background 0.15s; border-radius: 2px;
+  }
+  .history-item:hover { background: var(--surface2); }
+  .history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.2rem; }
+  .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-dim); }
+
+  /* MAIN */
+  main { padding: 2rem; overflow-y: auto; }
+
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 60vh; gap: 1rem;
+  }
+  .empty-icon { font-size: 3rem; opacity: 0.3; }
+  .empty-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-align: center; line-height: 1.8; }
+
+  /* LOADING */
+  #loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; }
+  .spinner { width: 30px; height: 30px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; }
+
+  /* RESULT */
+  #result { display: none; }
+  .result-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .result-keywords { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .result-kw-tag { background: var(--surface2); border: 1px solid var(--accent); color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.2rem 0.6rem; border-radius: 2px; }
+  .result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
+
+  .sections-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  .section-card { background: var(--surface); border: 1px solid var(--border); padding: 1.5rem; border-radius: 2px; }
+  .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+  .section-content { font-size: 0.85rem; line-height: 1.7; color: var(--text); }
+
+  .instagram-card { background: var(--surface); border: 1px solid var(--accent2); padding: 1.5rem; border-radius: 2px; margin-bottom: 2rem; position: relative; }
+  .instagram-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent2); margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .instagram-content { font-size: 0.85rem; line-height: 1.8; white-space: pre-wrap; color: var(--text); }
+  .copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
+  .copy-btn:hover { background: var(--accent2); color: var(--bg); }
+
+  .sources-section { margin-bottom: 2rem; }
+  .sources-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 0.8rem; }
+  .source-item { padding: 0.6rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+  .source-title { font-size: 0.8rem; color: var(--text); flex: 1; }
+  .source-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--accent); white-space: nowrap; }
+  .source-link { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--accent2); text-decoration: none; }
+  .source-link:hover { text-decoration: underline; }
+
+  .error-msg { background: rgba(224,92,75,0.1); border: 1px solid var(--accent2); color: var(--accent2); padding: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; border-radius: 2px; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sections-grid { grid-template-columns: 1fr; }
+    aside { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">THEATRUM <span>BELLI</span></div>
+    <div class="logo-sub">INTELLIGENCE LAB — ACCESSO RISERVATO</div>
+  </div>
+  <div class="header-right">
+    <a href="/" class="btn">← Dashboard</a>
+    <a href="/admin/logout" class="btn btn-danger">Esci</a>
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="keyword-area">
+      <div class="sidebar-title">Keyword Analysis</div>
+      <div class="keyword-tags" id="tags-container"></div>
+      <div class="keyword-input-row">
+        <input type="text" id="kw-input" placeholder="es. Gaza, Iran..." >
+        <button class="btn btn-primary" onclick="addTag()">+</button>
+      </div>
+      <div class="hint">Premi Enter o + per aggiungere. Combina keyword per analisi trasversali.</div>
+      <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">
+        ◆ GENERA ANALISI
+      </button>
+    </div>
+
+    <div>
+      <div class="sidebar-title">Analisi Precedenti</div>
+      <div id="history-list"></div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">◆</div>
+      <div class="empty-text">
+        Inserisci le keyword e clicca<br>
+        "GENERA ANALISI" per iniziare.<br><br>
+        Il sistema cercherà articoli correlati<br>
+        e produrrà un'analisi geopolitica,<br>
+        etica e giuridica con script Instagram.
+      </div>
+    </div>
+
+    <div id="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-text">ANALISI IN CORSO — ATTENDERE...</div>
+    </div>
+
+    <div id="result"></div>
+  </main>
+</div>
+
+<script>
+let tags = [];
+
+function addTag() {
+  const input = document.getElementById("kw-input");
+  const val = input.value.trim();
+  if (val && !tags.includes(val.toLowerCase())) {
+    tags.push(val.toLowerCase());
+    renderTags();
+  }
+  input.value = "";
+  input.focus();
+}
+
+document.getElementById("kw-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") addTag();
+});
+
+function removeTag(tag) {
+  tags = tags.filter(t => t !== tag);
+  renderTags();
+}
+
+function renderTags() {
+  const container = document.getElementById("tags-container");
+  container.innerHTML = tags.map(t =>
+    `<div class="tag">${t} <button onclick="removeTag('${t}')">×</button></div>`
+  ).join("");
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  const diff = Date.now() - d.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 60) return m + "m fa";
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + "h fa";
+  return Math.floor(h / 24) + "g fa";
+}
+
+async function runAnalysis() {
+  if (tags.length === 0) {
+    alert("Inserisci almeno una keyword.");
+    return;
+  }
+
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("loading-state").style.display = "flex";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("analyze-btn").disabled = true;
+
+  try {
+    const res = await fetch("/api/admin/analyze", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({keywords: tags})
+    });
+    const data = await res.json();
+
+    document.getElementById("loading-state").style.display = "none";
+    document.getElementById("analyze-btn").disabled = false;
+
+    if (data.error) {
+      document.getElementById("result").style.display = "block";
+      document.getElementById("result").innerHTML = `<div class="error-msg">⚠ ${data.error}</div>`;
+      return;
+    }
+
+    renderResult(data);
+    loadHistory();
+  } catch(e) {
+    document.getElementById("loading-state").style.display = "none";
+    document.getElementById("analyze-btn").disabled = false;
+    document.getElementById("result").style.display = "block";
+    document.getElementById("result").innerHTML = `<div class="error-msg">⚠ Errore di rete: ${e.message}</div>`;
+  }
+}
+
+function renderResult(data) {
+  const result = document.getElementById("result");
+  result.style.display = "block";
+
+  const kwtags = data.keywords.map(k => `<span class="result-kw-tag">${k}</span>`).join("");
+  const sources = data.articles.map(a => `
+    <div class="source-item">
+      <div>
+        <div class="source-title">${a.title}</div>
+        <a href="${a.link}" target="_blank" class="source-link">leggi →</a>
+      </div>
+      <div class="source-name">${a.source}</div>
+    </div>
+  `).join("");
+
+  result.innerHTML = `
+    <div class="result-header">
+      <div class="result-keywords">${kwtags}</div>
+      <div class="result-meta">${data.article_count} articoli analizzati · appena generato</div>
+    </div>
+
+    <div class="sections-grid">
+      <div class="section-card">
+        <div class="section-label">🌐 Analisi Geopolitica</div>
+        <div class="section-content">${data.geopolitical.replace(/\n/g, '<br>')}</div>
+      </div>
+      <div class="section-card">
+        <div class="section-label">⚖️ Dimensione Etica e Morale</div>
+        <div class="section-content">${data.ethical.replace(/\n/g, '<br>')}</div>
+      </div>
+      <div class="section-card" style="grid-column: 1/-1">
+        <div class="section-label">📜 Prospettiva Diritto Internazionale</div>
+        <div class="section-content">${data.legal.replace(/\n/g, '<br>')}</div>
+      </div>
+    </div>
+
+    <div class="instagram-card">
+      <div class="instagram-label">
+        <span>📱 Script Instagram (60 sec · IT/EN)</span>
+        <button class="copy-btn" onclick="copyScript()">COPIA</button>
+      </div>
+      <div class="instagram-content" id="ig-script">${data.instagram_script}</div>
+    </div>
+
+    <div class="sources-section">
+      <div class="sources-title">ARTICOLI UTILIZZATI (${data.article_count} totali, mostrati ${data.articles.length})</div>
+      ${sources}
+    </div>
+  `;
+}
+
+function copyScript() {
+  const text = document.getElementById("ig-script").innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector(".copy-btn");
+    btn.textContent = "COPIATO ✓";
+    setTimeout(() => btn.textContent = "COPIA", 2000);
+  });
+}
+
+async function loadHistory() {
+  const res = await fetch("/api/admin/analyses");
+  const data = await res.json();
+  const list = document.getElementById("history-list");
+  if (!data.length) { list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>'; return; }
+  list.innerHTML = data.map(a => `
+    <div class="history-item" onclick="loadAnalysis(${a.id})">
+      <div class="history-kw">${a.keywords}</div>
+      <div class="history-meta">${a.article_count} articoli · ${timeAgo(a.created_at)}</div>
+    </div>
+  `).join("");
+}
+
+async function loadAnalysis(id) {
+  const res = await fetch(`/api/admin/analyses/${id}`);
+  const data = await res.json();
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("loading-state").style.display = "none";
+  renderResult({
+    keywords: data.keywords.split(", "),
+    article_count: data.article_count,
+    articles: [],
+    geopolitical: data.geopolitical,
+    ethical: data.ethical,
+    legal: data.legal,
+    instagram_script: data.instagram_script
+  });
+}
+
+loadHistory();
+</script>
+</body>
+</html>

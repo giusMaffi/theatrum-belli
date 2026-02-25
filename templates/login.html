@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THEATRUM BELLI — Accesso Riservato</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0b;
+    color: #d4d0c8;
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .box {
+    border: 1px solid #242428;
+    padding: 3rem;
+    width: 380px;
+    background: #111114;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: #c8a96e;
+    text-align: center;
+    margin-bottom: 0.3rem;
+  }
+  .logo span { color: #e05c4b; }
+  .subtitle {
+    text-align: center;
+    font-size: 0.6rem;
+    color: #4a4845;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  label {
+    display: block;
+    font-size: 0.6rem;
+    color: #6a6860;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  input[type="password"] {
+    width: 100%;
+    background: #0a0a0b;
+    border: 1px solid #242428;
+    color: #d4d0c8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    padding: 0.7rem 1rem;
+    outline: none;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.1em;
+  }
+  input[type="password"]:focus { border-color: #c8a96e; }
+  button {
+    width: 100%;
+    background: transparent;
+    border: 1px solid #c8a96e;
+    color: #c8a96e;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  button:hover { background: #c8a96e; color: #0a0a0b; }
+  .error {
+    color: #e05c4b;
+    font-size: 0.65rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">THEATRUM <span>BELLI</span></div>
+  <div class="subtitle">Accesso Riservato</div>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="POST">
+    <label>Password</label>
+    <input type="password" name="password" autofocus placeholder="••••••••••••">
+    <button type="submit">ACCEDI →</button>
+  </form>
+</div>
+</body>
+</html>

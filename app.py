@@ -1,29 +1,31 @@
 import feedparser
 import sqlite3
 import threading
-import time
 import os
-from datetime import datetime, timezone
-from flask import Flask, render_template, jsonify, request
-from apscheduler.schedulers.background import BackgroundScheduler
 import re
+import json
+from datetime import datetime, timezone
+from flask import Flask, render_template, jsonify, request, session, redirect, url_for
+from apscheduler.schedulers.background import BackgroundScheduler
+import urllib.request
+import urllib.error
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "theatrum-belli-secret-2026")
 DB_PATH = "news.db"
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "theatrum2026")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
 # ─────────────────────────────────────────────
 # FONTI RSS
 # ─────────────────────────────────────────────
 FEEDS = {
-    # MAINSTREAM ITALIANE
     "ANSA Mondo": "https://www.ansa.it/sito/notizie/mondo/mondo_rss.xml",
     "Repubblica Esteri": "https://www.repubblica.it/rss/esteri/rss2.0.xml",
     "Corriere Esteri": "https://xml2.corriereobjects.it/rss/esteri.xml",
     "Il Sole 24 Ore Mondo": "https://www.ilsole24ore.com/rss/mondo.xml",
     "Il Fatto Quotidiano Esteri": "https://www.ilfattoquotidiano.it/category/esteri/feed/",
     "Scenari Economici": "https://scenarieconomici.it/feed/",
-
-    # MAINSTREAM INTERNAZIONALI
     "BBC World": "http://feeds.bbci.co.uk/news/world/rss.xml",
     "Reuters World": "https://feeds.reuters.com/reuters/worldNews",
     "Al Jazeera English": "https://www.aljazeera.com/xml/rss/all.xml",
@@ -32,13 +34,9 @@ FEEDS = {
     "DW World": "https://rss.dw.com/rdf/rss-en-world",
     "France24 EN": "https://www.france24.com/en/rss",
     "Euronews EN": "https://www.euronews.com/rss",
-
-    # PROSPETTIVA EST
     "TASS English": "https://tass.com/rss/v2.xml",
     "Xinhua EN": "http://www.xinhuanet.com/english/rss/worldrss.xml",
     "RT World": "https://www.rt.com/rss/news/",
-
-    # GEOPOLITICA SPECIALIZZATA
     "ISW": "https://www.understandingwar.org/rss.xml",
     "Foreign Affairs": "https://www.foreignaffairs.com/rss.xml",
     "The Diplomat": "https://thediplomat.com/feed/",
@@ -47,8 +45,6 @@ FEEDS = {
     "Limes": "https://www.limesonline.com/feed",
     "Geopolitical Futures": "https://geopoliticalfutures.com/feed/",
     "Responsible Statecraft": "https://responsiblestatecraft.org/feed/",
-
-    # ALTERNATIVE / MULTIPOLARE
     "The Cradle": "https://thecradle.co/feed",
     "MintPress News": "https://www.mintpressnews.com/feed/",
     "Multipolarista": "https://multipolarista.com/feed/",
@@ -56,9 +52,6 @@ FEEDS = {
     "Antiwar.com": "https://www.antiwar.com/blog/feed/",
 }
 
-# ─────────────────────────────────────────────
-# KEYWORD FILTER
-# ─────────────────────────────────────────────
 KEYWORDS_IT = [
     "guerra", "conflitto", "militare", "esercito", "nato", "ucraina", "russia",
     "cina", "taiwan", "israele", "palestina", "gaza", "siria", "iran", "medio oriente",
@@ -75,7 +68,7 @@ KEYWORDS_EN = [
     "brics", "g7", "g20", "balkans", "africa", "sahel", "houthi", "hezbollah",
     "weapons", "nuclear", "drone", "exercise", "troops", "forces", "invasion",
     "ceasefire", "peace talks", "coup", "airstrike", "frontline", "casualties",
-    "geopolitical", "security council", "pentagon", "nato", "warfare",
+    "geopolitical", "security council", "pentagon", "warfare",
 ]
 ALL_KEYWORDS = set(KEYWORDS_IT + KEYWORDS_EN)
 
@@ -123,6 +116,18 @@ def init_db():
             fetched_at TEXT
         )
     """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS analyses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            keywords TEXT,
+            article_count INTEGER,
+            geopolitical TEXT,
+            ethical TEXT,
+            legal TEXT,
+            instagram_script TEXT,
+            created_at TEXT
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -143,6 +148,18 @@ def save_article(source, title, link, summary, published, category):
         conn.close()
 
 
+def save_analysis(keywords, article_count, geopolitical, ethical, legal, instagram_script):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO analyses (keywords, article_count, geopolitical, ethical, legal, instagram_script, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (keywords, article_count, geopolitical, ethical, legal, instagram_script,
+          datetime.now(timezone.utc).isoformat()))
+    conn.commit()
+    conn.close()
+
+
 # ─────────────────────────────────────────────
 # FETCH
 # ─────────────────────────────────────────────
@@ -157,12 +174,10 @@ def fetch_all():
                 link = entry.get("link", "")
                 summary = re.sub(r"<[^>]+>", "", entry.get("summary", ""))
                 published = entry.get("published", datetime.now().isoformat())
-
                 if not link or not title:
                     continue
                 if not is_relevant(title, summary):
                     continue
-
                 category = categorize(title + " " + summary)
                 save_article(source, title, link, summary, published, category)
                 count += 1
@@ -172,7 +187,71 @@ def fetch_all():
 
 
 # ─────────────────────────────────────────────
-# ROUTES
+# CLAUDE API
+# ─────────────────────────────────────────────
+def call_claude(prompt):
+    if not ANTHROPIC_API_KEY:
+        return "API key non configurata."
+
+    data = json.dumps({
+        "model": "claude-opus-4-6",
+        "max_tokens": 2000,
+        "messages": [{"role": "user", "content": prompt}]
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=data,
+        headers={
+            "Content-Type": "application/json",
+            "x-api-key": ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01"
+        },
+        method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            return result["content"][0]["text"]
+    except Exception as e:
+        return f"Errore API: {e}"
+
+
+def generate_analysis(keywords_list, articles):
+    articles_text = ""
+    for i, a in enumerate(articles[:20], 1):
+        articles_text += f"\n[{i}] FONTE: {a['source']}\nTITOLO: {a['title']}\nRIEPILOGO: {a['summary'][:200]}\n"
+
+    keywords_str = ", ".join(keywords_list)
+
+    prompt = f"""Sei un analista geopolitico senior con expertise in diritto internazionale ed etica delle relazioni internazionali.
+
+Hai raccolto {len(articles)} articoli da fonti diverse (mainstream, alternative, occidentali, orientali) sui seguenti temi: {keywords_str}
+
+Ecco gli articoli:
+{articles_text}
+
+Produci un'analisi strutturata in 4 sezioni:
+
+## 1. ANALISI GEOPOLITICA
+Sintetizza in modo critico e bilanciato cosa sta succedendo. Identifica gli attori principali, i loro interessi reali, le dinamiche di potere sottostanti. Considera prospettive diverse (occidentale, russa, cinese, del Sud Globale). Max 300 parole.
+
+## 2. DIMENSIONE ETICA E MORALE
+Analizza le implicazioni etiche e morali degli eventi. Chi sono le vittime? Quali valori vengono violati o difesi? Quali sono le responsabilità morali degli attori coinvolti? Max 200 parole.
+
+## 3. PROSPETTIVA DEL DIRITTO INTERNAZIONALE
+Valuta gli eventi alla luce del diritto internazionale: Carta ONU, Convenzioni di Ginevra, diritto umanitario, precedenti giuridici. Indica eventuali violazioni o zone grigie. Max 200 parole.
+
+## 4. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)
+Scrivi uno script per un avatar AI che racconta questa analisi su Instagram Reels. Tono: autorevole ma accessibile, mai di parte. Struttura: hook 5 sec → contesto 15 sec → analisi 30 sec → conclusione 10 sec. Prima in italiano, poi in inglese. Max 150 parole per lingua.
+
+Rispondi SOLO con le 4 sezioni, senza introduzioni."""
+
+    return call_claude(prompt)
+
+
+# ─────────────────────────────────────────────
+# ROUTES PUBBLICHE
 # ─────────────────────────────────────────────
 @app.route("/")
 def index():
@@ -188,30 +267,25 @@ def api_news():
 
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-
     query = "SELECT source, title, link, summary, published, category, fetched_at FROM articles WHERE 1=1"
     params = []
-
     if category != "all":
         query += " AND category = ?"
         params.append(category)
     if source != "all":
         query += " AND source = ?"
         params.append(source)
-
     query += " ORDER BY fetched_at DESC LIMIT ? OFFSET ?"
     params.extend([limit, offset])
-
     c.execute(query, params)
     rows = c.fetchall()
     conn.close()
 
-    articles = [
+    return jsonify([
         {"source": r[0], "title": r[1], "link": r[2],
          "summary": r[3], "published": r[4], "category": r[5], "fetched_at": r[6]}
         for r in rows
-    ]
-    return jsonify(articles)
+    ])
 
 
 @app.route("/api/stats")
@@ -249,21 +323,123 @@ def api_sources():
 
 
 # ─────────────────────────────────────────────
-# SCHEDULER + STARTUP
+# ROUTES ADMIN (PRIVATE)
 # ─────────────────────────────────────────────
-def start_scheduler():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(fetch_all, "interval", hours=1, id="fetch_feeds")
-    scheduler.start()
-    return scheduler
+@app.route("/admin")
+def admin():
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+    return render_template("analisi.html")
 
 
-# Questo viene eseguito sia con `python app.py` che con gunicorn
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    error = ""
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASSWORD:
+            session["admin"] = True
+            return redirect(url_for("admin"))
+        error = "Password errata."
+    return render_template("login.html", error=error)
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin", None)
+    return redirect(url_for("index"))
+
+
+@app.route("/api/admin/analyze", methods=["POST"])
+def api_analyze():
+    if not session.get("admin"):
+        return jsonify({"error": "Non autorizzato"}), 403
+
+    data = request.json
+    keywords = [k.strip().lower() for k in data.get("keywords", []) if k.strip()]
+    if not keywords:
+        return jsonify({"error": "Inserisci almeno una keyword"}), 400
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    conditions = " OR ".join(["(LOWER(title) LIKE ? OR LOWER(summary) LIKE ?)" for _ in keywords])
+    params = []
+    for kw in keywords:
+        params.extend([f"%{kw}%", f"%{kw}%"])
+    c.execute(f"SELECT source, title, link, summary, published, category FROM articles WHERE {conditions} ORDER BY fetched_at DESC LIMIT 30", params)
+    rows = c.fetchall()
+    conn.close()
+
+    articles = [{"source": r[0], "title": r[1], "link": r[2], "summary": r[3], "published": r[4], "category": r[5]} for r in rows]
+
+    if not articles:
+        return jsonify({"error": f"Nessun articolo trovato per: {', '.join(keywords)}"}), 404
+
+    raw = generate_analysis(keywords, articles)
+
+    def extract_section(text, title):
+        pattern = rf"## {re.escape(title)}\n(.*?)(?=\n## |\Z)"
+        match = re.search(pattern, text, re.DOTALL)
+        return match.group(1).strip() if match else raw
+
+    geopolitical = extract_section(raw, "1. ANALISI GEOPOLITICA")
+    ethical = extract_section(raw, "2. DIMENSIONE ETICA E MORALE")
+    legal = extract_section(raw, "3. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
+    instagram = extract_section(raw, "4. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)")
+
+    save_analysis(", ".join(keywords), len(articles), geopolitical, ethical, legal, instagram)
+
+    return jsonify({
+        "keywords": keywords,
+        "article_count": len(articles),
+        "articles": articles[:10],
+        "geopolitical": geopolitical,
+        "ethical": ethical,
+        "legal": legal,
+        "instagram_script": instagram,
+    })
+
+
+@app.route("/api/admin/analyses")
+def api_analyses_history():
+    if not session.get("admin"):
+        return jsonify({"error": "Non autorizzato"}), 403
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT id, keywords, article_count, created_at FROM analyses ORDER BY created_at DESC LIMIT 20")
+    rows = c.fetchall()
+    conn.close()
+    return jsonify([{"id": r[0], "keywords": r[1], "article_count": r[2], "created_at": r[3]} for r in rows])
+
+
+@app.route("/api/admin/analyses/<int:analysis_id>")
+def api_analysis_detail(analysis_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Non autorizzato"}), 403
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT * FROM analyses WHERE id = ?", (analysis_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({"error": "Non trovata"}), 404
+    return jsonify({
+        "id": row[0], "keywords": row[1], "article_count": row[2],
+        "geopolitical": row[3], "ethical": row[4], "legal": row[5],
+        "instagram_script": row[6], "created_at": row[7]
+    })
+
+
+# ─────────────────────────────────────────────
+# STARTUP
+# ─────────────────────────────────────────────
 init_db()
 _startup_thread = threading.Thread(target=fetch_all)
 _startup_thread.daemon = True
 _startup_thread.start()
-_scheduler = start_scheduler()
+
+_scheduler = BackgroundScheduler()
+_scheduler.add_job(fetch_all, "interval", hours=1, id="fetch_feeds")
+_scheduler.start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
