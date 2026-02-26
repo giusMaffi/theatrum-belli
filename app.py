@@ -64,6 +64,30 @@ def init_db():
     # Migration: add new columns if table existed with old schema
     for col in ["narrative_map", "convergences", "divergences", "thread", "instagram_script", "legal"]:
         c.execute(f"ALTER TABLE analyses ADD COLUMN IF NOT EXISTS {col} TEXT")
+    # Migration: update perspective for existing articles based on source name
+    source_map = {
+        "ANSA Mondo": "italian_mainstream", "Repubblica Esteri": "italian_mainstream",
+        "Corriere Esteri": "italian_mainstream", "Il Sole 24 Ore Mondo": "italian_mainstream",
+        "Il Fatto Quotidiano Esteri": "italian_mainstream", "Limes": "think_tank",
+        "BBC World": "western_mainstream", "Reuters World": "western_mainstream",
+        "The Guardian World": "western_mainstream", "AP News": "western_mainstream",
+        "DW World": "western_mainstream", "France24 EN": "western_mainstream",
+        "Euronews EN": "western_mainstream", "Jerusalem Post": "pro_israel",
+        "Times of Israel": "pro_israel", "Haaretz EN": "pro_israel", "i24 News": "pro_israel",
+        "Al Jazeera English": "arab_media", "Middle East Eye": "arab_media",
+        "The Cradle": "alternative_left", "MintPress News": "alternative_left",
+        "Multipolarista": "alternative_left", "Consortium News": "alternative_left",
+        "Antiwar.com": "alternative_left", "Responsible Statecraft": "alternative_left",
+        "Scenari Economici": "alternative_left", "TASS English": "russian_state",
+        "RT World": "russian_state", "Sputnik World": "russian_state",
+        "Global Times EN": "chinese_state", "CGTN World": "chinese_state",
+        "SCMP World": "chinese_state", "ISW": "think_tank",
+        "Foreign Affairs": "think_tank", "The Diplomat": "think_tank",
+        "Defense One": "think_tank", "War on the Rocks": "think_tank",
+        "Geopolitical Futures": "think_tank",
+    }
+    for source, persp in source_map.items():
+        c.execute("UPDATE articles SET perspective = %s WHERE source = %s AND (perspective IS NULL OR perspective = 'other')", (persp, source))
     conn.commit()
     conn.close()
 
@@ -144,11 +168,11 @@ FEEDS = {
     "Scenari Economici":        ("https://scenarieconomici.it/feed/", "alternative_left"),
 
     # RUSSE / EURASIATICHE
-    "Global Times EN":          ("https://www.globaltimes.cn/rss/outbrain.xml", "chinese_state"),
-    "CGTN World":                ("https://www.cgtn.com/subscribe/feeds/en/world.xml", "chinese_state"),
+    "TASS English":             ("https://tass.com/rss/v2.xml", "russian_state"),
+    "RT World":                 ("https://www.rt.com/rss/news/", "russian_state"),
 
     # CINESI / ASIATICHE
-    "Sputnik World":             ("https://sputnikglobe.com/export/rss2/world/index.xml", "russian_state"),
+    "Xinhua EN":                ("http://www.xinhuanet.com/english/rss/worldrss.xml", "chinese_state"),
     "SCMP World":               ("https://www.scmp.com/rss/91/feed", "chinese_state"),
 
     # THINK TANK / ANALISI
@@ -369,7 +393,15 @@ Valutazione basata su fatti convergenti (non su narrative di parte): Carta ONU, 
 Se esistono analisi precedenti, come si è evoluta la situazione? Quali previsioni si sono avverate? Cosa è cambiato nel conflitto narrativo? Se è la prima analisi, stabilisci i marcatori per il futuro. Max 150 parole.
 
 ## 6. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)
-Script per avatar AI. Tono: analitico, neutro, mostra il conflitto di narrative senza prendere posizione. Struttura: hook 5 sec → "Su questo tema esistono visioni radicalmente diverse" → mappa sintetica 30 sec → "il punto di convergenza è" 15 sec → conclusione aperta 10 sec. Prima italiano, poi inglese.
+Script per voce AI — reporter che racconta dall'interno della storia, tono freddo e immersivo. Non un recap: una narrazione con un filo conduttore. Struttura:
+
+- APERTURA (8 sec): parti da un dettaglio concreto tratto dagli articoli — un numero, un'immagine, un fatto specifico che ancora l'ascoltatore alla realtà del momento. Non domande retoriche generiche.
+- CONTESTO (10 sec): una o due frasi che spiegano perché questa storia conta adesso. Il backstory minimo per capire la posta in gioco — cosa c'era prima, cosa è cambiato.
+- CONFLITTO DI NARRATIVE (25 sec): mostra come prospettive diverse leggono gli stessi fatti. Non meccanicamente "X dice, Y dice" — costruisci la tensione, usa dettagli specifici dagli articoli, fai sentire il contrasto come qualcosa di reale e consequenziale.
+- CONVERGENZA (10 sec): il fatto che nessuno può negare, detto con precisione. Non come formula ma come scoperta.
+- CHIUSURA (7 sec): non una domanda retorica vuota. Un pensiero che rimane, una tensione irrisolta, un paradosso che l'ascoltatore porta con sé.
+
+Ritmo da parlato naturale, con pause. Niente elenchi nel testo finale. Prima italiano, poi inglese.
 
 Rispondi SOLO con le 6 sezioni."""
 
