@@ -14,6 +14,10 @@ from collections import defaultdict
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "theatrum-belli-secret-2026")
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["PERMANENT_SESSION_LIFETIME"] = 86400 * 7  # 7 giorni
+from datetime import timedelta
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "theatrum2026")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
@@ -392,17 +396,22 @@ Valutazione basata su fatti convergenti (non su narrative di parte): Carta ONU, 
 ## 5. FILO NARRATIVO
 Se esistono analisi precedenti, come si è evoluta la situazione? Quali previsioni si sono avverate? Cosa è cambiato nel conflitto narrativo? Se è la prima analisi, stabilisci i marcatori per il futuro. Max 150 parole.
 
-## 6. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)
-Script per voce AI — reporter che racconta dall'interno della storia, tono freddo e immersivo. Non un recap: una narrazione con un filo conduttore. Struttura:
+## 6. SCRIPT INSTAGRAM (90 secondi, bilingue IT/EN)
+Script per voce AI — reporter che racconta dall'interno della storia. Tono freddo, immersivo, giornalistico. Non un recap: una narrazione con respiro e un filo conduttore che attraversa tutto il pezzo. Circa 200-220 parole per lingua.
 
-- APERTURA (8 sec): parti da un dettaglio concreto tratto dagli articoli — un numero, un'immagine, un fatto specifico che ancora l'ascoltatore alla realtà del momento. Non domande retoriche generiche.
-- CONTESTO (10 sec): una o due frasi che spiegano perché questa storia conta adesso. Il backstory minimo per capire la posta in gioco — cosa c'era prima, cosa è cambiato.
-- CONFLITTO DI NARRATIVE (25 sec): mostra come prospettive diverse leggono gli stessi fatti. Non meccanicamente "X dice, Y dice" — costruisci la tensione, usa dettagli specifici dagli articoli, fai sentire il contrasto come qualcosa di reale e consequenziale.
-- CONVERGENZA (10 sec): il fatto che nessuno può negare, detto con precisione. Non come formula ma come scoperta.
-- CHIUSURA (7 sec): non una domanda retorica vuota. Un pensiero che rimane, una tensione irrisolta, un paradosso che l'ascoltatore porta con sé.
+Struttura — slot separati, contenuti che si parlano tra loro:
 
-Ritmo da parlato naturale, con pause. Niente elenchi nel testo finale. Prima italiano, poi inglese.
+APERTURA (10 sec): parti da un fatto eclatante e concreto — un numero, un'immagine, una dichiarazione paradossale tratta dagli articoli. Se esiste storia precedente nel filo narrativo, aggancia il presente al passato in una frase sola. Niente domande retoriche generiche.
 
+CONTESTO (12 sec): perché questa storia conta adesso. La posta in gioco, il backstory essenziale — cosa esisteva prima, cosa è cambiato, chi sono gli attori. Scritto come se l'ascoltatore non sapesse nulla ma fosse intelligente.
+
+CONFLITTO DI NARRATIVE (30 sec): le prospettive diverse sugli stessi fatti, costruite con tensione narrativa reale. Usa dettagli specifici dagli articoli. Dove il materiale lo permette, inserisci la dimensione giuridica come voce aggiuntiva di contrasto — non come formula ma come elemento che cambia il peso della storia.
+
+CONVERGENZA (15 sec): il fatto che nessuna prospettiva può negare. Detto con precisione e senza fretta — è il momento più solido dello script.
+
+CHIUSURA (13 sec): non una domanda retorica. Un pensiero che rimane, una tensione irrisolta, un paradosso che l'ascoltatore porta con sé dopo che lo schermo si è spento.
+
+Ritmo da parlato naturale, frasi di lunghezza variabile — alcune brevi e secche, alcune più distese. Niente elenchi puntati nel testo finale. Prima italiano, poi inglese.
 Rispondi SOLO con le 6 sezioni."""
 
     return call_claude(prompt)
