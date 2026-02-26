@@ -398,10 +398,10 @@ function renderResult(data) {
 
     <div class="instagram-card">
       <div class="instagram-header">
-        <div class="section-title instagram-title" style="margin-bottom:0"><span class="icon">📱</span> Script Instagram (90 sec · IT/EN)</div>
+        <div class="section-title instagram-title" style="margin-bottom:0"><span class="icon">📱</span> Script Instagram (60 sec · IT/EN)</div>
         <button class="copy-btn" onclick="copyScript()">COPIA</button>
       </div>
-      <div class="instagram-content" id="ig-script">${renderMarkdown(data.instagram_script || '')}</div>
+      <div class="instagram-content" id="ig-script">${data.instagram_script || ''}</div>
     </div>
 
     <div class="sources-section">
