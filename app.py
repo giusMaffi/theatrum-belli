@@ -144,11 +144,11 @@ FEEDS = {
     "Scenari Economici":        ("https://scenarieconomici.it/feed/", "alternative_left"),
 
     # RUSSE / EURASIATICHE
-    "TASS English":             ("https://tass.com/rss/v2.xml", "russian_state"),
-    "RT World":                 ("https://www.rt.com/rss/news/", "russian_state"),
+    "Global Times EN":          ("https://www.globaltimes.cn/rss/outbrain.xml", "chinese_state"),
+    "CGTN World":                ("https://www.cgtn.com/subscribe/feeds/en/world.xml", "chinese_state"),
 
     # CINESI / ASIATICHE
-    "Xinhua EN":                ("http://www.xinhuanet.com/english/rss/worldrss.xml", "chinese_state"),
+    "Sputnik World":             ("https://sputnikglobe.com/export/rss2/world/index.xml", "russian_state"),
     "SCMP World":               ("https://www.scmp.com/rss/91/feed", "chinese_state"),
 
     # THINK TANK / ANALISI
