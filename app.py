@@ -61,6 +61,9 @@ def init_db():
             created_at TEXT
         )
     """)
+    # Migration: add new columns if table existed with old schema
+    for col in ["narrative_map", "convergences", "divergences", "thread", "instagram_script", "legal"]:
+        c.execute(f"ALTER TABLE analyses ADD COLUMN IF NOT EXISTS {col} TEXT")
     conn.commit()
     conn.close()
 
