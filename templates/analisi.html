@@ -29,70 +29,43 @@
   .header-right { display: flex; gap: 1rem; align-items: center; }
   .btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.8rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-radius: 2px; text-decoration: none; display: inline-block; }
   .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-primary { border-color: var(--accent); color: var(--accent); }
-  .btn-primary:hover { background: var(--accent); color: var(--bg); }
   .btn-danger { border-color: var(--accent2); color: var(--accent2); }
 
   .layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 60px); }
 
-  /* SIDEBAR */
   aside { border-right: 1px solid var(--border); padding: 1.5rem; overflow-y: auto; }
   .sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
 
-  /* KEYWORD INPUT */
   .keyword-area { margin-bottom: 1.5rem; }
   .keyword-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; min-height: 36px; }
-  .tag {
-    background: var(--surface2); border: 1px solid var(--border);
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
-    padding: 0.25rem 0.6rem; border-radius: 2px; display: flex; align-items: center; gap: 0.4rem;
-    color: var(--accent);
-  }
+  .tag { background: var(--surface2); border: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.25rem 0.6rem; border-radius: 2px; display: flex; align-items: center; gap: 0.4rem; color: var(--accent); }
   .tag button { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0; }
   .keyword-input-row { display: flex; gap: 0.5rem; }
-  input[type="text"] {
-    flex: 1; background: var(--surface); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
-    padding: 0.5rem 0.8rem; outline: none; border-radius: 2px;
-  }
+  input[type="text"] { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; padding: 0.5rem 0.8rem; outline: none; border-radius: 2px; }
   input[type="text"]:focus { border-color: var(--accent); }
   .hint { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-dim); margin-top: 0.5rem; line-height: 1.5; }
 
-  .analyze-btn {
-    width: 100%; background: var(--accent); border: none; color: var(--bg);
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em;
-    text-transform: uppercase; padding: 0.8rem; cursor: pointer; transition: all 0.2s;
-    border-radius: 2px; margin-top: 0.5rem;
-  }
+  .analyze-btn { width: 100%; background: var(--accent); border: none; color: var(--bg); font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.8rem; cursor: pointer; transition: all 0.2s; border-radius: 2px; margin-top: 0.5rem; }
   .analyze-btn:hover { background: #d4b97e; }
   .analyze-btn:disabled { opacity: 0.4; cursor: default; }
 
-  /* HISTORY */
-  .history-item {
-    padding: 0.7rem; border: 1px solid var(--border); margin-bottom: 0.5rem;
-    cursor: pointer; transition: background 0.15s; border-radius: 2px;
-  }
+  .history-item { padding: 0.7rem; border: 1px solid var(--border); margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s; border-radius: 2px; }
   .history-item:hover { background: var(--surface2); }
   .history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.2rem; }
   .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-dim); }
 
-  /* MAIN */
   main { padding: 2rem; overflow-y: auto; }
 
-  .empty-state {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 60vh; gap: 1rem;
-  }
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; }
   .empty-icon { font-size: 3rem; opacity: 0.3; }
   .empty-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-align: center; line-height: 1.8; }
 
-  /* LOADING */
   #loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; }
   .spinner { width: 30px; height: 30px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; }
+  .loading-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); letter-spacing: 0.05em; }
 
-  /* RESULT */
   #result { display: none; }
   .result-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
   .result-keywords { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
@@ -104,7 +77,10 @@
   .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
   .section-content { font-size: 0.85rem; line-height: 1.7; color: var(--text); }
 
-  .instagram-card { background: var(--surface); border: 1px solid var(--accent2); padding: 1.5rem; border-radius: 2px; margin-bottom: 2rem; position: relative; }
+  .narrative-card { background: var(--surface); border: 1px solid #2a2a3a; padding: 1.5rem; border-radius: 2px; margin-bottom: 1.5rem; }
+  .narrative-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: #7a8ec8; margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+
+  .instagram-card { background: var(--surface); border: 1px solid var(--accent2); padding: 1.5rem; border-radius: 2px; margin-bottom: 2rem; }
   .instagram-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent2); margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
   .instagram-content { font-size: 0.85rem; line-height: 1.8; white-space: pre-wrap; color: var(--text); }
   .copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
@@ -150,15 +126,12 @@
       <div class="sidebar-title">Keyword Analysis</div>
       <div class="keyword-tags" id="tags-container"></div>
       <div class="keyword-input-row">
-        <input type="text" id="kw-input" placeholder="es. Gaza, Iran..." >
-        <button class="btn btn-primary" onclick="addTag()">+</button>
+        <input type="text" id="kw-input" placeholder="es. Gaza, Iran...">
+        <button class="btn" style="border-color:var(--accent);color:var(--accent)" onclick="addTag()">+</button>
       </div>
       <div class="hint">Premi Enter o + per aggiungere. Combina keyword per analisi trasversali.</div>
-      <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">
-        ◆ GENERA ANALISI
-      </button>
+      <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">◆ GENERA ANALISI</button>
     </div>
-
     <div>
       <div class="sidebar-title">Analisi Precedenti</div>
       <div id="history-list"></div>
@@ -176,18 +149,18 @@
         etica e giuridica con script Instagram.
       </div>
     </div>
-
     <div id="loading-state">
       <div class="spinner"></div>
-      <div class="loading-text">ANALISI IN CORSO — ATTENDERE...</div>
+      <div class="loading-text">ANALISI IN CORSO</div>
+      <div class="loading-sub" id="loading-sub">Chiamata a Claude in corso...</div>
     </div>
-
     <div id="result"></div>
   </main>
 </div>
 
 <script>
 let tags = [];
+let pollInterval = null;
 
 function addTag() {
   const input = document.getElementById("kw-input");
@@ -228,10 +201,7 @@ function timeAgo(dateStr) {
 }
 
 async function runAnalysis() {
-  if (tags.length === 0) {
-    alert("Inserisci almeno una keyword.");
-    return;
-  }
+  if (tags.length === 0) { alert("Inserisci almeno una keyword."); return; }
 
   document.getElementById("empty-state").style.display = "none";
   document.getElementById("loading-state").style.display = "flex";
@@ -240,30 +210,64 @@ async function runAnalysis() {
 
   try {
     const res = await fetch("/api/admin/analyze", {
-      credentials: "include",
       method: "POST",
+      credentials: "include",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({keywords: tags})
     });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
     const data = await res.json();
 
-    document.getElementById("loading-state").style.display = "none";
-    document.getElementById("analyze-btn").disabled = false;
-
     if (data.error) {
-      document.getElementById("result").style.display = "block";
-      document.getElementById("result").innerHTML = `<div class="error-msg">⚠ ${data.error}</div>`;
+      showError(data.error);
       return;
     }
 
-    renderResult(data);
-    loadHistory();
+    // Avvia polling
+    pollJob(data.job_id);
+
   } catch(e) {
-    document.getElementById("loading-state").style.display = "none";
-    document.getElementById("analyze-btn").disabled = false;
-    document.getElementById("result").style.display = "block";
-    document.getElementById("result").innerHTML = `<div class="error-msg">⚠ Errore di rete: ${e.message}</div>`;
+    showError("Errore: " + e.message);
   }
+}
+
+function pollJob(jobId) {
+  let elapsed = 0;
+  pollInterval = setInterval(async () => {
+    elapsed += 3;
+    document.getElementById("loading-sub").textContent = `Claude sta elaborando... (${elapsed}s)`;
+
+    try {
+      const res = await fetch(`/api/admin/job/${jobId}`, {credentials: "include"});
+      const job = await res.json();
+
+      if (job.status === "done") {
+        clearInterval(pollInterval);
+        document.getElementById("analyze-btn").disabled = false;
+        document.getElementById("loading-state").style.display = "none";
+        renderResult(job.result);
+        loadHistory();
+      } else if (job.status === "error") {
+        clearInterval(pollInterval);
+        showError("Errore analisi: " + job.error);
+      }
+    } catch(e) {
+      // continua polling
+    }
+  }, 3000);
+}
+
+function showError(msg) {
+  clearInterval(pollInterval);
+  document.getElementById("analyze-btn").disabled = false;
+  document.getElementById("loading-state").style.display = "none";
+  document.getElementById("result").style.display = "block";
+  document.getElementById("result").innerHTML = `<div class="error-msg">⚠ ${msg}</div>`;
 }
 
 function renderResult(data) {
@@ -271,7 +275,7 @@ function renderResult(data) {
   result.style.display = "block";
 
   const kwtags = data.keywords.map(k => `<span class="result-kw-tag">${k}</span>`).join("");
-  const sources = data.articles.map(a => `
+  const sources = (data.articles || []).map(a => `
     <div class="source-item">
       <div>
         <div class="source-title">${a.title}</div>
@@ -281,37 +285,46 @@ function renderResult(data) {
     </div>
   `).join("");
 
+  const narrativeHtml = data.narrative ? `
+    <div class="narrative-card">
+      <div class="narrative-label">🔗 Filo Narrativo</div>
+      <div class="section-content">${data.narrative.replace(/\n/g, '<br>')}</div>
+    </div>
+  ` : "";
+
   result.innerHTML = `
     <div class="result-header">
       <div class="result-keywords">${kwtags}</div>
-      <div class="result-meta">${data.article_count} articoli analizzati · appena generato</div>
+      <div class="result-meta">${data.article_count} articoli analizzati · appena generato${data.has_history ? ' · con contesto storico' : ''}</div>
     </div>
 
     <div class="sections-grid">
       <div class="section-card">
         <div class="section-label">🌐 Analisi Geopolitica</div>
-        <div class="section-content">${data.geopolitical.replace(/\n/g, '<br>')}</div>
+        <div class="section-content">${(data.geopolitical || '').replace(/\n/g, '<br>')}</div>
       </div>
       <div class="section-card">
         <div class="section-label">⚖️ Dimensione Etica e Morale</div>
-        <div class="section-content">${data.ethical.replace(/\n/g, '<br>')}</div>
+        <div class="section-content">${(data.ethical || '').replace(/\n/g, '<br>')}</div>
       </div>
       <div class="section-card" style="grid-column: 1/-1">
         <div class="section-label">📜 Prospettiva Diritto Internazionale</div>
-        <div class="section-content">${data.legal.replace(/\n/g, '<br>')}</div>
+        <div class="section-content">${(data.legal || '').replace(/\n/g, '<br>')}</div>
       </div>
     </div>
+
+    ${narrativeHtml}
 
     <div class="instagram-card">
       <div class="instagram-label">
         <span>📱 Script Instagram (60 sec · IT/EN)</span>
         <button class="copy-btn" onclick="copyScript()">COPIA</button>
       </div>
-      <div class="instagram-content" id="ig-script">${data.instagram_script}</div>
+      <div class="instagram-content" id="ig-script">${data.instagram_script || ''}</div>
     </div>
 
     <div class="sources-section">
-      <div class="sources-title">ARTICOLI UTILIZZATI (${data.article_count} totali, mostrati ${data.articles.length})</div>
+      <div class="sources-title">ARTICOLI UTILIZZATI (${data.article_count} totali, mostrati ${(data.articles || []).length})</div>
       ${sources}
     </div>
   `;
@@ -327,16 +340,18 @@ function copyScript() {
 }
 
 async function loadHistory() {
-  const res = await fetch("/api/admin/analyses", {credentials: "include"});
-  const data = await res.json();
-  const list = document.getElementById("history-list");
-  if (!data.length) { list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>'; return; }
-  list.innerHTML = data.map(a => `
-    <div class="history-item" onclick="loadAnalysis(${a.id})">
-      <div class="history-kw">${a.keywords}</div>
-      <div class="history-meta">${a.article_count} articoli · ${timeAgo(a.created_at)}</div>
-    </div>
-  `).join("");
+  try {
+    const res = await fetch("/api/admin/analyses", {credentials: "include"});
+    const data = await res.json();
+    const list = document.getElementById("history-list");
+    if (!data.length) { list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>'; return; }
+    list.innerHTML = data.map(a => `
+      <div class="history-item" onclick="loadAnalysis(${a.id})">
+        <div class="history-kw">${a.keywords}</div>
+        <div class="history-meta">${a.article_count} articoli · ${timeAgo(a.created_at)}</div>
+      </div>
+    `).join("");
+  } catch(e) {}
 }
 
 async function loadAnalysis(id) {
@@ -351,7 +366,9 @@ async function loadAnalysis(id) {
     geopolitical: data.geopolitical,
     ethical: data.ethical,
     legal: data.legal,
-    instagram_script: data.instagram_script
+    narrative: data.narrative,
+    instagram_script: data.instagram_script,
+    has_history: false
   });
 }
 

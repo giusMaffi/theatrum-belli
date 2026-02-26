@@ -3,6 +3,7 @@ import threading
 import os
 import re
 import json
+import uuid
 from datetime import datetime, timezone
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -15,6 +16,9 @@ app.secret_key = os.environ.get("SECRET_KEY", "theatrum-belli-secret-2026")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "theatrum2026")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+# In-memory job store
+jobs = {}
 
 # ─────────────────────────────────────────────
 # DATABASE POSTGRES
@@ -196,7 +200,7 @@ def fetch_all():
 
 
 # ─────────────────────────────────────────────
-# CLAUDE API (SDK ufficiale)
+# CLAUDE API
 # ─────────────────────────────────────────────
 def call_claude(prompt):
     if not ANTHROPIC_API_KEY:
@@ -220,16 +224,15 @@ def generate_analysis(keywords_list, articles, previous_analyses=None):
         articles_text += f"\n[{i}] FONTE: {a['source']}\nTITOLO: {a['title']}\nRIEPILOGO: {a['summary'][:200]}\n"
 
     keywords_str = ", ".join(keywords_list)
-
     history_context = ""
     if previous_analyses:
-        history_context = "\n\nCONTESTO STORICO (analisi precedenti sugli stessi temi):\n"
+        history_context = "\n\nCONTESTO STORICO (analisi precedenti):\n"
         for pa in previous_analyses[:3]:
             history_context += f"\n--- {pa['created_at'][:10]} ---\n{pa['geopolitical'][:300]}...\n"
 
     prompt = f"""Sei un analista geopolitico senior con expertise in diritto internazionale ed etica delle relazioni internazionali.
 
-Hai raccolto {len(articles)} articoli da fonti diverse (mainstream, alternative, occidentali, orientali) sui temi: {keywords_str}
+Hai raccolto {len(articles)} articoli da fonti diverse sui temi: {keywords_str}
 {history_context}
 
 Articoli recenti:
@@ -255,6 +258,41 @@ Script per avatar AI su Instagram Reels. Tono autorevole ma accessibile. Struttu
 Rispondi SOLO con le 5 sezioni."""
 
     return call_claude(prompt)
+
+
+def run_analysis_job(job_id, keywords, articles, previous):
+    jobs[job_id]["status"] = "running"
+    try:
+        raw = generate_analysis(keywords, articles, previous)
+
+        def extract_section(text, title):
+            pattern = rf"## {re.escape(title)}\n(.*?)(?=\n## |\Z)"
+            match = re.search(pattern, text, re.DOTALL)
+            return match.group(1).strip() if match else ""
+
+        geopolitical = extract_section(raw, "1. ANALISI GEOPOLITICA")
+        ethical = extract_section(raw, "2. DIMENSIONE ETICA E MORALE")
+        legal = extract_section(raw, "3. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
+        narrative = extract_section(raw, "4. FILO NARRATIVO")
+        instagram = extract_section(raw, "5. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)")
+
+        save_analysis(", ".join(keywords), len(articles), geopolitical, ethical, legal, narrative, instagram)
+
+        jobs[job_id]["status"] = "done"
+        jobs[job_id]["result"] = {
+            "keywords": keywords,
+            "article_count": len(articles),
+            "articles": articles[:10],
+            "geopolitical": geopolitical,
+            "ethical": ethical,
+            "legal": legal,
+            "narrative": narrative,
+            "instagram_script": instagram,
+            "has_history": len(previous) > 0
+        }
+    except Exception as e:
+        jobs[job_id]["status"] = "error"
+        jobs[job_id]["error"] = str(e)
 
 
 # ─────────────────────────────────────────────
@@ -339,6 +377,7 @@ def admin_login():
     if request.method == "POST":
         if request.form.get("password") == ADMIN_PASSWORD:
             session["admin"] = True
+            session.permanent = True
             return redirect(url_for("admin"))
         error = "Password errata."
     return render_template("login.html", error=error)
@@ -354,6 +393,7 @@ def admin_logout():
 def api_analyze():
     if not session.get("admin"):
         return jsonify({"error": "Non autorizzato"}), 403
+
     data = request.json
     keywords = [k.strip().lower() for k in data.get("keywords", []) if k.strip()]
     if not keywords:
@@ -377,32 +417,24 @@ def api_analyze():
     if not articles:
         return jsonify({"error": f"Nessun articolo trovato per: {', '.join(keywords)}"}), 404
 
-    raw = generate_analysis(keywords, articles, previous)
+    # Avvia job in background
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "pending"}
+    t = threading.Thread(target=run_analysis_job, args=(job_id, keywords, articles, previous))
+    t.daemon = True
+    t.start()
 
-    def extract_section(text, title):
-        pattern = rf"## {re.escape(title)}\n(.*?)(?=\n## |\Z)"
-        match = re.search(pattern, text, re.DOTALL)
-        return match.group(1).strip() if match else ""
+    return jsonify({"job_id": job_id, "article_count": len(articles)})
 
-    geopolitical = extract_section(raw, "1. ANALISI GEOPOLITICA")
-    ethical = extract_section(raw, "2. DIMENSIONE ETICA E MORALE")
-    legal = extract_section(raw, "3. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
-    narrative = extract_section(raw, "4. FILO NARRATIVO")
-    instagram = extract_section(raw, "5. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)")
 
-    save_analysis(", ".join(keywords), len(articles), geopolitical, ethical, legal, narrative, instagram)
-
-    return jsonify({
-        "keywords": keywords,
-        "article_count": len(articles),
-        "articles": articles[:10],
-        "geopolitical": geopolitical,
-        "ethical": ethical,
-        "legal": legal,
-        "narrative": narrative,
-        "instagram_script": instagram,
-        "has_history": len(previous) > 0
-    })
+@app.route("/api/admin/job/<job_id>")
+def api_job_status(job_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Non autorizzato"}), 403
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "Job non trovato"}), 404
+    return jsonify(job)
 
 
 @app.route("/api/admin/analyses")
