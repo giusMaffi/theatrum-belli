@@ -6,9 +6,9 @@ import json
 from datetime import datetime, timezone
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
-import urllib.request
 import psycopg2
 from psycopg2.extras import RealDictCursor
+import anthropic
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "theatrum-belli-secret-2026")
@@ -196,32 +196,22 @@ def fetch_all():
 
 
 # ─────────────────────────────────────────────
-# CLAUDE API
+# CLAUDE API (SDK ufficiale)
 # ─────────────────────────────────────────────
 def call_claude(prompt):
     if not ANTHROPIC_API_KEY:
         return "API key non configurata."
-    data = json.dumps({
-        "model": "claude-opus-4-6",
-        "max_tokens": 2500,
-        "messages": [{"role": "user", "content": prompt}]
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=data,
-        headers={
-            "Content-Type": "application/json",
-            "x-api-key": ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01"
-        },
-        method="POST"
-    )
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-            return result["content"][0]["text"]
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        message = client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=2500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return message.content[0].text
     except Exception as e:
-        return f"Errore API: {e}"
+        print(f"Claude API error: {e}")
+        return f"Errore API Claude: {e}"
 
 
 def generate_analysis(keywords_list, articles, previous_analyses=None):
@@ -257,7 +247,7 @@ Vittime, valori violati o difesi, responsabilità morali. Max 200 parole.
 Carta ONU, Convenzioni di Ginevra, diritto umanitario, eventuali violazioni. Max 200 parole.
 
 ## 4. FILO NARRATIVO
-Collega gli eventi attuali a quelli passati (se esistono analisi precedenti). Come si è evoluta la situazione? Cosa è cambiato? Se è la prima analisi su questo tema, stabilisci i punti di riferimento per il futuro. Max 150 parole.
+Collega gli eventi attuali a quelli passati. Come si è evoluta la situazione? Se è la prima analisi, stabilisci i punti di riferimento per il futuro. Max 150 parole.
 
 ## 5. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)
 Script per avatar AI su Instagram Reels. Tono autorevole ma accessibile. Struttura: hook 5 sec → contesto 15 sec → analisi 30 sec → conclusione 10 sec. Prima italiano, poi inglese. Max 150 parole per lingua.
