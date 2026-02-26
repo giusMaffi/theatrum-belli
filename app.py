@@ -427,12 +427,17 @@ def run_analysis_job(job_id, keywords, articles, previous):
             match = re.search(pattern, text, re.DOTALL)
             return match.group(1).strip() if match else ""
 
+        def extract_fuzzy(text, keyword):
+            pattern = rf"## [^\n]*{re.escape(keyword)}[^\n]*\n(.*?)(?=\n## |\Z)"
+            match = re.search(pattern, text, re.DOTALL)
+            return match.group(1).strip() if match else ""
+
         narrative_map = extract_section(raw, "1. MAPPA DELLE NARRATIVE")
         convergences = extract_section(raw, "2. CONVERGENZE")
         divergences = extract_section(raw, "3. DIVERGENZE E CONFLITTI NARRATIVI")
         legal = extract_section(raw, "4. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
         thread = extract_section(raw, "5. FILO NARRATIVO")
-        instagram = extract_section(raw, "6. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)")
+        instagram = extract_fuzzy(raw, "SCRIPT INSTAGRAM")
 
         # Mappa prospettive usate
         by_perspective = defaultdict(list)
