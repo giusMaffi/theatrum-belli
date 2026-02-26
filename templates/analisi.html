@@ -217,11 +217,13 @@ const PERSP_LABELS = {
 
 function addTag() {
   const input = document.getElementById("kw-input");
-  const val = input.value.trim();
-  if (val && !tags.includes(val.toLowerCase())) {
-    tags.push(val.toLowerCase());
-    renderTags();
-  }
+  const parts = input.value.split(/[,;]+/).map(s => s.trim().toLowerCase()).filter(s => s);
+  parts.forEach(val => {
+    if (val && !tags.includes(val)) {
+      tags.push(val);
+    }
+  });
+  renderTags();
   input.value = "";
   input.focus();
 }
