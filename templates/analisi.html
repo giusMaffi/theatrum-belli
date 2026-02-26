@@ -240,6 +240,7 @@ async function runAnalysis() {
 
   try {
     const res = await fetch("/api/admin/analyze", {
+      credentials: "include",
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({keywords: tags})
@@ -326,7 +327,7 @@ function copyScript() {
 }
 
 async function loadHistory() {
-  const res = await fetch("/api/admin/analyses");
+  const res = await fetch("/api/admin/analyses", {credentials: "include"});
   const data = await res.json();
   const list = document.getElementById("history-list");
   if (!data.length) { list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>'; return; }
@@ -339,7 +340,7 @@ async function loadHistory() {
 }
 
 async function loadAnalysis(id) {
-  const res = await fetch(`/api/admin/analyses/${id}`);
+  const res = await fetch(`/api/admin/analyses/${id}`, {credentials: "include"});
   const data = await res.json();
   document.getElementById("empty-state").style.display = "none";
   document.getElementById("loading-state").style.display = "none";
