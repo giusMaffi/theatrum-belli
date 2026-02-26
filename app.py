@@ -333,7 +333,7 @@ def call_claude(prompt):
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         message = client.messages.create(
             model="claude-opus-4-6",
-            max_tokens=3000,
+            max_tokens=5000,
             messages=[{"role": "user", "content": prompt}]
         )
         return message.content[0].text
