@@ -7,103 +7,142 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0b; --surface: #111114; --surface2: #18181c;
-    --border: #242428; --accent: #c8a96e; --accent2: #e05c4b;
-    --text: #d4d0c8; --text-muted: #6a6860; --text-dim: #4a4845;
+    --bg: #0d0d0f;
+    --surface: #141417;
+    --surface2: #1c1c21;
+    --border: #2a2a30;
+    --accent: #c8a96e;
+    --accent2: #e05c4b;
+    --accent3: #6ab4c8;
+    --text: #e8e4dc;
+    --text-muted: #9a9690;
+    --text-dim: #5a5855;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 400; line-height: 1.6; }
 
   header {
     border-bottom: 1px solid var(--border);
-    padding: 1rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg);
-    position: sticky; top: 0; z-index: 100;
+    padding: 0.9rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg); position: sticky; top: 0; z-index: 100;
   }
   .logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.15em; color: var(--accent); }
   .logo span { color: var(--accent2); }
   .logo-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.15em; margin-top: 2px; }
-  .header-right { display: flex; gap: 1rem; align-items: center; }
+  .header-right { display: flex; gap: 0.8rem; align-items: center; }
   .btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.8rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-radius: 2px; text-decoration: none; display: inline-block; }
   .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger { border-color: var(--accent2); color: var(--accent2); }
+  .btn-danger { border-color: #3a2020; color: var(--accent2); }
+  .btn-danger:hover { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
 
-  .layout { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 60px); }
+  .layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 58px); }
 
-  aside { border-right: 1px solid var(--border); padding: 1.5rem; overflow-y: auto; }
-  .sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+  /* SIDEBAR */
+  aside { border-right: 1px solid var(--border); padding: 1.2rem; overflow-y: auto; background: var(--bg); }
+  .sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
 
-  .keyword-area { margin-bottom: 1.5rem; }
-  .keyword-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; min-height: 36px; }
-  .tag { background: var(--surface2); border: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.25rem 0.6rem; border-radius: 2px; display: flex; align-items: center; gap: 0.4rem; color: var(--accent); }
-  .tag button { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0; }
-  .keyword-input-row { display: flex; gap: 0.5rem; }
-  input[type="text"] { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; padding: 0.5rem 0.8rem; outline: none; border-radius: 2px; }
+  .keyword-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.7rem; min-height: 32px; }
+  .tag { background: #1a1a20; border: 1px solid var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.2rem 0.55rem; border-radius: 2px; display: flex; align-items: center; gap: 0.35rem; color: var(--accent); }
+  .tag button { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0; opacity: 0.7; }
+  .tag button:hover { opacity: 1; }
+  .keyword-input-row { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
+  input[type="text"] { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; padding: 0.45rem 0.7rem; outline: none; border-radius: 2px; }
   input[type="text"]:focus { border-color: var(--accent); }
-  .hint { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-dim); margin-top: 0.5rem; line-height: 1.5; }
+  input[type="text"]::placeholder { color: var(--text-dim); }
+  .hint { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 0.8rem; }
 
-  .analyze-btn { width: 100%; background: var(--accent); border: none; color: var(--bg); font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.8rem; cursor: pointer; transition: all 0.2s; border-radius: 2px; margin-top: 0.5rem; }
+  .analyze-btn { width: 100%; background: var(--accent); border: none; color: #0d0d0f; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.75rem; cursor: pointer; transition: all 0.2s; border-radius: 2px; }
   .analyze-btn:hover { background: #d4b97e; }
-  .analyze-btn:disabled { opacity: 0.4; cursor: default; }
+  .analyze-btn:disabled { opacity: 0.35; cursor: default; }
 
-  .history-item { padding: 0.7rem; border: 1px solid var(--border); margin-bottom: 0.5rem; cursor: pointer; transition: background 0.15s; border-radius: 2px; }
-  .history-item:hover { background: var(--surface2); }
-  .history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.2rem; }
-  .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-dim); }
+  /* HISTORY */
+  .history-date-group { margin-bottom: 1rem; }
+  .history-date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
+  .history-item { padding: 0.6rem 0.7rem; border: 1px solid var(--border); margin-bottom: 0.35rem; cursor: pointer; transition: all 0.15s; border-radius: 2px; background: var(--surface); }
+  .history-item:hover { border-color: var(--accent); background: var(--surface2); }
+  .history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.15rem; font-weight: 500; }
+  .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); }
 
-  main { padding: 2rem; overflow-y: auto; }
+  /* MAIN */
+  main { padding: 2rem; overflow-y: auto; max-width: 900px; }
 
   .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; }
-  .empty-icon { font-size: 3rem; opacity: 0.3; }
-  .empty-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-align: center; line-height: 1.8; }
+  .empty-icon { font-size: 2.5rem; opacity: 0.2; }
+  .empty-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-align: center; line-height: 1.9; }
 
   #loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; }
-  .spinner { width: 30px; height: 30px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; }
-  .loading-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); letter-spacing: 0.05em; }
+  .loading-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
 
+  /* RESULT */
   #result { display: none; }
-  .result-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-  .result-keywords { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
-  .result-kw-tag { background: var(--surface2); border: 1px solid var(--accent); color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.2rem 0.6rem; border-radius: 2px; }
-  .result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
+  .result-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .result-keywords { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+  .result-kw-tag { background: #1a1a20; border: 1px solid var(--accent); color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.2rem 0.6rem; border-radius: 2px; }
+  .result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+  .perspectives-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .persp-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; padding: 0.15rem 0.5rem; border-radius: 10px; border: 1px solid; }
+  .persp-western_mainstream { border-color: #4a7ab5; color: #7aaad5; background: #0d1520; }
+  .persp-italian_mainstream { border-color: #5a8a40; color: #8aba70; background: #0d150a; }
+  .persp-pro_israel { border-color: #b5844a; color: #d5a47a; background: #150e05; }
+  .persp-arab_media { border-color: #b54a4a; color: #d57a7a; background: #150a0a; }
+  .persp-alternative_left { border-color: #8a4ab5; color: #aa7ad5; background: #100a15; }
+  .persp-russian_state { border-color: #b54a4a; color: #c07070; background: #150808; }
+  .persp-chinese_state { border-color: #b58a4a; color: #d5aa7a; background: #150d05; }
+  .persp-think_tank { border-color: #4ab5a0; color: #7ad5c0; background: #051510; }
 
-  .sections-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-  .section-card { background: var(--surface); border: 1px solid var(--border); padding: 1.5rem; border-radius: 2px; }
-  .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
-  .section-content { font-size: 0.85rem; line-height: 1.7; color: var(--text); }
+  /* NARRATIVE MAP */
+  .section-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
+  .section-title .icon { font-size: 0.8rem; }
 
-  .narrative-card { background: var(--surface); border: 1px solid #2a2a3a; padding: 1.5rem; border-radius: 2px; margin-bottom: 1.5rem; }
-  .narrative-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: #7a8ec8; margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+  .narrative-grid { display: grid; gap: 0; margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+  .narrative-entry { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); }
+  .narrative-entry:last-child { border-bottom: none; }
+  .narrative-persp { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+  .narrative-text { font-size: 0.9rem; color: var(--text); line-height: 1.7; }
 
-  .instagram-card { background: var(--surface); border: 1px solid var(--accent2); padding: 1.5rem; border-radius: 2px; margin-bottom: 2rem; }
-  .instagram-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent2); margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .instagram-content { font-size: 0.85rem; line-height: 1.8; white-space: pre-wrap; color: var(--text); }
-  .copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-card { background: var(--surface); border: 1px solid var(--border); padding: 1.2rem; border-radius: 2px; }
+  .section-content { font-size: 0.88rem; color: var(--text); line-height: 1.75; }
+
+  .convergence-card { border-color: #1a3020; background: #0d150d; }
+  .divergence-card { border-color: #301a1a; background: #150d0d; }
+  .legal-card { background: var(--surface); border: 1px solid var(--border); padding: 1.2rem; border-radius: 2px; margin-bottom: 1.5rem; }
+  .thread-card { background: #0d0d18; border: 1px solid #1a1a30; padding: 1.2rem; border-radius: 2px; margin-bottom: 1.5rem; }
+  .thread-title { color: var(--accent3); }
+
+  .instagram-card { background: var(--surface); border: 1px solid #2a1a1a; padding: 1.2rem; border-radius: 2px; margin-bottom: 2rem; }
+  .instagram-title { color: var(--accent2); }
+  .instagram-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+  .instagram-content { font-size: 0.88rem; line-height: 1.8; white-space: pre-wrap; color: var(--text); }
+  .copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
   .copy-btn:hover { background: var(--accent2); color: var(--bg); }
 
   .sources-section { margin-bottom: 2rem; }
-  .sources-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 0.8rem; }
-  .source-item { padding: 0.6rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
-  .source-title { font-size: 0.8rem; color: var(--text); flex: 1; }
-  .source-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--accent); white-space: nowrap; }
-  .source-link { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--accent2); text-decoration: none; }
+  .source-item { padding: 0.55rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+  .source-title-text { font-size: 0.82rem; color: var(--text); flex: 1; line-height: 1.4; }
+  .source-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; white-space: nowrap; }
+  .source-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-muted); }
+  .source-link { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--accent2); text-decoration: none; }
   .source-link:hover { text-decoration: underline; }
 
-  .error-msg { background: rgba(224,92,75,0.1); border: 1px solid var(--accent2); color: var(--accent2); padding: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; border-radius: 2px; }
+  .error-msg { background: rgba(224,92,75,0.08); border: 1px solid #3a1a1a; color: #e07060; padding: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; border-radius: 2px; }
 
-  ::-webkit-scrollbar { width: 4px; }
+  /* Bold rendering */
+  .section-content strong, .narrative-text strong { color: var(--text); font-weight: 600; }
+
+  ::-webkit-scrollbar { width: 3px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); }
 
   @media (max-width: 900px) {
     .layout { grid-template-columns: 1fr; }
-    .sections-grid { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
     aside { border-right: none; border-bottom: 1px solid var(--border); }
+    main { max-width: 100%; }
   }
 </style>
 </head>
@@ -122,19 +161,20 @@
 
 <div class="layout">
   <aside>
-    <div class="keyword-area">
+    <div style="margin-bottom:1.5rem">
       <div class="sidebar-title">Keyword Analysis</div>
       <div class="keyword-tags" id="tags-container"></div>
       <div class="keyword-input-row">
         <input type="text" id="kw-input" placeholder="es. Gaza, Iran...">
-        <button class="btn" style="border-color:var(--accent);color:var(--accent)" onclick="addTag()">+</button>
+        <button class="btn" style="border-color:var(--accent);color:var(--accent);padding:0.45rem 0.7rem" onclick="addTag()">+</button>
       </div>
-      <div class="hint">Premi Enter o + per aggiungere. Combina keyword per analisi trasversali.</div>
+      <div class="hint">Premi Enter o + per aggiungere.<br>Combina keyword per analisi trasversali.</div>
       <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">◆ GENERA ANALISI</button>
     </div>
+
     <div>
       <div class="sidebar-title">Analisi Precedenti</div>
-      <div id="history-list"></div>
+      <div id="history-list"><div style="font-size:0.7rem;color:var(--text-dim)">Caricamento...</div></div>
     </div>
   </aside>
 
@@ -142,18 +182,19 @@
     <div class="empty-state" id="empty-state">
       <div class="empty-icon">◆</div>
       <div class="empty-text">
-        Inserisci le keyword e clicca<br>
-        "GENERA ANALISI" per iniziare.<br><br>
-        Il sistema cercherà articoli correlati<br>
-        e produrrà un'analisi geopolitica,<br>
-        etica e giuridica con script Instagram.
+        Inserisci le keyword e genera un'analisi.<br><br>
+        Il sistema mappa le narrative di<br>
+        8 prospettive editoriali diverse<br>
+        e mostra convergenze e conflitti.
       </div>
     </div>
+
     <div id="loading-state">
       <div class="spinner"></div>
       <div class="loading-text">ANALISI IN CORSO</div>
-      <div class="loading-sub" id="loading-sub">Chiamata a Claude in corso...</div>
+      <div class="loading-sub" id="loading-sub">Elaborazione con Claude...</div>
     </div>
+
     <div id="result"></div>
   </main>
 </div>
@@ -161,6 +202,18 @@
 <script>
 let tags = [];
 let pollInterval = null;
+
+const PERSP_LABELS = {
+  western_mainstream: "Mainstream Occidentale",
+  italian_mainstream: "Stampa Italiana",
+  pro_israel: "Stampa Israeliana",
+  arab_media: "Media Arabi",
+  alternative_left: "Critica Alternativa",
+  russian_state: "Media Russi",
+  chinese_state: "Media Cinesi",
+  think_tank: "Think Tank",
+  other: "Altro"
+};
 
 function addTag() {
   const input = document.getElementById("kw-input");
@@ -183,14 +236,25 @@ function removeTag(tag) {
 }
 
 function renderTags() {
-  const container = document.getElementById("tags-container");
-  container.innerHTML = tags.map(t =>
+  document.getElementById("tags-container").innerHTML = tags.map(t =>
     `<div class="tag">${t} <button onclick="removeTag('${t}')">×</button></div>`
   ).join("");
 }
 
-function timeAgo(dateStr) {
+function formatDate(dateStr) {
   if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('it-IT', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return "";
   const d = new Date(dateStr);
   const diff = Date.now() - d.getTime();
   const m = Math.floor(diff / 60000);
@@ -198,6 +262,13 @@ function timeAgo(dateStr) {
   const h = Math.floor(m / 60);
   if (h < 24) return h + "h fa";
   return Math.floor(h / 24) + "g fa";
+}
+
+function renderMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
 }
 
 async function runAnalysis() {
@@ -218,19 +289,13 @@ async function runAnalysis() {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(text);
+      throw new Error("Server error: " + res.status);
     }
 
     const data = await res.json();
+    if (data.error) { showError(data.error); return; }
 
-    if (data.error) {
-      showError(data.error);
-      return;
-    }
-
-    // Avvia polling
     pollJob(data.job_id);
-
   } catch(e) {
     showError("Errore: " + e.message);
   }
@@ -241,11 +306,9 @@ function pollJob(jobId) {
   pollInterval = setInterval(async () => {
     elapsed += 3;
     document.getElementById("loading-sub").textContent = `Claude sta elaborando... (${elapsed}s)`;
-
     try {
       const res = await fetch(`/api/admin/job/${jobId}`, {credentials: "include"});
       const job = await res.json();
-
       if (job.status === "done") {
         clearInterval(pollInterval);
         document.getElementById("analyze-btn").disabled = false;
@@ -254,11 +317,9 @@ function pollJob(jobId) {
         loadHistory();
       } else if (job.status === "error") {
         clearInterval(pollInterval);
-        showError("Errore analisi: " + job.error);
+        showError("Errore: " + job.error);
       }
-    } catch(e) {
-      // continua polling
-    }
+    } catch(e) {}
   }, 3000);
 }
 
@@ -274,60 +335,96 @@ function renderResult(data) {
   const result = document.getElementById("result");
   result.style.display = "block";
 
+  // Keywords
   const kwtags = data.keywords.map(k => `<span class="result-kw-tag">${k}</span>`).join("");
+
+  // Perspective badges
+  const perspBadges = Object.entries(data.perspectives_used || {}).map(([k, v]) =>
+    `<span class="persp-badge persp-${k}">${v}</span>`
+  ).join("");
+
+  // Narrative map — parse entries
+  const narrativeHtml = renderNarrativeMap(data.narrative_map || "");
+
+  // Sources
   const sources = (data.articles || []).map(a => `
     <div class="source-item">
-      <div>
-        <div class="source-title">${a.title}</div>
+      <div class="source-title-text">${a.title}</div>
+      <div class="source-right">
+        <span class="source-name">${a.source}</span>
         <a href="${a.link}" target="_blank" class="source-link">leggi →</a>
       </div>
-      <div class="source-name">${a.source}</div>
     </div>
   `).join("");
 
-  const narrativeHtml = data.narrative ? `
-    <div class="narrative-card">
-      <div class="narrative-label">🔗 Filo Narrativo</div>
-      <div class="section-content">${data.narrative.replace(/\n/g, '<br>')}</div>
+  const threadHtml = data.thread ? `
+    <div class="thread-card">
+      <div class="section-title thread-title"><span class="icon">🔗</span> Filo Narrativo</div>
+      <div class="section-content">${renderMarkdown(data.thread)}</div>
     </div>
   ` : "";
 
   result.innerHTML = `
     <div class="result-header">
       <div class="result-keywords">${kwtags}</div>
-      <div class="result-meta">${data.article_count} articoli analizzati · appena generato${data.has_history ? ' · con contesto storico' : ''}</div>
+      <div class="result-meta">${data.article_count} articoli analizzati${data.has_history ? ' · con contesto storico' : ''}</div>
+      <div class="perspectives-bar">${perspBadges}</div>
     </div>
 
-    <div class="sections-grid">
-      <div class="section-card">
-        <div class="section-label">🌐 Analisi Geopolitica</div>
-        <div class="section-content">${(data.geopolitical || '').replace(/\n/g, '<br>')}</div>
+    <div style="margin-bottom:1.5rem">
+      <div class="section-title"><span class="icon">🗺</span> Mappa delle Narrative</div>
+      <div class="narrative-grid">${narrativeHtml}</div>
+    </div>
+
+    <div class="two-col">
+      <div class="section-card convergence-card">
+        <div class="section-title" style="color:#6ab56a"><span class="icon">✓</span> Convergenze</div>
+        <div class="section-content">${renderMarkdown(data.convergences || '')}</div>
       </div>
-      <div class="section-card">
-        <div class="section-label">⚖️ Dimensione Etica e Morale</div>
-        <div class="section-content">${(data.ethical || '').replace(/\n/g, '<br>')}</div>
-      </div>
-      <div class="section-card" style="grid-column: 1/-1">
-        <div class="section-label">📜 Prospettiva Diritto Internazionale</div>
-        <div class="section-content">${(data.legal || '').replace(/\n/g, '<br>')}</div>
+      <div class="section-card divergence-card">
+        <div class="section-title" style="color:#c07070"><span class="icon">↔</span> Divergenze & Conflitti</div>
+        <div class="section-content">${renderMarkdown(data.divergences || '')}</div>
       </div>
     </div>
 
-    ${narrativeHtml}
+    <div class="legal-card">
+      <div class="section-title"><span class="icon">📜</span> Prospettiva Diritto Internazionale</div>
+      <div class="section-content">${renderMarkdown(data.legal || '')}</div>
+    </div>
+
+    ${threadHtml}
 
     <div class="instagram-card">
-      <div class="instagram-label">
-        <span>📱 Script Instagram (60 sec · IT/EN)</span>
+      <div class="instagram-header">
+        <div class="section-title instagram-title" style="margin-bottom:0"><span class="icon">📱</span> Script Instagram (60 sec · IT/EN)</div>
         <button class="copy-btn" onclick="copyScript()">COPIA</button>
       </div>
       <div class="instagram-content" id="ig-script">${data.instagram_script || ''}</div>
     </div>
 
     <div class="sources-section">
-      <div class="sources-title">ARTICOLI UTILIZZATI (${data.article_count} totali, mostrati ${(data.articles || []).length})</div>
+      <div class="section-title"><span class="icon">📰</span> Articoli Utilizzati (${data.article_count})</div>
       ${sources}
     </div>
   `;
+}
+
+function renderNarrativeMap(text) {
+  if (!text) return '<div class="narrative-entry"><div class="narrative-text">Nessuna narrativa mappata.</div></div>';
+  // Split per **[Prospettiva]**: pattern
+  const entries = text.split(/\n(?=\*\*)/);
+  return entries.map(entry => {
+    const match = entry.match(/^\*\*(.+?)\*\*[:\s]+([\s\S]+)/);
+    if (match) {
+      return `<div class="narrative-entry">
+        <div class="narrative-persp">${match[1]}</div>
+        <div class="narrative-text">${renderMarkdown(match[2].trim())}</div>
+      </div>`;
+    }
+    const clean = entry.trim();
+    if (!clean) return '';
+    return `<div class="narrative-entry"><div class="narrative-text">${renderMarkdown(clean)}</div></div>`;
+  }).join("");
 }
 
 function copyScript() {
@@ -344,14 +441,33 @@ async function loadHistory() {
     const res = await fetch("/api/admin/analyses", {credentials: "include"});
     const data = await res.json();
     const list = document.getElementById("history-list");
-    if (!data.length) { list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>'; return; }
-    list.innerHTML = data.map(a => `
-      <div class="history-item" onclick="loadAnalysis(${a.id})">
-        <div class="history-kw">${a.keywords}</div>
-        <div class="history-meta">${a.article_count} articoli · ${timeAgo(a.created_at)}</div>
+    if (!data || !data.length) {
+      list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>';
+      return;
+    }
+
+    // Raggruppa per data
+    const groups = {};
+    data.forEach(a => {
+      const dateKey = formatDate(a.created_at);
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(a);
+    });
+
+    list.innerHTML = Object.entries(groups).map(([date, items]) => `
+      <div class="history-date-group">
+        <div class="history-date-label">${date}</div>
+        ${items.map(a => `
+          <div class="history-item" onclick="loadAnalysis(${a.id})">
+            <div class="history-kw">${a.keywords}</div>
+            <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
+          </div>
+        `).join("")}
       </div>
     `).join("");
-  } catch(e) {}
+  } catch(e) {
+    document.getElementById("history-list").innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>';
+  }
 }
 
 async function loadAnalysis(id) {
@@ -363,10 +479,12 @@ async function loadAnalysis(id) {
     keywords: data.keywords.split(", "),
     article_count: data.article_count,
     articles: [],
-    geopolitical: data.geopolitical,
-    ethical: data.ethical,
+    perspectives_used: {},
+    narrative_map: data.narrative_map,
+    convergences: data.convergences,
+    divergences: data.divergences,
     legal: data.legal,
-    narrative: data.narrative,
+    thread: data.thread,
     instagram_script: data.instagram_script,
     has_history: false
   });

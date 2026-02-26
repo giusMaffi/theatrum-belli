@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import anthropic
+from collections import defaultdict
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "theatrum-belli-secret-2026")
@@ -17,11 +18,10 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "theatrum2026")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# In-memory job store
 jobs = {}
 
 # ─────────────────────────────────────────────
-# DATABASE POSTGRES
+# DATABASE
 # ─────────────────────────────────────────────
 def get_conn():
     return psycopg2.connect(DATABASE_URL, sslmode="require")
@@ -39,18 +39,24 @@ def init_db():
             summary TEXT,
             published TEXT,
             category TEXT,
+            perspective TEXT,
             fetched_at TEXT
         )
+    """)
+    # Add perspective column if missing (for existing DBs)
+    c.execute("""
+        ALTER TABLE articles ADD COLUMN IF NOT EXISTS perspective TEXT DEFAULT 'other'
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS analyses (
             id SERIAL PRIMARY KEY,
             keywords TEXT,
             article_count INTEGER,
-            geopolitical TEXT,
-            ethical TEXT,
+            narrative_map TEXT,
+            convergences TEXT,
+            divergences TEXT,
             legal TEXT,
-            narrative TEXT,
+            thread TEXT,
             instagram_script TEXT,
             created_at TEXT
         )
@@ -59,17 +65,17 @@ def init_db():
     conn.close()
 
 
-def save_article(source, title, link, summary, published, category):
+def save_article(source, title, link, summary, published, category, perspective):
     conn = get_conn()
     c = conn.cursor()
     try:
         c.execute("""
-            INSERT INTO articles (source, title, link, summary, published, category, fetched_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO articles (source, title, link, summary, published, category, perspective, fetched_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (link) DO NOTHING
         """, (source, title, link[:500] if link else "",
               summary[:500] if summary else "",
-              published, category,
+              published, category, perspective,
               datetime.now(timezone.utc).isoformat()))
         conn.commit()
     except Exception as e:
@@ -79,52 +85,88 @@ def save_article(source, title, link, summary, published, category):
         conn.close()
 
 
-def save_analysis(keywords, article_count, geopolitical, ethical, legal, narrative, instagram_script):
+def save_analysis(keywords, article_count, narrative_map, convergences, divergences, legal, thread, instagram_script):
     conn = get_conn()
     c = conn.cursor()
     c.execute("""
-        INSERT INTO analyses (keywords, article_count, geopolitical, ethical, legal, narrative, instagram_script, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    """, (keywords, article_count, geopolitical, ethical, legal, narrative, instagram_script,
+        INSERT INTO analyses (keywords, article_count, narrative_map, convergences, divergences, legal, thread, instagram_script, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (keywords, article_count, narrative_map, convergences, divergences, legal, thread, instagram_script,
           datetime.now(timezone.utc).isoformat()))
     conn.commit()
     conn.close()
 
 
 # ─────────────────────────────────────────────
-# FONTI RSS
+# FONTI RSS — classificate per prospettiva editoriale
 # ─────────────────────────────────────────────
+# Prospettive: western_mainstream, alternative_left, pro_israel, russian_state,
+#              chinese_state, arab_media, think_tank, italian_mainstream
+
 FEEDS = {
-    "ANSA Mondo": "https://www.ansa.it/sito/notizie/mondo/mondo_rss.xml",
-    "Repubblica Esteri": "https://www.repubblica.it/rss/esteri/rss2.0.xml",
-    "Corriere Esteri": "https://xml2.corriereobjects.it/rss/esteri.xml",
-    "Il Sole 24 Ore Mondo": "https://www.ilsole24ore.com/rss/mondo.xml",
-    "Il Fatto Quotidiano Esteri": "https://www.ilfattoquotidiano.it/category/esteri/feed/",
-    "Scenari Economici": "https://scenarieconomici.it/feed/",
-    "BBC World": "http://feeds.bbci.co.uk/news/world/rss.xml",
-    "Reuters World": "https://feeds.reuters.com/reuters/worldNews",
-    "Al Jazeera English": "https://www.aljazeera.com/xml/rss/all.xml",
-    "The Guardian World": "https://www.theguardian.com/world/rss",
-    "AP News": "https://feeds.apnews.com/rss/APNewsTop25Stories",
-    "DW World": "https://rss.dw.com/rdf/rss-en-world",
-    "France24 EN": "https://www.france24.com/en/rss",
-    "Euronews EN": "https://www.euronews.com/rss",
-    "TASS English": "https://tass.com/rss/v2.xml",
-    "Xinhua EN": "http://www.xinhuanet.com/english/rss/worldrss.xml",
-    "RT World": "https://www.rt.com/rss/news/",
-    "ISW": "https://www.understandingwar.org/rss.xml",
-    "Foreign Affairs": "https://www.foreignaffairs.com/rss.xml",
-    "The Diplomat": "https://thediplomat.com/feed/",
-    "Defense One": "https://www.defenseone.com/rss/all/",
-    "War on the Rocks": "https://warontherocks.com/feed/",
-    "Limes": "https://www.limesonline.com/feed",
-    "Geopolitical Futures": "https://geopoliticalfutures.com/feed/",
-    "Responsible Statecraft": "https://responsiblestatecraft.org/feed/",
-    "The Cradle": "https://thecradle.co/feed",
-    "MintPress News": "https://www.mintpressnews.com/feed/",
-    "Multipolarista": "https://multipolarista.com/feed/",
-    "Consortium News": "https://consortiumnews.com/feed/",
-    "Antiwar.com": "https://www.antiwar.com/blog/feed/",
+    # ITALIANO MAINSTREAM
+    "ANSA Mondo":               ("https://www.ansa.it/sito/notizie/mondo/mondo_rss.xml", "italian_mainstream"),
+    "Repubblica Esteri":        ("https://www.repubblica.it/rss/esteri/rss2.0.xml", "italian_mainstream"),
+    "Corriere Esteri":          ("https://xml2.corriereobjects.it/rss/esteri.xml", "italian_mainstream"),
+    "Il Sole 24 Ore Mondo":     ("https://www.ilsole24ore.com/rss/mondo.xml", "italian_mainstream"),
+    "Il Fatto Quotidiano":      ("https://www.ilfattoquotidiano.it/category/esteri/feed/", "italian_mainstream"),
+    "Limes":                    ("https://www.limesonline.com/feed", "think_tank"),
+
+    # WESTERN MAINSTREAM
+    "BBC World":                ("http://feeds.bbci.co.uk/news/world/rss.xml", "western_mainstream"),
+    "Reuters World":            ("https://feeds.reuters.com/reuters/worldNews", "western_mainstream"),
+    "The Guardian World":       ("https://www.theguardian.com/world/rss", "western_mainstream"),
+    "AP News":                  ("https://feeds.apnews.com/rss/APNewsTop25Stories", "western_mainstream"),
+    "DW World":                 ("https://rss.dw.com/rdf/rss-en-world", "western_mainstream"),
+    "France24 EN":              ("https://www.france24.com/en/rss", "western_mainstream"),
+    "Euronews EN":              ("https://www.euronews.com/rss", "western_mainstream"),
+
+    # PRO-ISRAEL / ISRAELIANE
+    "Jerusalem Post":           ("https://www.jpost.com/rss/rssfeedsfrontpage.aspx", "pro_israel"),
+    "Times of Israel":          ("https://www.timesofisrael.com/feed/", "pro_israel"),
+    "Haaretz EN":               ("https://www.haaretz.com/cmlink/1.628765", "pro_israel"),
+    "i24 News":                 ("https://www.i24news.tv/en/rss", "pro_israel"),
+
+    # ARABE / MEDIO ORIENTE
+    "Al Jazeera English":       ("https://www.aljazeera.com/xml/rss/all.xml", "arab_media"),
+    "Middle East Eye":          ("https://www.middleeasteye.net/rss", "arab_media"),
+
+    # ALTERNATIVE / CRITICA OCCIDENTALE
+    "The Cradle":               ("https://thecradle.co/feed", "alternative_left"),
+    "MintPress News":           ("https://www.mintpressnews.com/feed/", "alternative_left"),
+    "Multipolarista":           ("https://multipolarista.com/feed/", "alternative_left"),
+    "Consortium News":          ("https://consortiumnews.com/feed/", "alternative_left"),
+    "Antiwar.com":              ("https://www.antiwar.com/blog/feed/", "alternative_left"),
+    "Responsible Statecraft":   ("https://responsiblestatecraft.org/feed/", "alternative_left"),
+    "Scenari Economici":        ("https://scenarieconomici.it/feed/", "alternative_left"),
+
+    # RUSSE / EURASIATICHE
+    "TASS English":             ("https://tass.com/rss/v2.xml", "russian_state"),
+    "RT World":                 ("https://www.rt.com/rss/news/", "russian_state"),
+
+    # CINESI / ASIATICHE
+    "Xinhua EN":                ("http://www.xinhuanet.com/english/rss/worldrss.xml", "chinese_state"),
+    "SCMP World":               ("https://www.scmp.com/rss/91/feed", "chinese_state"),
+
+    # THINK TANK / ANALISI
+    "ISW":                      ("https://www.understandingwar.org/rss.xml", "think_tank"),
+    "Foreign Affairs":          ("https://www.foreignaffairs.com/rss.xml", "think_tank"),
+    "The Diplomat":             ("https://thediplomat.com/feed/", "think_tank"),
+    "Defense One":              ("https://www.defenseone.com/rss/all/", "think_tank"),
+    "War on the Rocks":         ("https://warontherocks.com/feed/", "think_tank"),
+    "Geopolitical Futures":     ("https://geopoliticalfutures.com/feed/", "think_tank"),
+}
+
+# Etichette leggibili per prospettiva
+PERSPECTIVE_LABELS = {
+    "western_mainstream": "Mainstream Occidentale",
+    "italian_mainstream": "Stampa Italiana",
+    "pro_israel":         "Stampa Israeliana",
+    "arab_media":         "Media Arabi",
+    "alternative_left":   "Critica Alternativa",
+    "russian_state":      "Media Russi",
+    "chinese_state":      "Media Cinesi/Asiatici",
+    "think_tank":         "Think Tank & Analisi",
 }
 
 KEYWORDS_IT = [
@@ -148,11 +190,11 @@ KEYWORDS_EN = [
 ALL_KEYWORDS = set(KEYWORDS_IT + KEYWORDS_EN)
 
 CATEGORY_TAGS = {
-    "🔴 Russia-Ucraina": ["ucraina", "ukraine", "russia", "zelensky", "putin", "donbass", "kharkiv", "kherson", "zaporizhzhia", "crimea", "mosca", "kiev", "kyiv"],
+    "🔴 Russia-Ucraina": ["ucraina", "ukraine", "russia", "zelensky", "putin", "donbass", "kharkiv", "kherson", "crimea", "kyiv"],
     "🟠 Medio Oriente": ["israel", "israele", "palestin", "gaza", "hamas", "hezbollah", "iran", "libano", "lebanon", "houthi", "yemen", "siria", "syria", "netanyahu"],
-    "🟡 Cina & Indo-Pacifico": ["china", "cina", "taiwan", "asia", "indo-pacific", "south china sea", "japan", "giappone", "corea", "korea", "beijing", "pechino", "xi jinping"],
-    "🟢 Africa & Sahel": ["africa", "sahel", "mali", "niger", "sudan", "ethiopia", "somalia", "congo", "burkina", "mozambico", "mozambique"],
-    "🔵 NATO & Occidente": ["nato", "g7", "eu", "ue", "europa", "europe", "difesa", "defense", "allean", "pentagon", "washington", "bruxelles", "brussels"],
+    "🟡 Cina & Indo-Pacifico": ["china", "cina", "taiwan", "indo-pacific", "south china sea", "japan", "giappone", "corea", "korea", "beijing", "pechino", "xi jinping"],
+    "🟢 Africa & Sahel": ["africa", "sahel", "mali", "niger", "sudan", "ethiopia", "somalia", "congo", "burkina"],
+    "🔵 NATO & Occidente": ["nato", "g7", "eu", "ue", "europa", "europe", "difesa", "defense", "pentagon", "washington", "bruxelles"],
     "⚪ Altro": [],
 }
 
@@ -179,7 +221,7 @@ def is_relevant(title, summary=""):
 def fetch_all():
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Fetching feeds...")
     count = 0
-    for source, url in FEEDS.items():
+    for source, (url, perspective) in FEEDS.items():
         try:
             feed = feedparser.parse(url)
             for entry in feed.entries[:30]:
@@ -192,11 +234,62 @@ def fetch_all():
                 if not is_relevant(title, summary):
                     continue
                 category = categorize(title + " " + summary)
-                save_article(source, title, link, summary, published, category)
+                save_article(source, title, link, summary, published, category, perspective)
                 count += 1
         except Exception as e:
             print(f"Error fetching {source}: {e}")
     print(f"[DONE] Saved {count} relevant articles.")
+
+
+# ─────────────────────────────────────────────
+# SELEZIONE BILANCIATA PER PROSPETTIVA
+# ─────────────────────────────────────────────
+def select_balanced_articles(all_articles, max_total=25, max_per_perspective=4):
+    """
+    Selezione in due fasi:
+    1. Top 10 per rilevanza (quante keyword matchano) — entrano sempre
+    2. Restanti slot distribuiti per garantire diversità di prospettiva
+    """
+    # Raggruppa per prospettiva
+    by_perspective = defaultdict(list)
+    for a in all_articles:
+        by_perspective[a.get('perspective', 'other')].append(a)
+
+    selected = []
+    seen_links = set()
+
+    # Fase 1: prendi i più rilevanti (già ordinati per recency dal DB)
+    top = all_articles[:10]
+    for a in top:
+        if a['link'] not in seen_links:
+            selected.append(a)
+            seen_links.add(a['link'])
+
+    # Fase 2: riempi fino a max_total bilanciando per prospettiva
+    perspectives = list(by_perspective.keys())
+    per_perspective_count = defaultdict(int)
+    for a in selected:
+        per_perspective_count[a.get('perspective', 'other')] += 1
+
+    remaining = [a for a in all_articles[10:] if a['link'] not in seen_links]
+    # Round-robin per prospettiva
+    i = 0
+    while len(selected) < max_total and i < len(remaining) * 2:
+        for persp in perspectives:
+            if len(selected) >= max_total:
+                break
+            candidates = [a for a in remaining
+                         if a.get('perspective') == persp
+                         and a['link'] not in seen_links
+                         and per_perspective_count[persp] < max_per_perspective]
+            if candidates:
+                a = candidates[0]
+                selected.append(a)
+                seen_links.add(a['link'])
+                per_perspective_count[persp] += 1
+        i += 1
+
+    return selected
 
 
 # ─────────────────────────────────────────────
@@ -209,7 +302,7 @@ def call_claude(prompt):
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         message = client.messages.create(
             model="claude-opus-4-6",
-            max_tokens=2500,
+            max_tokens=3000,
             messages=[{"role": "user", "content": prompt}]
         )
         return message.content[0].text
@@ -219,43 +312,63 @@ def call_claude(prompt):
 
 
 def generate_analysis(keywords_list, articles, previous_analyses=None):
+    # Raggruppa articoli per prospettiva
+    by_perspective = defaultdict(list)
+    for a in articles:
+        by_perspective[a.get('perspective', 'other')].append(a)
+
+    # Costruisci contesto strutturato per prospettiva
     articles_text = ""
-    for i, a in enumerate(articles[:20], 1):
-        articles_text += f"\n[{i}] FONTE: {a['source']}\nTITOLO: {a['title']}\nRIEPILOGO: {a['summary'][:200]}\n"
+    for persp, arts in by_perspective.items():
+        label = PERSPECTIVE_LABELS.get(persp, persp)
+        articles_text += f"\n\n=== {label.upper()} ===\n"
+        for a in arts:
+            articles_text += f"• [{a['source']}] {a['title']}\n  {a['summary'][:150]}\n"
+
+    # Prospettive presenti
+    perspectives_present = [PERSPECTIVE_LABELS.get(p, p) for p in by_perspective.keys()]
+    perspectives_missing = [PERSPECTIVE_LABELS.get(p, p) for p in PERSPECTIVE_LABELS.keys()
+                           if p not in by_perspective]
 
     keywords_str = ", ".join(keywords_list)
+
     history_context = ""
     if previous_analyses:
-        history_context = "\n\nCONTESTO STORICO (analisi precedenti):\n"
-        for pa in previous_analyses[:3]:
-            history_context += f"\n--- {pa['created_at'][:10]} ---\n{pa['geopolitical'][:300]}...\n"
+        history_context = "\n\nANALISI PRECEDENTI SULLO STESSO TEMA:\n"
+        for pa in previous_analyses[:2]:
+            history_context += f"\n[{pa['created_at'][:10]}]\n{pa['narrative_map'][:400]}...\n"
 
-    prompt = f"""Sei un analista geopolitico senior con expertise in diritto internazionale ed etica delle relazioni internazionali.
+    prompt = f"""Sei un analista di intelligence geopolitica. Il tuo metodo è la MAPPATURA DELLE NARRATIVE: non cerchi una verità unica, ma mappi cosa dice ogni prospettiva editoriale, dove convergono e dove divergono.
 
-Hai raccolto {len(articles)} articoli da fonti diverse sui temi: {keywords_str}
+TEMA: {keywords_str}
+PROSPETTIVE PRESENTI: {', '.join(perspectives_present)}
+PROSPETTIVE ASSENTI (nessun articolo disponibile): {', '.join(perspectives_missing) if perspectives_missing else 'nessuna'}
 {history_context}
 
-Articoli recenti:
+ARTICOLI PER PROSPETTIVA:
 {articles_text}
 
-Produci un'analisi in 5 sezioni:
+Produci un'analisi in 6 sezioni:
 
-## 1. ANALISI GEOPOLITICA
-Cosa sta succedendo realmente. Attori principali, interessi reali, dinamiche di potere. Prospettive multiple (occidentale, russa, cinese, Sud Globale). Max 300 parole.
+## 1. MAPPA DELLE NARRATIVE
+Per ogni prospettiva presente, sintetizza in 2-3 frasi cosa dice e quale frame interpretativo usa. Sii preciso e fedele a ciò che le fonti dicono realmente — non attribuire posizioni non documentate. Formato: **[Prospettiva]**: testo.
 
-## 2. DIMENSIONE ETICA E MORALE
-Vittime, valori violati o difesi, responsabilità morali. Max 200 parole.
+## 2. CONVERGENZE
+Cosa concordano tutte o quasi tutte le prospettive? Questi sono i fatti più solidi. Max 150 parole.
 
-## 3. PROSPETTIVA DEL DIRITTO INTERNAZIONALE
-Carta ONU, Convenzioni di Ginevra, diritto umanitario, eventuali violazioni. Max 200 parole.
+## 3. DIVERGENZE E CONFLITTI NARRATIVI
+Dove le prospettive si contraddicono radicalmente? Quali sono i punti di scontro narrativo più rilevanti? Quali domande rimangono aperte? Max 200 parole.
 
-## 4. FILO NARRATIVO
-Collega gli eventi attuali a quelli passati. Come si è evoluta la situazione? Se è la prima analisi, stabilisci i punti di riferimento per il futuro. Max 150 parole.
+## 4. PROSPETTIVA DEL DIRITTO INTERNAZIONALE
+Valutazione basata su fatti convergenti (non su narrative di parte): Carta ONU, Convenzioni di Ginevra, diritto umanitario. Max 150 parole.
 
-## 5. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)
-Script per avatar AI su Instagram Reels. Tono autorevole ma accessibile. Struttura: hook 5 sec → contesto 15 sec → analisi 30 sec → conclusione 10 sec. Prima italiano, poi inglese. Max 150 parole per lingua.
+## 5. FILO NARRATIVO
+Se esistono analisi precedenti, come si è evoluta la situazione? Quali previsioni si sono avverate? Cosa è cambiato nel conflitto narrativo? Se è la prima analisi, stabilisci i marcatori per il futuro. Max 150 parole.
 
-Rispondi SOLO con le 5 sezioni."""
+## 6. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)
+Script per avatar AI. Tono: analitico, neutro, mostra il conflitto di narrative senza prendere posizione. Struttura: hook 5 sec → "Su questo tema esistono visioni radicalmente diverse" → mappa sintetica 30 sec → "il punto di convergenza è" 15 sec → conclusione aperta 10 sec. Prima italiano, poi inglese.
+
+Rispondi SOLO con le 6 sezioni."""
 
     return call_claude(prompt)
 
@@ -270,23 +383,33 @@ def run_analysis_job(job_id, keywords, articles, previous):
             match = re.search(pattern, text, re.DOTALL)
             return match.group(1).strip() if match else ""
 
-        geopolitical = extract_section(raw, "1. ANALISI GEOPOLITICA")
-        ethical = extract_section(raw, "2. DIMENSIONE ETICA E MORALE")
-        legal = extract_section(raw, "3. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
-        narrative = extract_section(raw, "4. FILO NARRATIVO")
-        instagram = extract_section(raw, "5. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)")
+        narrative_map = extract_section(raw, "1. MAPPA DELLE NARRATIVE")
+        convergences = extract_section(raw, "2. CONVERGENZE")
+        divergences = extract_section(raw, "3. DIVERGENZE E CONFLITTI NARRATIVI")
+        legal = extract_section(raw, "4. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
+        thread = extract_section(raw, "5. FILO NARRATIVO")
+        instagram = extract_section(raw, "6. SCRIPT INSTAGRAM (60 secondi, bilingue IT/EN)")
 
-        save_analysis(", ".join(keywords), len(articles), geopolitical, ethical, legal, narrative, instagram)
+        # Mappa prospettive usate
+        by_perspective = defaultdict(list)
+        for a in articles:
+            by_perspective[a.get('perspective', 'other')].append(a)
+        perspectives_used = {p: PERSPECTIVE_LABELS.get(p, p) for p in by_perspective.keys()}
+
+        save_analysis(", ".join(keywords), len(articles),
+                     narrative_map, convergences, divergences, legal, thread, instagram)
 
         jobs[job_id]["status"] = "done"
         jobs[job_id]["result"] = {
             "keywords": keywords,
             "article_count": len(articles),
-            "articles": articles[:10],
-            "geopolitical": geopolitical,
-            "ethical": ethical,
+            "articles": articles[:15],
+            "perspectives_used": perspectives_used,
+            "narrative_map": narrative_map,
+            "convergences": convergences,
+            "divergences": divergences,
             "legal": legal,
-            "narrative": narrative,
+            "thread": thread,
             "instagram_script": instagram,
             "has_history": len(previous) > 0
         }
@@ -405,26 +528,30 @@ def api_analyze():
     params = []
     for kw in keywords:
         params.extend([f"%{kw}%", f"%{kw}%"])
-    c.execute(f"SELECT source, title, link, summary, published, category FROM articles WHERE {conditions} ORDER BY fetched_at DESC LIMIT 30", params)
-    articles = [dict(r) for r in c.fetchall()]
+    c.execute(f"""SELECT source, title, link, summary, published, category, perspective
+                  FROM articles WHERE {conditions}
+                  ORDER BY fetched_at DESC LIMIT 100""", params)
+    all_articles = [dict(r) for r in c.fetchall()]
 
     kw_conditions = " OR ".join(["LOWER(keywords) LIKE %s" for _ in keywords])
     kw_params = [f"%{kw}%" for kw in keywords]
-    c.execute(f"SELECT geopolitical, created_at FROM analyses WHERE {kw_conditions} ORDER BY created_at DESC LIMIT 3", kw_params)
+    c.execute(f"SELECT narrative_map, created_at FROM analyses WHERE {kw_conditions} ORDER BY created_at DESC LIMIT 2", kw_params)
     previous = [dict(r) for r in c.fetchall()]
     conn.close()
 
-    if not articles:
+    if not all_articles:
         return jsonify({"error": f"Nessun articolo trovato per: {', '.join(keywords)}"}), 404
 
-    # Avvia job in background
+    # Selezione bilanciata
+    articles = select_balanced_articles(all_articles, max_total=25, max_per_perspective=4)
+
     job_id = str(uuid.uuid4())
     jobs[job_id] = {"status": "pending"}
     t = threading.Thread(target=run_analysis_job, args=(job_id, keywords, articles, previous))
     t.daemon = True
     t.start()
 
-    return jsonify({"job_id": job_id, "article_count": len(articles)})
+    return jsonify({"job_id": job_id, "article_count": len(all_articles), "selected": len(articles)})
 
 
 @app.route("/api/admin/job/<job_id>")
@@ -443,7 +570,7 @@ def api_analyses_history():
         return jsonify({"error": "Non autorizzato"}), 403
     conn = get_conn()
     c = conn.cursor(cursor_factory=RealDictCursor)
-    c.execute("SELECT id, keywords, article_count, created_at FROM analyses ORDER BY created_at DESC LIMIT 20")
+    c.execute("SELECT id, keywords, article_count, created_at FROM analyses ORDER BY created_at DESC LIMIT 50")
     rows = [dict(r) for r in c.fetchall()]
     conn.close()
     return jsonify(rows)
