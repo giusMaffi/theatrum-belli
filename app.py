@@ -579,7 +579,7 @@ def api_analyze():
         params.extend([f"%{kw}%", f"%{kw}%"])
     c.execute(f"""SELECT source, title, link, summary, published, category, perspective
                   FROM articles WHERE {conditions}
-                  ORDER BY fetched_at DESC LIMIT 500""", params)
+                  ORDER BY id DESC LIMIT 500""", params)
     all_articles = [dict(r) for r in c.fetchall()]
 
     kw_conditions = " OR ".join(["LOWER(keywords) LIKE %s" for _ in keywords])
