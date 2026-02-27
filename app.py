@@ -47,7 +47,6 @@ def init_db():
             fetched_at TEXT
         )
     """)
-    # Add perspective column if missing (for existing DBs)
     c.execute("""
         ALTER TABLE articles ADD COLUMN IF NOT EXISTS perspective TEXT DEFAULT 'other'
     """)
@@ -65,10 +64,8 @@ def init_db():
             created_at TEXT
         )
     """)
-    # Migration: add new columns if table existed with old schema
     for col in ["narrative_map", "convergences", "divergences", "thread", "instagram_script", "legal"]:
         c.execute(f"ALTER TABLE analyses ADD COLUMN IF NOT EXISTS {col} TEXT")
-    # Migration: update perspective for existing articles based on source name
     source_map = {
         "ANSA Mondo": "italian_mainstream", "Repubblica Esteri": "italian_mainstream",
         "Corriere Esteri": "italian_mainstream", "Il Sole 24 Ore Mondo": "italian_mainstream",
@@ -131,9 +128,6 @@ def save_analysis(keywords, article_count, narrative_map, convergences, divergen
 # ─────────────────────────────────────────────
 # FONTI RSS — classificate per prospettiva editoriale
 # ─────────────────────────────────────────────
-# Prospettive: western_mainstream, alternative_left, pro_israel, russian_state,
-#              chinese_state, arab_media, think_tank, italian_mainstream
-
 FEEDS = {
     # ITALIANO MAINSTREAM
     "ANSA Mondo":               ("https://www.ansa.it/sito/notizie/mondo/mondo_rss.xml", "italian_mainstream"),
@@ -188,7 +182,6 @@ FEEDS = {
     "Geopolitical Futures":     ("https://geopoliticalfutures.com/feed/", "think_tank"),
 }
 
-# Etichette leggibili per prospettiva
 PERSPECTIVE_LABELS = {
     "western_mainstream": "Mainstream Occidentale",
     "italian_mainstream": "Stampa Italiana",
@@ -276,12 +269,6 @@ def fetch_all():
 # SELEZIONE BILANCIATA PER PROSPETTIVA
 # ─────────────────────────────────────────────
 def select_balanced_articles(all_articles, max_total=25, max_per_perspective=4):
-    """
-    Selezione in due fasi:
-    1. Top 10 per rilevanza (quante keyword matchano) — entrano sempre
-    2. Restanti slot distribuiti per garantire diversità di prospettiva
-    """
-    # Raggruppa per prospettiva
     by_perspective = defaultdict(list)
     for a in all_articles:
         by_perspective[a.get('perspective', 'other')].append(a)
@@ -289,21 +276,18 @@ def select_balanced_articles(all_articles, max_total=25, max_per_perspective=4):
     selected = []
     seen_links = set()
 
-    # Fase 1: prendi i più rilevanti (già ordinati per recency dal DB)
     top = all_articles[:10]
     for a in top:
         if a['link'] not in seen_links:
             selected.append(a)
             seen_links.add(a['link'])
 
-    # Fase 2: riempi fino a max_total bilanciando per prospettiva
     perspectives = list(by_perspective.keys())
     per_perspective_count = defaultdict(int)
     for a in selected:
         per_perspective_count[a.get('perspective', 'other')] += 1
 
     remaining = [a for a in all_articles[10:] if a['link'] not in seen_links]
-    # Round-robin per prospettiva
     i = 0
     while len(selected) < max_total and i < len(remaining) * 2:
         for persp in perspectives:
@@ -343,12 +327,10 @@ def call_claude(prompt):
 
 
 def generate_analysis(keywords_list, articles, previous_analyses=None):
-    # Raggruppa articoli per prospettiva
     by_perspective = defaultdict(list)
     for a in articles:
         by_perspective[a.get('perspective', 'other')].append(a)
 
-    # Costruisci contesto strutturato per prospettiva
     articles_text = ""
     for persp, arts in by_perspective.items():
         label = PERSPECTIVE_LABELS.get(persp, persp)
@@ -356,7 +338,6 @@ def generate_analysis(keywords_list, articles, previous_analyses=None):
         for a in arts:
             articles_text += f"• [{a['source']}] {a['title']}\n  {a['summary'][:150]}\n"
 
-    # Prospettive presenti
     perspectives_present = [PERSPECTIVE_LABELS.get(p, p) for p in by_perspective.keys()]
     perspectives_missing = [PERSPECTIVE_LABELS.get(p, p) for p in PERSPECTIVE_LABELS.keys()
                            if p not in by_perspective]
@@ -397,21 +378,22 @@ Valutazione basata su fatti convergenti (non su narrative di parte): Carta ONU, 
 Se esistono analisi precedenti, come si è evoluta la situazione? Quali previsioni si sono avverate? Cosa è cambiato nel conflitto narrativo? Se è la prima analisi, stabilisci i marcatori per il futuro. Max 150 parole.
 
 ## 6. SCRIPT INSTAGRAM (90 secondi, bilingue IT/EN)
-Script per voce AI — reporter che racconta dall'interno della storia. Tono freddo, immersivo, giornalistico. Non un recap: una narrazione con respiro e un filo conduttore che attraversa tutto il pezzo. Circa 200-220 parole per lingua.
+Pezzo giornalistico autonomo per voce AI. Non è un riassunto dell'analisi — è un racconto con un solo angolo, una sola storia, un solo filo.
 
-Struttura — slot separati, contenuti che si parlano tra loro:
+REGOLA FONDAMENTALE: prima di scrivere, individua UN'anomalia — un fatto che non torna, un silenzio strano, un paradosso che emerge solo leggendo tutto insieme. Non il fatto principale della giornata: quello che nessuno ha messo in primo piano. Quella è la storia. Tutto il resto serve a costruirla, non a raccontarla.
 
-APERTURA (10 sec): parti da un fatto eclatante e concreto — un numero, un'immagine, una dichiarazione paradossale tratta dagli articoli. Se esiste storia precedente nel filo narrativo, aggancia il presente al passato in una frase sola. Niente domande retoriche generiche.
+Struttura interna (non dichiarare i titoli, non usare intestazioni nel testo):
 
-CONTESTO (12 sec): perché questa storia conta adesso. La posta in gioco, il backstory essenziale — cosa esisteva prima, cosa è cambiato, chi sono gli attori. Scritto come se l'ascoltatore non sapesse nulla ma fosse intelligente.
+— Apri con il fatto anomalo. Concreto, specifico, misurabile. Una o due frasi al massimo. L'ascoltatore deve sentire che c'è qualcosa che non quadra.
 
-CONFLITTO DI NARRATIVE (30 sec): le prospettive diverse sugli stessi fatti, costruite con tensione narrativa reale. Usa dettagli specifici dagli articoli. Dove il materiale lo permette, inserisci la dimensione giuridica come voce aggiuntiva di contrasto — non come formula ma come elemento che cambia il peso della storia.
+— Costruisci il contesto minimo necessario. Una o due forze in gioco, non sei. Chi decide, chi tace, cosa si muove sotto la superficie. Scritto per chi è intelligente ma non segue la notizia ogni giorno.
 
-CONVERGENZA (15 sec): il fatto che nessuna prospettiva può negare. Detto con precisione e senza fretta — è il momento più solido dello script.
+— Mostra la tensione reale: non "chi dice cosa" ma cosa rivela il modo in cui lo dicono. Il silenzio di una fonte è narrativa. L'assenza di un attore è narrativa. Una fonte che parla d'altro proprio oggi è narrativa. Usa questo.
 
-CHIUSURA (13 sec): non una domanda retorica. Un pensiero che rimane, una tensione irrisolta, un paradosso che l'ascoltatore porta con sé dopo che lo schermo si è spento.
+— Chiudi con una tensione irrisolta — qualcosa che l'ascoltatore può portarsi via e verificare da solo nei giorni successivi. Non una domanda retorica. Un fatto sospeso.
 
-Ritmo da parlato naturale, frasi di lunghezza variabile — alcune brevi e secche, alcune più distese. Niente elenchi puntati nel testo finale. Prima italiano, poi inglese.
+Tono: freddo, preciso, nessun aggettivo inutile. Niente enfasi da telegiornale, niente toni allarmistici. Il peso della storia deve venire dai fatti, non dalle parole con cui li descrivi. Ritmo variabile — frasi brevi e secche alternate a frasi più distese. Circa 180-200 parole per lingua. Prima italiano, poi inglese. Niente elenchi, niente titoletti, niente markdown nel testo finale.
+
 Rispondi SOLO con le 6 sezioni."""
 
     return call_claude(prompt)
@@ -439,7 +421,6 @@ def run_analysis_job(job_id, keywords, articles, previous):
         thread = extract_section(raw, "5. FILO NARRATIVO")
         instagram = extract_fuzzy(raw, "SCRIPT INSTAGRAM")
 
-        # Mappa prospettive usate
         by_perspective = defaultdict(list)
         for a in articles:
             by_perspective[a.get('perspective', 'other')].append(a)
@@ -591,7 +572,6 @@ def api_analyze():
     if not all_articles:
         return jsonify({"error": f"Nessun articolo trovato per: {', '.join(keywords)}"}), 404
 
-    # Selezione bilanciata
     articles = select_balanced_articles(all_articles, max_total=25, max_per_perspective=4)
 
     job_id = str(uuid.uuid4())
