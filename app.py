@@ -191,6 +191,7 @@ PERSPECTIVE_LABELS = {
     "russian_state":      "Media Russi",
     "chinese_state":      "Media Cinesi/Asiatici",
     "think_tank":         "Think Tank & Analisi",
+    "other":              "Altro",
 }
 
 KEYWORDS_IT = [
@@ -360,7 +361,7 @@ PROSPETTIVE ASSENTI (nessun articolo disponibile): {', '.join(perspectives_missi
 ARTICOLI PER PROSPETTIVA:
 {articles_text}
 
-Produci un'analisi in 6 sezioni:
+Produci un'analisi in 6 sezioni. Usa ESATTAMENTE questi titoli di sezione:
 
 ## 1. MAPPA DELLE NARRATIVE
 Per ogni prospettiva presente, sintetizza in 2-3 frasi cosa dice e quale frame interpretativo usa. Sii preciso e fedele a ciò che le fonti dicono realmente — non attribuire posizioni non documentate. Formato: **[Prospettiva]**: testo.
@@ -394,7 +395,7 @@ Struttura interna (non dichiarare i titoli, non usare intestazioni nel testo):
 
 Tono: freddo, preciso, nessun aggettivo inutile. Niente enfasi da telegiornale, niente toni allarmistici. Il peso della storia deve venire dai fatti, non dalle parole con cui li descrivi. Ritmo variabile — frasi brevi e secche alternate a frasi più distese. Circa 180-200 parole per lingua. Prima italiano, poi inglese. Niente elenchi, niente titoletti, niente markdown nel testo finale.
 
-Rispondi SOLO con le 6 sezioni."""
+Rispondi SOLO con le 6 sezioni. Usa ESATTAMENTE i titoli indicati sopra."""
 
     return call_claude(prompt)
 
@@ -414,12 +415,18 @@ def run_analysis_job(job_id, keywords, articles, previous):
             match = re.search(pattern, text, re.DOTALL)
             return match.group(1).strip() if match else ""
 
-        narrative_map = extract_section(raw, "1. MAPPA DELLE NARRATIVE")
-        convergences = extract_section(raw, "2. CONVERGENZE")
-        divergences = extract_section(raw, "3. DIVERGENZE E CONFLITTI NARRATIVI")
-        legal = extract_section(raw, "4. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
-        thread = extract_section(raw, "5. FILO NARRATIVO")
-        instagram = extract_fuzzy(raw, "SCRIPT INSTAGRAM")
+        # FIX: fallback "" su ogni sezione — nessun None arriva a save_analysis
+        narrative_map = extract_section(raw, "1. MAPPA DELLE NARRATIVE") or ""
+        convergences  = extract_section(raw, "2. CONVERGENZE") or ""
+        divergences   = extract_section(raw, "3. DIVERGENZE E CONFLITTI NARRATIVI") or ""
+        legal         = extract_section(raw, "4. PROSPETTIVA DEL DIRITTO INTERNAZIONALE") or ""
+        thread        = extract_section(raw, "5. FILO NARRATIVO") or ""
+        instagram     = extract_fuzzy(raw, "SCRIPT INSTAGRAM") or ""
+
+        # Se le sezioni principali sono tutte vuote, probabilmente il formato è diverso
+        # Logghiamo il raw per debug futuro
+        if not narrative_map and not convergences:
+            print(f"[WARN] Sezioni non estratte. Raw output (primi 500 char): {raw[:500]}")
 
         by_perspective = defaultdict(list)
         for a in articles:
@@ -446,6 +453,7 @@ def run_analysis_job(job_id, keywords, articles, previous):
     except Exception as e:
         jobs[job_id]["status"] = "error"
         jobs[job_id]["error"] = str(e)
+        print(f"[ERROR] Job {job_id}: {e}")
 
 
 # ─────────────────────────────────────────────
