@@ -627,6 +627,18 @@ def api_analysis_detail(analysis_id):
     return jsonify(dict(row))
 
 
+
+@app.route("/api/admin/analyses/<int:analysis_id>", methods=["DELETE"])
+def api_analysis_delete(analysis_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Non autorizzato"}), 403
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("DELETE FROM analyses WHERE id = %s", (analysis_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"deleted": analysis_id})
+
 # ─────────────────────────────────────────────
 # STARTUP
 # ─────────────────────────────────────────────
