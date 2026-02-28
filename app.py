@@ -317,7 +317,7 @@ def call_claude(prompt):
     try:
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         message = client.messages.create(
-            model="claude-opus-4-6",
+            model="claude-sonnet-4-20250514",
             max_tokens=5000,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -381,7 +381,7 @@ Se esistono analisi precedenti, come si è evoluta la situazione? Quali previsio
 ## 6. SCRIPT INSTAGRAM (90 secondi, bilingue IT/EN)
 Pezzo giornalistico autonomo per voce AI. Non è un riassunto dell'analisi — è un racconto con un solo angolo, una sola storia, un solo filo.
 
-REGOLA FONDAMENTALE: prima di scrivere, individua UN'anomalia — un fatto che non torna, un silenzio strano, un paradosso che emerge solo leggendo tutto insieme. Non il fatto principale della giornata: quello che nessuno ha messo in primo piano. Quella è la storia. Tutto il resto serve a costruirla, non a raccontarla.
+REGOLA FONDAMENTALE: prima di scrivere, valuta il peso del fatto principale. Se il fatto principale è esso stesso senza precedenti o anomalo — un attacco militare dichiarato, una svolta storica, una rottura di equilibri consolidati — quello è la storia, raccontala con tutto il suo peso. Se invece il fatto principale è ordinario, allora cerca UN'anomalia secondaria — un silenzio strano, un paradosso che emerge solo leggendo tutto insieme. In entrambi i casi, usa la profondità dell'analisi: le 8 prospettive, le convergenze, le divergenze, il filo storico non sono decorazione — sono il materiale con cui costruisci la lettura. Lo script deve sembrare scritto da qualcuno che sa più cose di chi lo ascolta, non da qualcuno che ha letto solo i titoli. Quando citi comportamenti editoriali di una testata, nomina sempre la testata esplicitamente.
 
 Struttura interna (non dichiarare i titoli, non usare intestazioni nel testo):
 
