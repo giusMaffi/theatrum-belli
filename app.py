@@ -393,7 +393,7 @@ Struttura interna (non dichiarare i titoli, non usare intestazioni nel testo):
 
 — Chiudi con una tensione irrisolta — qualcosa che l'ascoltatore può portarsi via e verificare da solo nei giorni successivi. Non una domanda retorica. Un fatto sospeso.
 
-Tono: freddo, preciso, nessun aggettivo inutile. Niente enfasi da telegiornale, niente toni allarmistici. Il peso della storia deve venire dai fatti, non dalle parole con cui li descrivi. Ritmo variabile — frasi brevi e secche alternate a frasi più distese. Circa 180-200 parole per lingua. Prima italiano, poi inglese. Niente elenchi, niente titoletti, niente markdown nel testo finale.
+Tono: autorevole e tagliente, come un corrispondente con vent'anni di esperienza che sa cosa sta guardando e non ha bisogno di urlarlo. Non freddo — lucido. La differenza è che il freddo descrive, il lucido interpreta. Usa i fatti come lame, non come mattoni. Ogni frase deve guadagnarsi il posto: se non aggiunge prospettiva o tensione, toglila. Almeno un riferimento storico concreto e preciso — non "come sempre accade" ma "come nel [anno], quando [fatto specifico]" — che riveli perché questo momento è diverso o uguale a qualcosa che conosciamo già. Ritmo variabile: frasi brevi e secche per i fatti, frasi più distese per l'interpretazione. Circa 180-200 parole per lingua. Prima italiano, poi inglese. Niente elenchi, niente titoletti, niente markdown nel testo finale.
 
 Rispondi SOLO con le 6 sezioni. Usa ESATTAMENTE i titoli indicati sopra."""
 
