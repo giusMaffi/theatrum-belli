@@ -7,16 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0d0d0f;
-  --surface: #141417;
-  --surface2: #1c1c21;
-  --border: #2a2a30;
-  --accent: #c8a96e;
-  --accent2: #e05c4b;
-  --accent3: #6ab4c8;
-  --text: #e8e4dc;
-  --text-muted: #9a9690;
-  --text-dim: #5a5855;
+  --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21; --border: #2a2a30;
+  --accent: #c8a96e; --accent2: #e05c4b; --accent3: #6ab4c8;
+  --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 400; line-height: 1.6; }
@@ -29,16 +22,11 @@ header { border-bottom: 1px solid var(--border); padding: 0.9rem 2rem; display: 
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 .btn-danger { border-color: #3a2020; color: var(--accent2); }
 .btn-danger:hover { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
-
-/* SECTION NAV */
 .section-nav { display: none; position: sticky; top: 58px; z-index: 90; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 1.5rem; overflow-x: auto; }
 .section-nav.visible { display: flex; }
 .nav-anchor { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); padding: 0.55rem 0.75rem; text-decoration: none; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
 .nav-anchor:hover { color: var(--accent); border-bottom-color: var(--accent); }
-
 .layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 58px); }
-
-/* SIDEBAR */
 aside { border-right: 1px solid var(--border); padding: 1.2rem; overflow-y: auto; background: var(--bg); position: sticky; top: 58px; height: calc(100vh - 58px); }
 .sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
 .keyword-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.7rem; min-height: 32px; }
@@ -53,8 +41,6 @@ input[type="text"]::placeholder { color: var(--text-dim); }
 .analyze-btn { width: 100%; background: var(--accent); border: none; color: #0d0d0f; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.75rem; cursor: pointer; transition: all 0.2s; border-radius: 2px; }
 .analyze-btn:hover { background: #d4b97e; }
 .analyze-btn:disabled { opacity: 0.35; cursor: default; }
-
-/* DOSSIER SIDEBAR */
 .dossier-group { margin-bottom: 0.4rem; }
 .dossier-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; cursor: pointer; border-radius: 2px; transition: background 0.15s; }
 .dossier-header:hover { background: var(--surface2); }
@@ -67,26 +53,23 @@ input[type="text"]::placeholder { color: var(--text-dim); }
 .dossier-header.open .dossier-chevron { transform: rotate(90deg); }
 
 /* HISTORY ITEM */
-.history-item { position: relative; padding: 0.6rem 0.7rem; border: 1px solid var(--border); margin-bottom: 0.35rem; cursor: pointer; transition: all 0.15s; border-radius: 2px; background: var(--surface); }
+.history-item { position: relative; padding: 0.6rem 0.7rem; padding-right: 3.2rem; border: 1px solid var(--border); margin-bottom: 0.35rem; cursor: pointer; transition: all 0.15s; border-radius: 2px; background: var(--surface); }
 .history-item:hover { border-color: var(--accent); background: var(--surface2); }
 .history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.15rem; font-weight: 500; }
 .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); }
 
 /* DELETE BTN */
-.delete-btn { position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.7rem; opacity: 0; padding: 0.2rem 0.4rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
+.delete-btn { position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.7rem; opacity: 0; padding: 0.2rem 0.3rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
 .history-item:hover .delete-btn { opacity: 1; }
 .delete-btn:hover { color: var(--accent2); }
 
-/* UPDATE BTN — nuovo */
-.update-btn { position: absolute; right: 1.8rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.75rem; opacity: 0; padding: 0.2rem 0.4rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
+/* UPDATE BTN — sempre visibile ma dimesso, diventa dorato sull'hover dell'item */
+.update-btn { position: absolute; right: 1.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.8rem; opacity: 0; padding: 0.2rem 0.3rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
 .history-item:hover .update-btn { opacity: 1; }
-.update-btn:hover { color: var(--accent); }
+.update-btn:hover { color: var(--accent) !important; }
 
-/* HISTORY DATE GROUP */
 .history-date-group { margin-bottom: 1rem; }
 .history-date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
-
-/* MAIN */
 main { overflow-y: auto; }
 .main-content { padding: 2rem; max-width: 900px; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; padding: 2rem; }
@@ -97,8 +80,6 @@ main { overflow-y: auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; }
 .loading-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
-
-/* RESULT */
 #result { display: none; }
 .result-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .result-kw-headline { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; line-height: 1.2; margin-bottom: 0.5rem; }
@@ -115,13 +96,9 @@ main { overflow-y: auto; }
 .persp-chinese_state { border-color: #b58a4a; color: #d5aa7a; background: #150d05; }
 .persp-think_tank { border-color: #4ab5a0; color: #7ad5c0; background: #051510; }
 .persp-other { border-color: #555; color: #888; background: #111; }
-
-/* SECTION */
 .section-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
 .section-title .icon { font-size: 0.8rem; }
 .section-block { margin-bottom: 2rem; }
-
-/* NARRATIVE MAP */
 .narrative-grid { display: grid; gap: 0; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
 .narrative-entry { display: grid; grid-template-columns: 155px 1fr; border-bottom: 1px solid var(--border); }
 .narrative-entry:last-child { border-bottom: none; }
@@ -137,8 +114,6 @@ main { overflow-y: auto; }
 .legal-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
 .thread-card { background: #0d0d18; border: 1px solid #1a1a30; padding: 1.4rem; border-radius: 2px; }
 .thread-title { color: var(--accent3); }
-
-/* INSTAGRAM */
 .instagram-card { background: var(--surface); border: 1px solid #2a1a1a; padding: 1.4rem; border-radius: 2px; }
 .instagram-title { color: var(--accent2); }
 .instagram-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
@@ -149,8 +124,6 @@ main { overflow-y: auto; }
 .instagram-content { font-size: 0.9rem; line-height: 1.85; color: #ccc9c0; white-space: pre-wrap; }
 .copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
 .copy-btn:hover { background: var(--accent2); color: var(--bg); }
-
-/* SOURCES */
 .source-item { padding: 0.55rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
 .source-title-text { font-size: 0.82rem; color: var(--text); flex: 1; line-height: 1.4; }
 .source-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; white-space: nowrap; }
@@ -159,11 +132,9 @@ main { overflow-y: auto; }
 .source-link:hover { text-decoration: underline; }
 .error-msg { background: rgba(224,92,75,0.08); border: 1px solid #3a1a1a; color: #e07060; padding: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; border-radius: 2px; }
 .section-content strong, .narrative-text strong { color: var(--text); font-weight: 600; }
-
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); }
-
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
   .two-col { grid-template-columns: 1fr; }
@@ -295,17 +266,6 @@ function formatTime(dateStr) {
   return d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
 }
 
-function timeAgo(dateStr) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  const diff = Date.now() - d.getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 60) return m + "m fa";
-  const h = Math.floor(m / 60);
-  if (h < 24) return h + "h fa";
-  return Math.floor(h / 24) + "g fa";
-}
-
 function renderMarkdown(text) {
   if (!text) return '';
   return text
@@ -322,17 +282,11 @@ function splitScript(text) {
   const enStartRegex = /\n\s*\n(Today |This |The |In |On |At |When |While |Inside |After |Before |During |Now |As |What |There )/;
   const match = text.search(enStartRegex);
   if (match !== -1) {
-    return {
-      it: text.slice(0, match).trim(),
-      en: text.slice(match).trim()
-    };
+    return { it: text.slice(0, match).trim(), en: text.slice(match).trim() };
   }
   const lines = text.split('\n');
   const mid = Math.ceil(lines.length / 2);
-  return {
-    it: lines.slice(0, mid).join('\n').trim(),
-    en: lines.slice(mid).join('\n').trim()
-  };
+  return { it: lines.slice(0, mid).join('\n').trim(), en: lines.slice(mid).join('\n').trim() };
 }
 
 function showScriptTab(lang) {
@@ -342,12 +296,10 @@ function showScriptTab(lang) {
   if (!content) return;
   if (lang === 'it') {
     content.textContent = scriptItText;
-    tabIt.classList.add('active');
-    tabEn.classList.remove('active');
+    tabIt.classList.add('active'); tabEn.classList.remove('active');
   } else {
     content.textContent = scriptEnText;
-    tabEn.classList.add('active');
-    tabIt.classList.remove('active');
+    tabEn.classList.add('active'); tabIt.classList.remove('active');
   }
 }
 
@@ -371,25 +323,22 @@ async function runAnalysis() {
   } catch(e) { showError("Errore: " + e.message); }
 }
 
-// ─── NUOVO: updateAnalysis ───────────────────────────────────────────────────
-// Carica le keyword dell'analisi selezionata nei tag e avvia una nuova analisi.
+// ─── UPDATE ANALISI ───────────────────────────────────────────────────────────
+// Carica le keyword dell'analisi nel form e avvia una nuova analisi aggiornata.
 async function updateAnalysis(id) {
   try {
     const res = await fetch(`/api/admin/analyses/${id}`, {credentials: "include"});
     const data = await res.json();
     if (!data || !data.keywords) { alert("Impossibile caricare le keyword."); return; }
-    // Svuota i tag attuali e carica quelli dell'analisi originale
     tags = data.keywords.split(",").map(k => k.trim().toLowerCase()).filter(k => k);
     renderTags();
-    // Scorri in cima alla sidebar per mostrare i tag
     document.getElementById("kw-input").scrollIntoView({behavior: "smooth", block: "center"});
-    // Breve ritardo visivo, poi avvia
     setTimeout(() => runAnalysis(), 400);
   } catch(e) {
     alert("Errore nel caricamento dell'analisi: " + e.message);
   }
 }
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 function pollJob(jobId) {
   let elapsed = 0;
@@ -440,15 +389,22 @@ function renderResult(data) {
   scriptItText = scripts.it;
   scriptEnText = scripts.en;
 
-  const sources = (data.articles || []).map(a => `
-    <div class="source-item">
-      <div class="source-title-text">${a.title}</div>
-      <div class="source-right">
-        <span class="source-name">${a.source}</span>
-        <a href="${a.link}" target="_blank" class="source-link">leggi →</a>
-      </div>
+  // Sezione fonti: visibile solo se ci sono articoli (analisi live), nascosta se da storico
+  const articles = data.articles || [];
+  const sourcesHtml = articles.length > 0 ? `
+    <div class="section-block sources-section" id="sec-fonti">
+      <div class="section-title"><span class="icon">📰</span> Articoli Utilizzati (${data.article_count})</div>
+      ${articles.map(a => `
+        <div class="source-item">
+          <div class="source-title-text">${a.title}</div>
+          <div class="source-right">
+            <span class="source-name">${a.source}</span>
+            <a href="${a.link}" target="_blank" class="source-link">leggi →</a>
+          </div>
+        </div>
+      `).join("")}
     </div>
-  `).join("");
+  ` : `<div id="sec-fonti"></div>`;
 
   const threadHtml = data.thread ? `
     <div class="section-block" id="sec-filo">
@@ -504,10 +460,7 @@ function renderResult(data) {
           <div class="instagram-content" id="ig-script">${scriptItText}</div>
         </div>
       </div>
-      <div class="section-block sources-section" id="sec-fonti">
-        <div class="section-title"><span class="icon">📰</span> Articoli Utilizzati (${data.article_count})</div>
-        ${sources}
-      </div>
+      ${sourcesHtml}
     </div>
   `;
 }
@@ -543,8 +496,62 @@ async function deleteAnalysis(id, btn) {
   if (!confirm("Eliminare questa analisi?")) return;
   try {
     const res = await fetch(`/api/admin/analyses/${id}`, { method: "DELETE", credentials: "include" });
-    if (res.ok) { const item = btn.closest(".history-item"); item.remove(); }
+    if (res.ok) { btn.closest(".history-item").remove(); }
   } catch(e) { alert("Errore durante l'eliminazione."); }
+}
+
+function buildHistoryItem(a) {
+  return `
+    <div class="history-item" onclick="loadAnalysis(${a.id})">
+      <div class="history-kw">${a.keywords}</div>
+      <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
+      <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
+      <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
+    </div>
+  `;
+}
+
+// Normalizza keyword: sort alfabetico — "iran, china" === "china, iran"
+function normalizeKw(kwStr) {
+  return (kwStr || '').split(',').map(k => k.trim().toLowerCase()).filter(k => k).sort().join(', ');
+}
+
+// Raggruppa array di analisi per keyword normalizzate → catene temporali
+function groupByNormalizedKw(items) {
+  const chains = {};
+  items.forEach(a => {
+    const key = normalizeKw(a.keywords);
+    if (!chains[key]) chains[key] = [];
+    chains[key].push(a);
+  });
+  // Ogni catena: dalla più recente alla più vecchia
+  Object.values(chains).forEach(chain => chain.sort((a, b) => b.created_at.localeCompare(a.created_at)));
+  // Catene ordinate per data della più recente
+  return Object.entries(chains).sort((a, b) => b[1][0].created_at.localeCompare(a[1][0].created_at));
+}
+
+// Renderizza una catena temporale: item principale + versioni precedenti indentate
+function renderChain(chain) {
+  return chain.map((a, i) => {
+    if (i === 0) {
+      // Analisi più recente — item principale con bottone UPDATE
+      const aggiornamenti = chain.length > 1 ? ` · <span style="color:var(--accent3)">↺ ${chain.length - 1}</span>` : '';
+      return `
+        <div class="history-item" onclick="loadAnalysis(${a.id})">
+          <div class="history-kw">${a.keywords}</div>
+          <div class="history-meta">${a.article_count} art · ${formatTime(a.created_at)}${aggiornamenti}</div>
+          <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
+          <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
+        </div>`;
+    } else {
+      // Versioni precedenti — indentate con indicatore data
+      return `
+        <div class="history-item" style="margin-left:0.8rem;border-left:2px solid var(--border);border-radius:0 2px 2px 0;padding-right:2rem;" onclick="loadAnalysis(${a.id})">
+          <div class="history-meta" style="color:var(--text-dim)">↺ ${formatDate(a.created_at)} · ${formatTime(a.created_at)}</div>
+          <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
+        </div>`;
+    }
+  }).join('');
 }
 
 async function loadHistory() {
@@ -557,6 +564,7 @@ async function loadHistory() {
       return;
     }
 
+    // Smista nei dossier tematici
     const buckets = {};
     DOSSIER_MAP.forEach(d => { buckets[d.label] = []; });
     buckets['__ungrouped__'] = [];
@@ -565,20 +573,18 @@ async function loadHistory() {
       const kw = (a.keywords || '').toLowerCase();
       let matched = false;
       for (const d of DOSSIER_MAP) {
-        if (d.keys.some(k => kw.includes(k))) {
-          buckets[d.label].push(a);
-          matched = true;
-          break;
-        }
+        if (d.keys.some(k => kw.includes(k))) { buckets[d.label].push(a); matched = true; break; }
       }
       if (!matched) buckets['__ungrouped__'].push(a);
     });
 
     let html = '';
 
+    // Dossier tematici con catene temporali
     DOSSIER_MAP.forEach(d => {
       const items = buckets[d.label];
       if (!items.length) return;
+      const chains = groupByNormalizedKw(items);
       html += `
         <div class="dossier-group">
           <div class="dossier-header open" onclick="toggleDossier(this)">
@@ -588,41 +594,18 @@ async function loadHistory() {
             <div class="dossier-chevron">▶</div>
           </div>
           <div class="dossier-items">
-            ${items.map(a => `
-              <div class="history-item" onclick="loadAnalysis(${a.id})">
-                <div class="history-kw">${a.keywords}</div>
-                <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
-                <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
-                <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
-              </div>
-            `).join('')}
+            ${chains.map(([key, chain]) => renderChain(chain)).join('')}
           </div>
         </div>`;
     });
 
+    // Non classificate
     if (buckets['__ungrouped__'].length > 0) {
-      const dateGroups = {};
-      buckets['__ungrouped__'].forEach(a => {
-        const dk = formatDate(a.created_at);
-        if (!dateGroups[dk]) dateGroups[dk] = [];
-        dateGroups[dk].push(a);
-      });
-      if (Object.keys(buckets).filter(k => k !== '__ungrouped__').some(k => buckets[k].length > 0)) {
+      if (DOSSIER_MAP.some(d => buckets[d.label].length > 0)) {
         html += `<div class="sidebar-title" style="margin-top:1rem">Altro</div>`;
       }
-      html += Object.entries(dateGroups).map(([date, items]) => `
-        <div class="history-date-group">
-          <div class="history-date-label">${date}</div>
-          ${items.map(a => `
-            <div class="history-item" onclick="loadAnalysis(${a.id})">
-              <div class="history-kw">${a.keywords}</div>
-              <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
-              <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
-              <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
-            </div>
-          `).join("")}
-        </div>
-      `).join("");
+      const chains = groupByNormalizedKw(buckets['__ungrouped__']);
+      html += chains.map(([key, chain]) => renderChain(chain)).join('');
     }
 
     list.innerHTML = html;
@@ -632,8 +615,7 @@ async function loadHistory() {
 }
 
 function toggleDossier(header) {
-  const items = header.nextElementSibling;
-  items.classList.toggle('collapsed');
+  header.nextElementSibling.classList.toggle('collapsed');
   header.classList.toggle('open');
 }
 
@@ -645,7 +627,7 @@ async function loadAnalysis(id) {
   renderResult({
     keywords: data.keywords.split(", "),
     article_count: data.article_count,
-    articles: [],
+    articles: [],           // storico: niente lista articoli (non salvata nel DB)
     perspectives_used: {},
     narrative_map: data.narrative_map,
     convergences: data.convergences,
