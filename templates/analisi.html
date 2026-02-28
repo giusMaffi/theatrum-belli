@@ -102,6 +102,10 @@
   .dossier-items { padding-left: 1.1rem; }
   .dossier-items.collapsed { display: none; }
   .dossier-header.open .dossier-chevron { transform: rotate(90deg); }
+  .history-item { position: relative; }
+  .delete-btn { position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.7rem; opacity: 0; padding: 0.2rem 0.4rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
+  .history-item:hover .delete-btn { opacity: 1; }
+  .delete-btn:hover { color: var(--accent2); }
 
   /* HISTORY */
   .history-date-group { margin-bottom: 1rem; }
@@ -582,6 +586,22 @@ function copyScript() {
   });
 }
 
+async function deleteAnalysis(id, btn) {
+  if (!confirm("Eliminare questa analisi?")) return;
+  try {
+    const res = await fetch(`/api/admin/analyses/${id}`, {
+      method: "DELETE",
+      credentials: "include"
+    });
+    if (res.ok) {
+      const item = btn.closest(".history-item");
+      item.remove();
+    }
+  } catch(e) {
+    alert("Errore durante l'eliminazione.");
+  }
+}
+
 async function loadHistory() {
   try {
     const res = await fetch("/api/admin/analyses", {credentials: "include"});
@@ -629,6 +649,7 @@ async function loadHistory() {
               <div class="history-item" onclick="loadAnalysis(${a.id})">
                 <div class="history-kw">${a.keywords}</div>
                 <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
+                <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
               </div>
             `).join('')}
           </div>
