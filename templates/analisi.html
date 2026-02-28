@@ -6,209 +6,172 @@
 <title>THEATRUM BELLI — Intelligence Lab</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0d0d0f;
-    --surface: #141417;
-    --surface2: #1c1c21;
-    --border: #2a2a30;
-    --accent: #c8a96e;
-    --accent2: #e05c4b;
-    --accent3: #6ab4c8;
-    --text: #e8e4dc;
-    --text-muted: #9a9690;
-    --text-dim: #5a5855;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 400; line-height: 1.6; }
+:root {
+  --bg: #0d0d0f;
+  --surface: #141417;
+  --surface2: #1c1c21;
+  --border: #2a2a30;
+  --accent: #c8a96e;
+  --accent2: #e05c4b;
+  --accent3: #6ab4c8;
+  --text: #e8e4dc;
+  --text-muted: #9a9690;
+  --text-dim: #5a5855;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 400; line-height: 1.6; }
+header { border-bottom: 1px solid var(--border); padding: 0.9rem 2rem; display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: sticky; top: 0; z-index: 100; }
+.logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.15em; color: var(--accent); }
+.logo span { color: var(--accent2); }
+.logo-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.15em; margin-top: 2px; }
+.header-right { display: flex; gap: 0.8rem; align-items: center; }
+.btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.8rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-radius: 2px; text-decoration: none; display: inline-block; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { border-color: #3a2020; color: var(--accent2); }
+.btn-danger:hover { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
 
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 0.9rem 2rem;
-    display: flex; align-items: center; justify-content: space-between;
-    background: var(--bg); position: sticky; top: 0; z-index: 100;
-  }
-  .logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.15em; color: var(--accent); }
-  .logo span { color: var(--accent2); }
-  .logo-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.15em; margin-top: 2px; }
-  .header-right { display: flex; gap: 0.8rem; align-items: center; }
-  .btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.8rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-radius: 2px; text-decoration: none; display: inline-block; }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger { border-color: #3a2020; color: var(--accent2); }
-  .btn-danger:hover { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
+/* SECTION NAV */
+.section-nav { display: none; position: sticky; top: 58px; z-index: 90; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 1.5rem; overflow-x: auto; }
+.section-nav.visible { display: flex; }
+.nav-anchor { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); padding: 0.55rem 0.75rem; text-decoration: none; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+.nav-anchor:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
-  /* SECTION NAV — sticky, visibile solo con risultato */
-  .section-nav {
-    display: none;
-    position: sticky;
-    top: 58px;
-    z-index: 90;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    padding: 0 1.5rem;
-    overflow-x: auto;
-  }
-  .section-nav.visible { display: flex; }
-  .nav-anchor {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.57rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-    padding: 0.55rem 0.75rem;
-    text-decoration: none;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .nav-anchor:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 58px); }
 
-  .layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 58px); }
+/* SIDEBAR */
+aside { border-right: 1px solid var(--border); padding: 1.2rem; overflow-y: auto; background: var(--bg); position: sticky; top: 58px; height: calc(100vh - 58px); }
+.sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+.keyword-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.7rem; min-height: 32px; }
+.tag { background: #1a1a20; border: 1px solid var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.2rem 0.55rem; border-radius: 2px; display: flex; align-items: center; gap: 0.35rem; color: var(--accent); }
+.tag button { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0; opacity: 0.7; }
+.tag button:hover { opacity: 1; }
+.keyword-input-row { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
+input[type="text"] { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; padding: 0.45rem 0.7rem; outline: none; border-radius: 2px; }
+input[type="text"]:focus { border-color: var(--accent); }
+input[type="text"]::placeholder { color: var(--text-dim); }
+.hint { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 0.8rem; }
+.analyze-btn { width: 100%; background: var(--accent); border: none; color: #0d0d0f; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.75rem; cursor: pointer; transition: all 0.2s; border-radius: 2px; }
+.analyze-btn:hover { background: #d4b97e; }
+.analyze-btn:disabled { opacity: 0.35; cursor: default; }
 
-  /* SIDEBAR */
-  aside {
-    border-right: 1px solid var(--border);
-    padding: 1.2rem;
-    overflow-y: auto;
-    background: var(--bg);
-    position: sticky;
-    top: 58px;
-    height: calc(100vh - 58px);
-  }
-  .sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+/* DOSSIER SIDEBAR */
+.dossier-group { margin-bottom: 0.4rem; }
+.dossier-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; cursor: pointer; border-radius: 2px; transition: background 0.15s; }
+.dossier-header:hover { background: var(--surface2); }
+.dossier-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.dossier-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); flex: 1; }
+.dossier-count { font-family: 'IBM Plex Mono', monospace; font-size: 0.52rem; color: var(--text-dim); }
+.dossier-chevron { font-size: 0.5rem; color: var(--text-dim); transition: transform 0.15s; }
+.dossier-items { padding-left: 1.1rem; }
+.dossier-items.collapsed { display: none; }
+.dossier-header.open .dossier-chevron { transform: rotate(90deg); }
 
-  .keyword-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.7rem; min-height: 32px; }
-  .tag { background: #1a1a20; border: 1px solid var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.2rem 0.55rem; border-radius: 2px; display: flex; align-items: center; gap: 0.35rem; color: var(--accent); }
-  .tag button { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0; opacity: 0.7; }
-  .tag button:hover { opacity: 1; }
-  .keyword-input-row { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
-  input[type="text"] { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; padding: 0.45rem 0.7rem; outline: none; border-radius: 2px; }
-  input[type="text"]:focus { border-color: var(--accent); }
-  input[type="text"]::placeholder { color: var(--text-dim); }
-  .hint { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 0.8rem; }
+/* HISTORY ITEM */
+.history-item { position: relative; padding: 0.6rem 0.7rem; border: 1px solid var(--border); margin-bottom: 0.35rem; cursor: pointer; transition: all 0.15s; border-radius: 2px; background: var(--surface); }
+.history-item:hover { border-color: var(--accent); background: var(--surface2); }
+.history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.15rem; font-weight: 500; }
+.history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); }
 
-  .analyze-btn { width: 100%; background: var(--accent); border: none; color: #0d0d0f; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.75rem; cursor: pointer; transition: all 0.2s; border-radius: 2px; }
-  .analyze-btn:hover { background: #d4b97e; }
-  .analyze-btn:disabled { opacity: 0.35; cursor: default; }
+/* DELETE BTN */
+.delete-btn { position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.7rem; opacity: 0; padding: 0.2rem 0.4rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
+.history-item:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { color: var(--accent2); }
 
-  /* DOSSIER SIDEBAR */
-  .dossier-group { margin-bottom: 0.4rem; }
-  .dossier-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; cursor: pointer; border-radius: 2px; transition: background 0.15s; }
-  .dossier-header:hover { background: var(--surface2); }
-  .dossier-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-  .dossier-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); flex: 1; }
-  .dossier-count { font-family: 'IBM Plex Mono', monospace; font-size: 0.52rem; color: var(--text-dim); }
-  .dossier-chevron { font-size: 0.5rem; color: var(--text-dim); transition: transform 0.15s; }
-  .dossier-items { padding-left: 1.1rem; }
-  .dossier-items.collapsed { display: none; }
-  .dossier-header.open .dossier-chevron { transform: rotate(90deg); }
-  .history-item { position: relative; }
-  .delete-btn { position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.7rem; opacity: 0; padding: 0.2rem 0.4rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
-  .history-item:hover .delete-btn { opacity: 1; }
-  .delete-btn:hover { color: var(--accent2); }
+/* UPDATE BTN — nuovo */
+.update-btn { position: absolute; right: 1.8rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.75rem; opacity: 0; padding: 0.2rem 0.4rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
+.history-item:hover .update-btn { opacity: 1; }
+.update-btn:hover { color: var(--accent); }
 
-  /* HISTORY */
-  .history-date-group { margin-bottom: 1rem; }
-  .history-date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
-  .history-item { padding: 0.6rem 0.7rem; border: 1px solid var(--border); margin-bottom: 0.35rem; cursor: pointer; transition: all 0.15s; border-radius: 2px; background: var(--surface); }
-  .history-item:hover { border-color: var(--accent); background: var(--surface2); }
-  .history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.15rem; font-weight: 500; }
-  .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); }
+/* HISTORY DATE GROUP */
+.history-date-group { margin-bottom: 1rem; }
+.history-date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
 
-  /* MAIN */
-  main { overflow-y: auto; }
-  .main-content { padding: 2rem; max-width: 900px; }
+/* MAIN */
+main { overflow-y: auto; }
+.main-content { padding: 2rem; max-width: 900px; }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; padding: 2rem; }
+.empty-icon { font-size: 2.5rem; opacity: 0.2; }
+.empty-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-align: center; line-height: 1.9; }
+#loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; padding: 2rem; }
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; }
+.loading-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
 
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; padding: 2rem; }
-  .empty-icon { font-size: 2.5rem; opacity: 0.2; }
-  .empty-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-align: center; line-height: 1.9; }
+/* RESULT */
+#result { display: none; }
+.result-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.result-kw-headline { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; line-height: 1.2; margin-bottom: 0.5rem; }
+.result-kw-headline .kw-sep { color: var(--text-dim); font-size: 1.1rem; margin: 0 0.3rem; }
+.result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.6rem; }
+.perspectives-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.persp-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; padding: 0.15rem 0.5rem; border-radius: 10px; border: 1px solid; }
+.persp-western_mainstream { border-color: #4a7ab5; color: #7aaad5; background: #0d1520; }
+.persp-italian_mainstream { border-color: #5a8a40; color: #8aba70; background: #0d150a; }
+.persp-pro_israel { border-color: #b5844a; color: #d5a47a; background: #150e05; }
+.persp-arab_media { border-color: #b54a4a; color: #d57a7a; background: #150a0a; }
+.persp-alternative_left { border-color: #8a4ab5; color: #aa7ad5; background: #100a15; }
+.persp-russian_state { border-color: #b54a4a; color: #c07070; background: #150808; }
+.persp-chinese_state { border-color: #b58a4a; color: #d5aa7a; background: #150d05; }
+.persp-think_tank { border-color: #4ab5a0; color: #7ad5c0; background: #051510; }
+.persp-other { border-color: #555; color: #888; background: #111; }
 
-  #loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; padding: 2rem; }
-  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; }
-  .loading-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
+/* SECTION */
+.section-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
+.section-title .icon { font-size: 0.8rem; }
+.section-block { margin-bottom: 2rem; }
 
-  /* RESULT */
-  #result { display: none; }
+/* NARRATIVE MAP */
+.narrative-grid { display: grid; gap: 0; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+.narrative-entry { display: grid; grid-template-columns: 155px 1fr; border-bottom: 1px solid var(--border); }
+.narrative-entry:last-child { border-bottom: none; }
+.narrative-persp-col { padding: 0.9rem 1rem; background: var(--surface); border-right: 1px solid var(--border); display: flex; align-items: flex-start; }
+.narrative-persp { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.5; }
+.narrative-text-col { padding: 0.9rem 1.2rem; }
+.narrative-text { font-size: 0.88rem; color: var(--text); line-height: 1.75; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.section-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
+.section-content { font-size: 0.88rem; color: #ccc9c0; line-height: 1.85; }
+.convergence-card { border-color: #1a3020; background: #0d150d; }
+.divergence-card { border-color: #301a1a; background: #150d0d; }
+.legal-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
+.thread-card { background: #0d0d18; border: 1px solid #1a1a30; padding: 1.4rem; border-radius: 2px; }
+.thread-title { color: var(--accent3); }
 
-  .result-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-  /* Keywords headline Playfair */
-  .result-kw-headline { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; line-height: 1.2; margin-bottom: 0.5rem; }
-  .result-kw-headline .kw-sep { color: var(--text-dim); font-size: 1.1rem; margin: 0 0.3rem; }
-  .result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.6rem; }
-  .perspectives-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-  .persp-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; padding: 0.15rem 0.5rem; border-radius: 10px; border: 1px solid; }
-  .persp-western_mainstream { border-color: #4a7ab5; color: #7aaad5; background: #0d1520; }
-  .persp-italian_mainstream { border-color: #5a8a40; color: #8aba70; background: #0d150a; }
-  .persp-pro_israel { border-color: #b5844a; color: #d5a47a; background: #150e05; }
-  .persp-arab_media { border-color: #b54a4a; color: #d57a7a; background: #150a0a; }
-  .persp-alternative_left { border-color: #8a4ab5; color: #aa7ad5; background: #100a15; }
-  .persp-russian_state { border-color: #b54a4a; color: #c07070; background: #150808; }
-  .persp-chinese_state { border-color: #b58a4a; color: #d5aa7a; background: #150d05; }
-  .persp-think_tank { border-color: #4ab5a0; color: #7ad5c0; background: #051510; }
-  .persp-other { border-color: #555; color: #888; background: #111; }
+/* INSTAGRAM */
+.instagram-card { background: var(--surface); border: 1px solid #2a1a1a; padding: 1.4rem; border-radius: 2px; }
+.instagram-title { color: var(--accent2); }
+.instagram-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+.script-tabs { display: flex; gap: 0; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; width: fit-content; }
+.script-tab { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.9rem; background: transparent; border: none; color: var(--text-dim); cursor: pointer; transition: all 0.15s; text-transform: uppercase; }
+.script-tab.active { background: var(--accent2); color: var(--bg); }
+.script-tab:not(.active):hover { color: var(--text-muted); background: var(--surface2); }
+.instagram-content { font-size: 0.9rem; line-height: 1.85; color: #ccc9c0; white-space: pre-wrap; }
+.copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
+.copy-btn:hover { background: var(--accent2); color: var(--bg); }
 
-  /* SECTION */
-  .section-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
-  .section-title .icon { font-size: 0.8rem; }
-  .section-block { margin-bottom: 2rem; }
+/* SOURCES */
+.source-item { padding: 0.55rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+.source-title-text { font-size: 0.82rem; color: var(--text); flex: 1; line-height: 1.4; }
+.source-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; white-space: nowrap; }
+.source-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-muted); }
+.source-link { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--accent2); text-decoration: none; }
+.source-link:hover { text-decoration: underline; }
+.error-msg { background: rgba(224,92,75,0.08); border: 1px solid #3a1a1a; color: #e07060; padding: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; border-radius: 2px; }
+.section-content strong, .narrative-text strong { color: var(--text); font-weight: 600; }
 
-  /* NARRATIVE MAP — due colonne */
-  .narrative-grid { display: grid; gap: 0; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
-  .narrative-entry { display: grid; grid-template-columns: 155px 1fr; border-bottom: 1px solid var(--border); }
-  .narrative-entry:last-child { border-bottom: none; }
-  .narrative-persp-col { padding: 0.9rem 1rem; background: var(--surface); border-right: 1px solid var(--border); display: flex; align-items: flex-start; }
-  .narrative-persp { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.5; }
-  .narrative-text-col { padding: 0.9rem 1.2rem; }
-  .narrative-text { font-size: 0.88rem; color: var(--text); line-height: 1.75; }
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); }
 
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .section-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
-  .section-content { font-size: 0.88rem; color: #ccc9c0; line-height: 1.85; }
-
-  .convergence-card { border-color: #1a3020; background: #0d150d; }
-  .divergence-card { border-color: #301a1a; background: #150d0d; }
-  .legal-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
-  .thread-card { background: #0d0d18; border: 1px solid #1a1a30; padding: 1.4rem; border-radius: 2px; }
-  .thread-title { color: var(--accent3); }
-
-  /* INSTAGRAM con tab IT/EN */
-  .instagram-card { background: var(--surface); border: 1px solid #2a1a1a; padding: 1.4rem; border-radius: 2px; }
-  .instagram-title { color: var(--accent2); }
-  .instagram-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
-  .script-tabs { display: flex; gap: 0; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; width: fit-content; }
-  .script-tab { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.9rem; background: transparent; border: none; color: var(--text-dim); cursor: pointer; transition: all 0.15s; text-transform: uppercase; }
-  .script-tab.active { background: var(--accent2); color: var(--bg); }
-  .script-tab:not(.active):hover { color: var(--text-muted); background: var(--surface2); }
-  .instagram-content { font-size: 0.9rem; line-height: 1.85; color: #ccc9c0; white-space: pre-wrap; }
-  .copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
-  .copy-btn:hover { background: var(--accent2); color: var(--bg); }
-
-  .sources-section { }
-  .source-item { padding: 0.55rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
-  .source-title-text { font-size: 0.82rem; color: var(--text); flex: 1; line-height: 1.4; }
-  .source-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; white-space: nowrap; }
-  .source-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-muted); }
-  .source-link { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--accent2); text-decoration: none; }
-  .source-link:hover { text-decoration: underline; }
-
-  .error-msg { background: rgba(224,92,75,0.08); border: 1px solid #3a1a1a; color: #e07060; padding: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; border-radius: 2px; }
-
-  .section-content strong, .narrative-text strong { color: var(--text); font-weight: 600; }
-
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); }
-
-  @media (max-width: 900px) {
-    .layout { grid-template-columns: 1fr; }
-    .two-col { grid-template-columns: 1fr; }
-    aside { border-right: none; border-bottom: 1px solid var(--border); position: static; height: auto; }
-    .narrative-entry { grid-template-columns: 1fr; }
-    .narrative-persp-col { border-right: none; border-bottom: 1px solid var(--border); }
-    .section-nav { display: none !important; }
-  }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  aside { border-right: none; border-bottom: 1px solid var(--border); position: static; height: auto; }
+  .narrative-entry { grid-template-columns: 1fr; }
+  .narrative-persp-col { border-right: none; border-bottom: 1px solid var(--border); }
+  .section-nav { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -224,7 +187,6 @@
   </div>
 </header>
 
-<!-- Barra ancore — appare solo con risultato visibile -->
 <nav class="section-nav" id="section-nav">
   <a href="#sec-narrative" class="nav-anchor">🗺 Narrative</a>
   <a href="#sec-convergenze" class="nav-anchor">✓ Convergenze</a>
@@ -247,7 +209,6 @@
       <div class="hint">Premi Enter o + per aggiungere.<br>Combina keyword per analisi trasversali.</div>
       <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">◆ GENERA ANALISI</button>
     </div>
-
     <div>
       <div class="sidebar-title">Analisi Precedenti</div>
       <div id="history-list"><div style="font-size:0.7rem;color:var(--text-dim)">Caricamento...</div></div>
@@ -264,13 +225,11 @@
         e mostra convergenze e conflitti.
       </div>
     </div>
-
     <div id="loading-state">
       <div class="spinner"></div>
       <div class="loading-text">ANALISI IN CORSO</div>
       <div class="loading-sub" id="loading-sub">Elaborazione con Claude...</div>
     </div>
-
     <div id="result"></div>
   </main>
 </div>
@@ -278,7 +237,6 @@
 <script>
 let tags = [];
 let pollInterval = null;
-// Stato tab script
 let scriptItText = '';
 let scriptEnText = '';
 
@@ -294,20 +252,17 @@ const PERSP_LABELS = {
   other: "Altro"
 };
 
-// Dossier tematici per sidebar
 const DOSSIER_MAP = [
-  { label: "Medio Oriente",        color: "#c08040", keys: ["iran","israel","gaza","palestina","hamas","hezbollah","libano","yemen","houthi","siria","beirut"] },
-  { label: "Russia · Ucraina",     color: "#c06060", keys: ["russia","ucraina","ukraine","putin","zelensky","donbass","crimea","kyiv","mosca","nato"] },
+  { label: "Medio Oriente", color: "#c08040", keys: ["iran","israel","gaza","palestina","hamas","hezbollah","libano","yemen","houthi","siria","beirut"] },
+  { label: "Russia · Ucraina", color: "#c06060", keys: ["russia","ucraina","ukraine","putin","zelensky","donbass","crimea","kyiv","mosca","nato"] },
   { label: "Cina · Indo-Pacifico", color: "#c0a040", keys: ["china","cina","taiwan","beijing","pechino","india","pakistan","corea","korea"] },
-  { label: "Africa · Sahel",       color: "#60a060", keys: ["africa","sahel","mali","niger","sudan","somalia","congo","burkina","etiopia"] },
+  { label: "Africa · Sahel", color: "#60a060", keys: ["africa","sahel","mali","niger","sudan","somalia","congo","burkina","etiopia"] },
 ];
 
 function addTag() {
   const input = document.getElementById("kw-input");
   const parts = input.value.split(/[,;]+/).map(s => s.trim().toLowerCase()).filter(s => s);
-  parts.forEach(val => {
-    if (val && !tags.includes(val)) tags.push(val);
-  });
+  parts.forEach(val => { if (val && !tags.includes(val)) tags.push(val); });
   renderTags();
   input.value = "";
   input.focus();
@@ -362,23 +317,22 @@ function renderMarkdown(text) {
     .replace(/\n/g, '<br>');
 }
 
-// Split script IT/EN — cerca il punto dove inizia la versione inglese
 function splitScript(text) {
   if (!text) return { it: '', en: '' };
-  // Cerca riga vuota seguita da frase che inizia con parola inglese comune
   const enStartRegex = /\n\s*\n(Today |This |The |In |On |At |When |While |Inside |After |Before |During |Now |As |What |There )/;
   const match = text.search(enStartRegex);
   if (match !== -1) {
-    const splitPos = text.indexOf('\n', match + 1);
     return {
       it: text.slice(0, match).trim(),
       en: text.slice(match).trim()
     };
   }
-  // Fallback: cerca separatore esplicito
   const lines = text.split('\n');
   const mid = Math.ceil(lines.length / 2);
-  return { it: lines.slice(0, mid).join('\n').trim(), en: lines.slice(mid).join('\n').trim() };
+  return {
+    it: lines.slice(0, mid).join('\n').trim(),
+    en: lines.slice(mid).join('\n').trim()
+  };
 }
 
 function showScriptTab(lang) {
@@ -399,31 +353,43 @@ function showScriptTab(lang) {
 
 async function runAnalysis() {
   if (tags.length === 0) { alert("Inserisci almeno una keyword."); return; }
-
   document.getElementById("empty-state").style.display = "none";
   document.getElementById("loading-state").style.display = "flex";
   document.getElementById("result").style.display = "none";
   document.getElementById("section-nav").classList.remove("visible");
   document.getElementById("analyze-btn").disabled = true;
-
   try {
     const res = await fetch("/api/admin/analyze", {
-      method: "POST",
-      credentials: "include",
+      method: "POST", credentials: "include",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({keywords: tags})
     });
-
     if (!res.ok) throw new Error("Server error: " + res.status);
-
     const data = await res.json();
     if (data.error) { showError(data.error); return; }
-
     pollJob(data.job_id);
+  } catch(e) { showError("Errore: " + e.message); }
+}
+
+// ─── NUOVO: updateAnalysis ───────────────────────────────────────────────────
+// Carica le keyword dell'analisi selezionata nei tag e avvia una nuova analisi.
+async function updateAnalysis(id) {
+  try {
+    const res = await fetch(`/api/admin/analyses/${id}`, {credentials: "include"});
+    const data = await res.json();
+    if (!data || !data.keywords) { alert("Impossibile caricare le keyword."); return; }
+    // Svuota i tag attuali e carica quelli dell'analisi originale
+    tags = data.keywords.split(",").map(k => k.trim().toLowerCase()).filter(k => k);
+    renderTags();
+    // Scorri in cima alla sidebar per mostrare i tag
+    document.getElementById("kw-input").scrollIntoView({behavior: "smooth", block: "center"});
+    // Breve ritardo visivo, poi avvia
+    setTimeout(() => runAnalysis(), 400);
   } catch(e) {
-    showError("Errore: " + e.message);
+    alert("Errore nel caricamento dell'analisi: " + e.message);
   }
 }
+// ────────────────────────────────────────────────────────────────────────────
 
 function pollJob(jobId) {
   let elapsed = 0;
@@ -460,27 +426,20 @@ function renderResult(data) {
   result.style.display = "block";
   document.getElementById("section-nav").classList.add("visible");
 
-  // Keywords — headline in Playfair
   const kwHeadline = data.keywords.map((k, i) =>
-    i < data.keywords.length - 1
-      ? `${k}<span class="kw-sep">·</span>`
-      : k
+    i < data.keywords.length - 1 ? `${k}<span class="kw-sep">·</span>` : k
   ).join('');
 
-  // Perspective badges
   const perspBadges = Object.entries(data.perspectives_used || {}).map(([k, v]) =>
     `<span class="persp-badge persp-${k}">${v}</span>`
   ).join("");
 
-  // Narrative map
   const narrativeHtml = renderNarrativeMap(data.narrative_map || "");
 
-  // Script split IT/EN
   const scripts = splitScript(data.instagram_script || '');
   scriptItText = scripts.it;
   scriptEnText = scripts.en;
 
-  // Sources
   const sources = (data.articles || []).map(a => `
     <div class="source-item">
       <div class="source-title-text">${a.title}</div>
@@ -507,12 +466,10 @@ function renderResult(data) {
         <div class="result-meta">${data.article_count} articoli analizzati${data.has_history ? ' · con contesto storico' : ''}</div>
         <div class="perspectives-bar">${perspBadges}</div>
       </div>
-
       <div class="section-block" id="sec-narrative">
         <div class="section-title"><span class="icon">🗺</span> Mappa delle Narrative</div>
         <div class="narrative-grid">${narrativeHtml}</div>
       </div>
-
       <div class="two-col section-block">
         <div id="sec-convergenze">
           <div class="section-card convergence-card">
@@ -527,16 +484,13 @@ function renderResult(data) {
           </div>
         </div>
       </div>
-
       <div class="section-block" id="sec-diritto">
         <div class="legal-card">
           <div class="section-title"><span class="icon">📜</span> Prospettiva Diritto Internazionale</div>
           <div class="section-content">${renderMarkdown(data.legal || '')}</div>
         </div>
       </div>
-
       ${threadHtml}
-
       <div class="section-block" id="sec-script">
         <div class="instagram-card">
           <div class="instagram-header">
@@ -550,7 +504,6 @@ function renderResult(data) {
           <div class="instagram-content" id="ig-script">${scriptItText}</div>
         </div>
       </div>
-
       <div class="section-block sources-section" id="sec-fonti">
         <div class="section-title"><span class="icon">📰</span> Articoli Utilizzati (${data.article_count})</div>
         ${sources}
@@ -589,17 +542,9 @@ function copyScript() {
 async function deleteAnalysis(id, btn) {
   if (!confirm("Eliminare questa analisi?")) return;
   try {
-    const res = await fetch(`/api/admin/analyses/${id}`, {
-      method: "DELETE",
-      credentials: "include"
-    });
-    if (res.ok) {
-      const item = btn.closest(".history-item");
-      item.remove();
-    }
-  } catch(e) {
-    alert("Errore durante l'eliminazione.");
-  }
+    const res = await fetch(`/api/admin/analyses/${id}`, { method: "DELETE", credentials: "include" });
+    if (res.ok) { const item = btn.closest(".history-item"); item.remove(); }
+  } catch(e) { alert("Errore durante l'eliminazione."); }
 }
 
 async function loadHistory() {
@@ -612,7 +557,6 @@ async function loadHistory() {
       return;
     }
 
-    // Raggruppa per dossier tematico
     const buckets = {};
     DOSSIER_MAP.forEach(d => { buckets[d.label] = []; });
     buckets['__ungrouped__'] = [];
@@ -632,7 +576,6 @@ async function loadHistory() {
 
     let html = '';
 
-    // Dossier tematici con colore e collapsibile
     DOSSIER_MAP.forEach(d => {
       const items = buckets[d.label];
       if (!items.length) return;
@@ -649,6 +592,7 @@ async function loadHistory() {
               <div class="history-item" onclick="loadAnalysis(${a.id})">
                 <div class="history-kw">${a.keywords}</div>
                 <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
+                <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
                 <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
               </div>
             `).join('')}
@@ -656,7 +600,6 @@ async function loadHistory() {
         </div>`;
     });
 
-    // Non classificate — raggruppate per data
     if (buckets['__ungrouped__'].length > 0) {
       const dateGroups = {};
       buckets['__ungrouped__'].forEach(a => {
@@ -674,6 +617,8 @@ async function loadHistory() {
             <div class="history-item" onclick="loadAnalysis(${a.id})">
               <div class="history-kw">${a.keywords}</div>
               <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
+              <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
+              <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
             </div>
           `).join("")}
         </div>
