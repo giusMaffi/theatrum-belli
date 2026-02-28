@@ -36,10 +36,45 @@
   .btn-danger { border-color: #3a2020; color: var(--accent2); }
   .btn-danger:hover { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
 
+  /* SECTION NAV — sticky, visibile solo con risultato */
+  .section-nav {
+    display: none;
+    position: sticky;
+    top: 58px;
+    z-index: 90;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+    overflow-x: auto;
+  }
+  .section-nav.visible { display: flex; }
+  .nav-anchor {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.57rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    padding: 0.55rem 0.75rem;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .nav-anchor:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
   .layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 58px); }
 
   /* SIDEBAR */
-  aside { border-right: 1px solid var(--border); padding: 1.2rem; overflow-y: auto; background: var(--bg); }
+  aside {
+    border-right: 1px solid var(--border);
+    padding: 1.2rem;
+    overflow-y: auto;
+    background: var(--bg);
+    position: sticky;
+    top: 58px;
+    height: calc(100vh - 58px);
+  }
   .sidebar-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
 
   .keyword-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.7rem; min-height: 32px; }
@@ -56,6 +91,18 @@
   .analyze-btn:hover { background: #d4b97e; }
   .analyze-btn:disabled { opacity: 0.35; cursor: default; }
 
+  /* DOSSIER SIDEBAR */
+  .dossier-group { margin-bottom: 0.4rem; }
+  .dossier-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; cursor: pointer; border-radius: 2px; transition: background 0.15s; }
+  .dossier-header:hover { background: var(--surface2); }
+  .dossier-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dossier-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); flex: 1; }
+  .dossier-count { font-family: 'IBM Plex Mono', monospace; font-size: 0.52rem; color: var(--text-dim); }
+  .dossier-chevron { font-size: 0.5rem; color: var(--text-dim); transition: transform 0.15s; }
+  .dossier-items { padding-left: 1.1rem; }
+  .dossier-items.collapsed { display: none; }
+  .dossier-header.open .dossier-chevron { transform: rotate(90deg); }
+
   /* HISTORY */
   .history-date-group { margin-bottom: 1rem; }
   .history-date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
@@ -65,13 +112,14 @@
   .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); }
 
   /* MAIN */
-  main { padding: 2rem; overflow-y: auto; max-width: 900px; }
+  main { overflow-y: auto; }
+  .main-content { padding: 2rem; max-width: 900px; }
 
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; }
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; padding: 2rem; }
   .empty-icon { font-size: 2.5rem; opacity: 0.2; }
   .empty-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); text-align: center; line-height: 1.9; }
 
-  #loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; }
+  #loading-state { display: none; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; padding: 2rem; }
   .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; }
@@ -79,10 +127,12 @@
 
   /* RESULT */
   #result { display: none; }
+
   .result-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-  .result-keywords { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
-  .result-kw-tag { background: #1a1a20; border: 1px solid var(--accent); color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 0.2rem 0.6rem; border-radius: 2px; }
-  .result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+  /* Keywords headline Playfair */
+  .result-kw-headline { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--accent); letter-spacing: 0.04em; line-height: 1.2; margin-bottom: 0.5rem; }
+  .result-kw-headline .kw-sep { color: var(--text-dim); font-size: 1.1rem; margin: 0 0.3rem; }
+  .result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.6rem; }
   .perspectives-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
   .persp-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; padding: 0.15rem 0.5rem; border-radius: 10px; border: 1px solid; }
   .persp-western_mainstream { border-color: #4a7ab5; color: #7aaad5; background: #0d1520; }
@@ -93,35 +143,45 @@
   .persp-russian_state { border-color: #b54a4a; color: #c07070; background: #150808; }
   .persp-chinese_state { border-color: #b58a4a; color: #d5aa7a; background: #150d05; }
   .persp-think_tank { border-color: #4ab5a0; color: #7ad5c0; background: #051510; }
+  .persp-other { border-color: #555; color: #888; background: #111; }
 
-  /* NARRATIVE MAP */
+  /* SECTION */
   .section-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
   .section-title .icon { font-size: 0.8rem; }
+  .section-block { margin-bottom: 2rem; }
 
-  .narrative-grid { display: grid; gap: 0; margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
-  .narrative-entry { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); }
+  /* NARRATIVE MAP — due colonne */
+  .narrative-grid { display: grid; gap: 0; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+  .narrative-entry { display: grid; grid-template-columns: 155px 1fr; border-bottom: 1px solid var(--border); }
   .narrative-entry:last-child { border-bottom: none; }
-  .narrative-persp { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
-  .narrative-text { font-size: 0.9rem; color: var(--text); line-height: 1.7; }
+  .narrative-persp-col { padding: 0.9rem 1rem; background: var(--surface); border-right: 1px solid var(--border); display: flex; align-items: flex-start; }
+  .narrative-persp { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.5; }
+  .narrative-text-col { padding: 0.9rem 1.2rem; }
+  .narrative-text { font-size: 0.88rem; color: var(--text); line-height: 1.75; }
 
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-  .section-card { background: var(--surface); border: 1px solid var(--border); padding: 1.2rem; border-radius: 2px; }
-  .section-content { font-size: 0.88rem; color: var(--text); line-height: 1.75; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .section-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
+  .section-content { font-size: 0.88rem; color: #ccc9c0; line-height: 1.85; }
 
   .convergence-card { border-color: #1a3020; background: #0d150d; }
   .divergence-card { border-color: #301a1a; background: #150d0d; }
-  .legal-card { background: var(--surface); border: 1px solid var(--border); padding: 1.2rem; border-radius: 2px; margin-bottom: 1.5rem; }
-  .thread-card { background: #0d0d18; border: 1px solid #1a1a30; padding: 1.2rem; border-radius: 2px; margin-bottom: 1.5rem; }
+  .legal-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
+  .thread-card { background: #0d0d18; border: 1px solid #1a1a30; padding: 1.4rem; border-radius: 2px; }
   .thread-title { color: var(--accent3); }
 
-  .instagram-card { background: var(--surface); border: 1px solid #2a1a1a; padding: 1.2rem; border-radius: 2px; margin-bottom: 2rem; }
+  /* INSTAGRAM con tab IT/EN */
+  .instagram-card { background: var(--surface); border: 1px solid #2a1a1a; padding: 1.4rem; border-radius: 2px; }
   .instagram-title { color: var(--accent2); }
-  .instagram-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
-  .instagram-content { font-size: 0.88rem; line-height: 1.8; white-space: pre-wrap; color: var(--text); }
+  .instagram-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+  .script-tabs { display: flex; gap: 0; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; width: fit-content; }
+  .script-tab { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.9rem; background: transparent; border: none; color: var(--text-dim); cursor: pointer; transition: all 0.15s; text-transform: uppercase; }
+  .script-tab.active { background: var(--accent2); color: var(--bg); }
+  .script-tab:not(.active):hover { color: var(--text-muted); background: var(--surface2); }
+  .instagram-content { font-size: 0.9rem; line-height: 1.85; color: #ccc9c0; white-space: pre-wrap; }
   .copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
   .copy-btn:hover { background: var(--accent2); color: var(--bg); }
 
-  .sources-section { margin-bottom: 2rem; }
+  .sources-section { }
   .source-item { padding: 0.55rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
   .source-title-text { font-size: 0.82rem; color: var(--text); flex: 1; line-height: 1.4; }
   .source-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; white-space: nowrap; }
@@ -131,7 +191,6 @@
 
   .error-msg { background: rgba(224,92,75,0.08); border: 1px solid #3a1a1a; color: #e07060; padding: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; border-radius: 2px; }
 
-  /* Bold rendering */
   .section-content strong, .narrative-text strong { color: var(--text); font-weight: 600; }
 
   ::-webkit-scrollbar { width: 3px; }
@@ -141,8 +200,10 @@
   @media (max-width: 900px) {
     .layout { grid-template-columns: 1fr; }
     .two-col { grid-template-columns: 1fr; }
-    aside { border-right: none; border-bottom: 1px solid var(--border); }
-    main { max-width: 100%; }
+    aside { border-right: none; border-bottom: 1px solid var(--border); position: static; height: auto; }
+    .narrative-entry { grid-template-columns: 1fr; }
+    .narrative-persp-col { border-right: none; border-bottom: 1px solid var(--border); }
+    .section-nav { display: none !important; }
   }
 </style>
 </head>
@@ -158,6 +219,17 @@
     <a href="/admin/logout" class="btn btn-danger">Esci</a>
   </div>
 </header>
+
+<!-- Barra ancore — appare solo con risultato visibile -->
+<nav class="section-nav" id="section-nav">
+  <a href="#sec-narrative" class="nav-anchor">🗺 Narrative</a>
+  <a href="#sec-convergenze" class="nav-anchor">✓ Convergenze</a>
+  <a href="#sec-divergenze" class="nav-anchor">↔ Divergenze</a>
+  <a href="#sec-diritto" class="nav-anchor">📜 Diritto</a>
+  <a href="#sec-filo" class="nav-anchor">🔗 Filo</a>
+  <a href="#sec-script" class="nav-anchor">📱 Script</a>
+  <a href="#sec-fonti" class="nav-anchor">📰 Fonti</a>
+</nav>
 
 <div class="layout">
   <aside>
@@ -202,6 +274,9 @@
 <script>
 let tags = [];
 let pollInterval = null;
+// Stato tab script
+let scriptItText = '';
+let scriptEnText = '';
 
 const PERSP_LABELS = {
   western_mainstream: "Mainstream Occidentale",
@@ -215,13 +290,19 @@ const PERSP_LABELS = {
   other: "Altro"
 };
 
+// Dossier tematici per sidebar
+const DOSSIER_MAP = [
+  { label: "Medio Oriente",        color: "#c08040", keys: ["iran","israel","gaza","palestina","hamas","hezbollah","libano","yemen","houthi","siria","beirut"] },
+  { label: "Russia · Ucraina",     color: "#c06060", keys: ["russia","ucraina","ukraine","putin","zelensky","donbass","crimea","kyiv","mosca","nato"] },
+  { label: "Cina · Indo-Pacifico", color: "#c0a040", keys: ["china","cina","taiwan","beijing","pechino","india","pakistan","corea","korea"] },
+  { label: "Africa · Sahel",       color: "#60a060", keys: ["africa","sahel","mali","niger","sudan","somalia","congo","burkina","etiopia"] },
+];
+
 function addTag() {
   const input = document.getElementById("kw-input");
   const parts = input.value.split(/[,;]+/).map(s => s.trim().toLowerCase()).filter(s => s);
   parts.forEach(val => {
-    if (val && !tags.includes(val)) {
-      tags.push(val);
-    }
+    if (val && !tags.includes(val)) tags.push(val);
   });
   renderTags();
   input.value = "";
@@ -269,8 +350,47 @@ function timeAgo(dateStr) {
 function renderMarkdown(text) {
   if (!text) return '';
   return text
+    .replace(/\*\*ITALIANO\*\*/gi, '')
+    .replace(/\*\*ENGLISH\*\*/gi, '')
+    .replace(/---+/g, '')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n{3,}/g, '\n\n')
     .replace(/\n/g, '<br>');
+}
+
+// Split script IT/EN — cerca il punto dove inizia la versione inglese
+function splitScript(text) {
+  if (!text) return { it: '', en: '' };
+  // Cerca riga vuota seguita da frase che inizia con parola inglese comune
+  const enStartRegex = /\n\s*\n(Today |This |The |In |On |At |When |While |Inside |After |Before |During |Now |As |What |There )/;
+  const match = text.search(enStartRegex);
+  if (match !== -1) {
+    const splitPos = text.indexOf('\n', match + 1);
+    return {
+      it: text.slice(0, match).trim(),
+      en: text.slice(match).trim()
+    };
+  }
+  // Fallback: cerca separatore esplicito
+  const lines = text.split('\n');
+  const mid = Math.ceil(lines.length / 2);
+  return { it: lines.slice(0, mid).join('\n').trim(), en: lines.slice(mid).join('\n').trim() };
+}
+
+function showScriptTab(lang) {
+  const content = document.getElementById('ig-script');
+  const tabIt = document.getElementById('tab-it');
+  const tabEn = document.getElementById('tab-en');
+  if (!content) return;
+  if (lang === 'it') {
+    content.textContent = scriptItText;
+    tabIt.classList.add('active');
+    tabEn.classList.remove('active');
+  } else {
+    content.textContent = scriptEnText;
+    tabEn.classList.add('active');
+    tabIt.classList.remove('active');
+  }
 }
 
 async function runAnalysis() {
@@ -279,6 +399,7 @@ async function runAnalysis() {
   document.getElementById("empty-state").style.display = "none";
   document.getElementById("loading-state").style.display = "flex";
   document.getElementById("result").style.display = "none";
+  document.getElementById("section-nav").classList.remove("visible");
   document.getElementById("analyze-btn").disabled = true;
 
   try {
@@ -289,10 +410,7 @@ async function runAnalysis() {
       body: JSON.stringify({keywords: tags})
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error("Server error: " + res.status);
-    }
+    if (!res.ok) throw new Error("Server error: " + res.status);
 
     const data = await res.json();
     if (data.error) { showError(data.error); return; }
@@ -330,23 +448,33 @@ function showError(msg) {
   document.getElementById("analyze-btn").disabled = false;
   document.getElementById("loading-state").style.display = "none";
   document.getElementById("result").style.display = "block";
-  document.getElementById("result").innerHTML = `<div class="error-msg">⚠ ${msg}</div>`;
+  document.getElementById("result").innerHTML = `<div style="padding:2rem"><div class="error-msg">⚠ ${msg}</div></div>`;
 }
 
 function renderResult(data) {
   const result = document.getElementById("result");
   result.style.display = "block";
+  document.getElementById("section-nav").classList.add("visible");
 
-  // Keywords
-  const kwtags = data.keywords.map(k => `<span class="result-kw-tag">${k}</span>`).join("");
+  // Keywords — headline in Playfair
+  const kwHeadline = data.keywords.map((k, i) =>
+    i < data.keywords.length - 1
+      ? `${k}<span class="kw-sep">·</span>`
+      : k
+  ).join('');
 
   // Perspective badges
   const perspBadges = Object.entries(data.perspectives_used || {}).map(([k, v]) =>
     `<span class="persp-badge persp-${k}">${v}</span>`
   ).join("");
 
-  // Narrative map — parse entries
+  // Narrative map
   const narrativeHtml = renderNarrativeMap(data.narrative_map || "");
+
+  // Script split IT/EN
+  const scripts = splitScript(data.instagram_script || '');
+  scriptItText = scripts.it;
+  scriptEnText = scripts.en;
 
   // Sources
   const sources = (data.articles || []).map(a => `
@@ -360,78 +488,94 @@ function renderResult(data) {
   `).join("");
 
   const threadHtml = data.thread ? `
-    <div class="thread-card">
-      <div class="section-title thread-title"><span class="icon">🔗</span> Filo Narrativo</div>
-      <div class="section-content">${renderMarkdown(data.thread)}</div>
+    <div class="section-block" id="sec-filo">
+      <div class="thread-card">
+        <div class="section-title thread-title"><span class="icon">🔗</span> Filo Narrativo</div>
+        <div class="section-content">${renderMarkdown(data.thread)}</div>
+      </div>
     </div>
-  ` : "";
+  ` : `<div id="sec-filo"></div>`;
 
   result.innerHTML = `
-    <div class="result-header">
-      <div class="result-keywords">${kwtags}</div>
-      <div class="result-meta">${data.article_count} articoli analizzati${data.has_history ? ' · con contesto storico' : ''}</div>
-      <div class="perspectives-bar">${perspBadges}</div>
-    </div>
-
-    <div style="margin-bottom:1.5rem">
-      <div class="section-title"><span class="icon">🗺</span> Mappa delle Narrative</div>
-      <div class="narrative-grid">${narrativeHtml}</div>
-    </div>
-
-    <div class="two-col">
-      <div class="section-card convergence-card">
-        <div class="section-title" style="color:#6ab56a"><span class="icon">✓</span> Convergenze</div>
-        <div class="section-content">${renderMarkdown(data.convergences || '')}</div>
+    <div class="main-content">
+      <div class="result-header">
+        <div class="result-kw-headline">${kwHeadline}</div>
+        <div class="result-meta">${data.article_count} articoli analizzati${data.has_history ? ' · con contesto storico' : ''}</div>
+        <div class="perspectives-bar">${perspBadges}</div>
       </div>
-      <div class="section-card divergence-card">
-        <div class="section-title" style="color:#c07070"><span class="icon">↔</span> Divergenze & Conflitti</div>
-        <div class="section-content">${renderMarkdown(data.divergences || '')}</div>
+
+      <div class="section-block" id="sec-narrative">
+        <div class="section-title"><span class="icon">🗺</span> Mappa delle Narrative</div>
+        <div class="narrative-grid">${narrativeHtml}</div>
       </div>
-    </div>
 
-    <div class="legal-card">
-      <div class="section-title"><span class="icon">📜</span> Prospettiva Diritto Internazionale</div>
-      <div class="section-content">${renderMarkdown(data.legal || '')}</div>
-    </div>
-
-    ${threadHtml}
-
-    <div class="instagram-card">
-      <div class="instagram-header">
-        <div class="section-title instagram-title" style="margin-bottom:0"><span class="icon">📱</span> Script Instagram (90 sec · IT/EN)</div>
-        <button class="copy-btn" onclick="copyScript()">COPIA</button>
+      <div class="two-col section-block">
+        <div id="sec-convergenze">
+          <div class="section-card convergence-card">
+            <div class="section-title" style="color:#6ab56a"><span class="icon">✓</span> Convergenze</div>
+            <div class="section-content">${renderMarkdown(data.convergences || '')}</div>
+          </div>
+        </div>
+        <div id="sec-divergenze">
+          <div class="section-card divergence-card">
+            <div class="section-title" style="color:#c07070"><span class="icon">↔</span> Divergenze & Conflitti</div>
+            <div class="section-content">${renderMarkdown(data.divergences || '')}</div>
+          </div>
+        </div>
       </div>
-      <div class="instagram-content" id="ig-script">${data.instagram_script || ''}</div>
-    </div>
 
-    <div class="sources-section">
-      <div class="section-title"><span class="icon">📰</span> Articoli Utilizzati (${data.article_count})</div>
-      ${sources}
+      <div class="section-block" id="sec-diritto">
+        <div class="legal-card">
+          <div class="section-title"><span class="icon">📜</span> Prospettiva Diritto Internazionale</div>
+          <div class="section-content">${renderMarkdown(data.legal || '')}</div>
+        </div>
+      </div>
+
+      ${threadHtml}
+
+      <div class="section-block" id="sec-script">
+        <div class="instagram-card">
+          <div class="instagram-header">
+            <div class="section-title instagram-title" style="margin-bottom:0"><span class="icon">📱</span> Script Instagram (90 sec · IT/EN)</div>
+            <button class="copy-btn" onclick="copyScript()">COPIA</button>
+          </div>
+          <div class="script-tabs">
+            <button class="script-tab active" id="tab-it" onclick="showScriptTab('it')">IT</button>
+            <button class="script-tab" id="tab-en" onclick="showScriptTab('en')">EN</button>
+          </div>
+          <div class="instagram-content" id="ig-script">${scriptItText}</div>
+        </div>
+      </div>
+
+      <div class="section-block sources-section" id="sec-fonti">
+        <div class="section-title"><span class="icon">📰</span> Articoli Utilizzati (${data.article_count})</div>
+        ${sources}
+      </div>
     </div>
   `;
 }
 
 function renderNarrativeMap(text) {
-  if (!text) return '<div class="narrative-entry"><div class="narrative-text">Nessuna narrativa mappata.</div></div>';
-  // Split per **[Prospettiva]**: pattern
+  if (!text) return '<div class="narrative-entry"><div class="narrative-text-col"><div class="narrative-text">Nessuna narrativa mappata.</div></div></div>';
   const entries = text.split(/\n(?=\*\*)/);
   return entries.map(entry => {
     const match = entry.match(/^\*\*(.+?)\*\*[:\s]+([\s\S]+)/);
     if (match) {
       return `<div class="narrative-entry">
-        <div class="narrative-persp">${match[1]}</div>
-        <div class="narrative-text">${renderMarkdown(match[2].trim())}</div>
+        <div class="narrative-persp-col"><div class="narrative-persp">${match[1]}</div></div>
+        <div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(match[2].trim())}</div></div>
       </div>`;
     }
     const clean = entry.trim();
     if (!clean) return '';
-    return `<div class="narrative-entry"><div class="narrative-text">${renderMarkdown(clean)}</div></div>`;
+    return `<div class="narrative-entry"><div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(clean)}</div></div></div>`;
   }).join("");
 }
 
 function copyScript() {
-  const text = document.getElementById("ig-script").innerText;
-  navigator.clipboard.writeText(text).then(() => {
+  const el = document.getElementById("ig-script");
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
     const btn = document.querySelector(".copy-btn");
     btn.textContent = "COPIATO ✓";
     setTimeout(() => btn.textContent = "COPIA", 2000);
@@ -448,28 +592,83 @@ async function loadHistory() {
       return;
     }
 
-    // Raggruppa per data
-    const groups = {};
+    // Raggruppa per dossier tematico
+    const buckets = {};
+    DOSSIER_MAP.forEach(d => { buckets[d.label] = []; });
+    buckets['__ungrouped__'] = [];
+
     data.forEach(a => {
-      const dateKey = formatDate(a.created_at);
-      if (!groups[dateKey]) groups[dateKey] = [];
-      groups[dateKey].push(a);
+      const kw = (a.keywords || '').toLowerCase();
+      let matched = false;
+      for (const d of DOSSIER_MAP) {
+        if (d.keys.some(k => kw.includes(k))) {
+          buckets[d.label].push(a);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) buckets['__ungrouped__'].push(a);
     });
 
-    list.innerHTML = Object.entries(groups).map(([date, items]) => `
-      <div class="history-date-group">
-        <div class="history-date-label">${date}</div>
-        ${items.map(a => `
-          <div class="history-item" onclick="loadAnalysis(${a.id})">
-            <div class="history-kw">${a.keywords}</div>
-            <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
+    let html = '';
+
+    // Dossier tematici con colore e collapsibile
+    DOSSIER_MAP.forEach(d => {
+      const items = buckets[d.label];
+      if (!items.length) return;
+      html += `
+        <div class="dossier-group">
+          <div class="dossier-header open" onclick="toggleDossier(this)">
+            <div class="dossier-dot" style="background:${d.color}"></div>
+            <div class="dossier-label">${d.label}</div>
+            <div class="dossier-count">${items.length}</div>
+            <div class="dossier-chevron">▶</div>
           </div>
-        `).join("")}
-      </div>
-    `).join("");
+          <div class="dossier-items">
+            ${items.map(a => `
+              <div class="history-item" onclick="loadAnalysis(${a.id})">
+                <div class="history-kw">${a.keywords}</div>
+                <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+    });
+
+    // Non classificate — raggruppate per data
+    if (buckets['__ungrouped__'].length > 0) {
+      const dateGroups = {};
+      buckets['__ungrouped__'].forEach(a => {
+        const dk = formatDate(a.created_at);
+        if (!dateGroups[dk]) dateGroups[dk] = [];
+        dateGroups[dk].push(a);
+      });
+      if (Object.keys(buckets).filter(k => k !== '__ungrouped__').some(k => buckets[k].length > 0)) {
+        html += `<div class="sidebar-title" style="margin-top:1rem">Altro</div>`;
+      }
+      html += Object.entries(dateGroups).map(([date, items]) => `
+        <div class="history-date-group">
+          <div class="history-date-label">${date}</div>
+          ${items.map(a => `
+            <div class="history-item" onclick="loadAnalysis(${a.id})">
+              <div class="history-kw">${a.keywords}</div>
+              <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
+            </div>
+          `).join("")}
+        </div>
+      `).join("");
+    }
+
+    list.innerHTML = html;
   } catch(e) {
     document.getElementById("history-list").innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>';
   }
+}
+
+function toggleDossier(header) {
+  const items = header.nextElementSibling;
+  items.classList.toggle('collapsed');
+  header.classList.toggle('open');
 }
 
 async function loadAnalysis(id) {
