@@ -6,7 +6,11 @@
 <title>THEATRUM BELLI — Intelligence Lab</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21; --border: #2a2a30; --accent: #c8a96e; --accent2: #e05c4b; --accent3: #6ab4c8; --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855; }
+:root {
+  --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21;
+  --border: #2a2a30; --accent: #c8a96e; --accent2: #e05c4b;
+  --accent3: #6ab4c8; --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855;
+}
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 400; line-height: 1.6; }
 header { border-bottom: 1px solid var(--border); padding: 0.9rem 2rem; display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: sticky; top: 0; z-index: 100; }
@@ -37,6 +41,13 @@ input[type="text"]::placeholder { color: var(--text-dim); }
 .analyze-btn { width: 100%; background: var(--accent); border: none; color: #0d0d0f; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.75rem; cursor: pointer; transition: all 0.2s; border-radius: 2px; }
 .analyze-btn:hover { background: #d4b97e; }
 .analyze-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* ── FILTRO DATE ─────────────────────────────────────────────────────────── */
+.date-filter { display: flex; gap: 0.3rem; margin-bottom: 0.8rem; }
+.filter-btn { flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; letter-spacing: 0.07em; padding: 0.25rem 0; cursor: pointer; border-radius: 2px; transition: all 0.15s; text-transform: uppercase; }
+.filter-btn:hover { border-color: var(--accent); color: var(--text-muted); }
+.filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,169,110,0.08); }
+
 .dossier-group { margin-bottom: 0.4rem; }
 .dossier-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; cursor: pointer; border-radius: 2px; transition: background 0.15s; }
 .dossier-header:hover { background: var(--surface2); }
@@ -74,15 +85,15 @@ main { overflow-y: auto; }
 .result-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.6rem; }
 .perspectives-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .persp-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; padding: 0.15rem 0.5rem; border-radius: 10px; border: 1px solid; }
-.persp-western_mainstream { border-color: #4a7ab5; color: #7aaad5; background: #0d1520; }
-.persp-italian_mainstream { border-color: #5a8a40; color: #8aba70; background: #0d150a; }
-.persp-pro_israel { border-color: #b5844a; color: #d5a47a; background: #150e05; }
-.persp-arab_media { border-color: #b54a4a; color: #d57a7a; background: #150a0a; }
-.persp-alternative_left { border-color: #8a4ab5; color: #aa7ad5; background: #100a15; }
-.persp-russian_state { border-color: #b54a4a; color: #c07070; background: #150808; }
-.persp-chinese_state { border-color: #b58a4a; color: #d5aa7a; background: #150d05; }
-.persp-think_tank { border-color: #4ab5a0; color: #7ad5c0; background: #051510; }
-.persp-other { border-color: #555; color: #888; background: #111; }
+.persp-western_mainstream  { border-color: #4a7ab5; color: #7aaad5; background: #0d1520; }
+.persp-italian_mainstream  { border-color: #5a8a40; color: #8aba70; background: #0d150a; }
+.persp-pro_israel          { border-color: #b5844a; color: #d5a47a; background: #150e05; }
+.persp-arab_media          { border-color: #b54a4a; color: #d57a7a; background: #150a0a; }
+.persp-alternative_left    { border-color: #8a4ab5; color: #aa7ad5; background: #100a15; }
+.persp-russian_state       { border-color: #b54a4a; color: #c07070; background: #150808; }
+.persp-chinese_state       { border-color: #b58a4a; color: #d5aa7a; background: #150d05; }
+.persp-think_tank          { border-color: #4ab5a0; color: #7ad5c0; background: #051510; }
+.persp-other               { border-color: #555; color: #888; background: #111; }
 .section-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 1rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
 .section-title .icon { font-size: 0.8rem; }
 .section-block { margin-bottom: 2rem; }
@@ -97,9 +108,9 @@ main { overflow-y: auto; }
 .section-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
 .section-content { font-size: 0.88rem; color: #ccc9c0; line-height: 1.85; }
 .convergence-card { border-color: #1a3020; background: #0d150d; }
-.divergence-card { border-color: #301a1a; background: #150d0d; }
-.legal-card { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
-.thread-card { background: #0d0d18; border: 1px solid #1a1a30; padding: 1.4rem; border-radius: 2px; }
+.divergence-card   { border-color: #301a1a; background: #150d0d; }
+.legal-card   { background: var(--surface); border: 1px solid var(--border); padding: 1.4rem; border-radius: 2px; }
+.thread-card  { background: #0d0d18; border: 1px solid #1a1a30; padding: 1.4rem; border-radius: 2px; }
 .thread-title { color: var(--accent3); }
 .instagram-card { background: var(--surface); border: 1px solid #2a1a1a; padding: 1.4rem; border-radius: 2px; }
 .instagram-title { color: var(--accent2); }
@@ -122,6 +133,7 @@ main { overflow-y: auto; }
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); }
+.history-empty-filter { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); text-align: center; padding: 1rem 0; }
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
   .two-col { grid-template-columns: 1fr; }
@@ -143,15 +155,17 @@ main { overflow-y: auto; }
     <a href="/admin/logout" class="btn btn-danger">Esci</a>
   </div>
 </header>
+
 <nav class="section-nav" id="section-nav">
-  <a href="#sec-narrative" class="nav-anchor">🗺 Narrative</a>
+  <a href="#sec-narrative"   class="nav-anchor">🗺 Narrative</a>
   <a href="#sec-convergenze" class="nav-anchor">✓ Convergenze</a>
-  <a href="#sec-divergenze" class="nav-anchor">↔ Divergenze</a>
-  <a href="#sec-diritto" class="nav-anchor">📜 Diritto</a>
-  <a href="#sec-filo" class="nav-anchor">🔗 Filo</a>
-  <a href="#sec-script" class="nav-anchor">📱 Script</a>
-  <a href="#sec-fonti" class="nav-anchor">📰 Fonti</a>
+  <a href="#sec-divergenze"  class="nav-anchor">↔ Divergenze</a>
+  <a href="#sec-diritto"     class="nav-anchor">📜 Diritto</a>
+  <a href="#sec-filo"        class="nav-anchor">🔗 Filo</a>
+  <a href="#sec-script"      class="nav-anchor">📱 Script</a>
+  <a href="#sec-fonti"       class="nav-anchor">📰 Fonti</a>
 </nav>
+
 <div class="layout">
   <aside>
     <div style="margin-bottom:1.5rem">
@@ -164,11 +178,19 @@ main { overflow-y: auto; }
       <div class="hint">Premi Enter o + per aggiungere.<br>Combina keyword per analisi trasversali.</div>
       <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">◆ GENERA ANALISI</button>
     </div>
+
     <div>
       <div class="sidebar-title">Analisi Precedenti</div>
+      <!-- FILTRO DATE -->
+      <div class="date-filter">
+        <button class="filter-btn active" data-days="7"  onclick="setFilter(7,this)">7g</button>
+        <button class="filter-btn"        data-days="30" onclick="setFilter(30,this)">30g</button>
+        <button class="filter-btn"        data-days="0"  onclick="setFilter(0,this)">Tutto</button>
+      </div>
       <div id="history-list"><div style="font-size:0.7rem;color:var(--text-dim)">Caricamento...</div></div>
     </div>
   </aside>
+
   <main>
     <div class="empty-state" id="empty-state">
       <div class="empty-icon">◆</div>
@@ -193,20 +215,16 @@ let tags = [];
 let pollInterval = null;
 let scriptItText = '';
 let scriptEnText = '';
+let allAnalyses = [];
+let activeDays = 7;
 
-// ─── FIX: timeout massimo polling (600s) ─────────────────────────────────────
 const POLL_TIMEOUT_S = 600;
 
 const PERSP_LABELS = {
-  western_mainstream: "Mainstream Occidentale",
-  italian_mainstream: "Stampa Italiana",
-  pro_israel: "Stampa Israeliana",
-  arab_media: "Media Arabi",
-  alternative_left: "Critica Alternativa",
-  russian_state: "Media Russi",
-  chinese_state: "Media Cinesi",
-  think_tank: "Think Tank",
-  other: "Altro"
+  western_mainstream: "Mainstream Occidentale", italian_mainstream: "Stampa Italiana",
+  pro_israel: "Stampa Israeliana", arab_media: "Media Arabi",
+  alternative_left: "Critica Alternativa", russian_state: "Media Russi",
+  chinese_state: "Media Cinesi", think_tank: "Think Tank", other: "Altro"
 };
 
 function tagColor(tag) {
@@ -220,17 +238,10 @@ function addTag() {
   const input = document.getElementById("kw-input");
   const parts = input.value.split(/[,;]+/).map(s => s.trim().toLowerCase()).filter(s => s);
   parts.forEach(val => { if (val && !tags.includes(val)) tags.push(val); });
-  renderTags();
-  input.value = "";
-  input.focus();
+  renderTags(); input.value = ""; input.focus();
 }
-
-document.getElementById("kw-input").addEventListener("keydown", e => {
-  if (e.key === "Enter") addTag();
-});
-
+document.getElementById("kw-input").addEventListener("keydown", e => { if (e.key === "Enter") addTag(); });
 function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags(); }
-
 function renderTags() {
   document.getElementById("tags-container").innerHTML = tags.map(t =>
     `<div class="tag">${t} <button onclick="removeTag('${t}')">×</button></div>`
@@ -242,24 +253,19 @@ function formatDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('it-IT', {day:'2-digit', month:'short', year:'numeric'});
 }
-
 function formatTime(dateStr) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   return d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
 }
-
 function renderMarkdown(text) {
   if (!text) return '';
   return text
-    .replace(/\*\*ITALIANO\*\*/gi, '')
-    .replace(/\*\*ENGLISH\*\*/gi, '')
+    .replace(/\*\*ITALIANO\*\*/gi, '').replace(/\*\*ENGLISH\*\*/gi, '')
     .replace(/---+/g, '')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/\n/g, '<br>');
+    .replace(/\n{3,}/g, '\n\n').replace(/\n/g, '<br>');
 }
-
 function splitScript(text) {
   if (!text) return { it: '', en: '' };
   const enStartRegex = /\n\s*\n(Today |This |The |In |On |At |When |While |Inside |After |Before |During |Now |As |What |There )/;
@@ -269,7 +275,6 @@ function splitScript(text) {
   const mid = Math.ceil(lines.length / 2);
   return { it: lines.slice(0, mid).join('\n').trim(), en: lines.slice(mid).join('\n').trim() };
 }
-
 function showScriptTab(lang) {
   const content = document.getElementById('ig-script');
   const tabIt = document.getElementById('tab-it');
@@ -279,24 +284,25 @@ function showScriptTab(lang) {
   else { content.textContent = scriptEnText; tabEn.classList.add('active'); tabIt.classList.remove('active'); }
 }
 
-// ─── FIX: salva/ripristina jobId da sessionStorage ──────────────────────────
-function saveActiveJob(jobId, elapsed) {
-  sessionStorage.setItem('activeJobId', jobId);
-  sessionStorage.setItem('activeJobElapsed', elapsed || 0);
+// ── FILTRO DATE ───────────────────────────────────────────────────────────────
+function setFilter(days, btn) {
+  activeDays = days;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHistory(allAnalyses);
 }
 
-function clearActiveJob() {
-  sessionStorage.removeItem('activeJobId');
-  sessionStorage.removeItem('activeJobElapsed');
+function filterByDays(items, days) {
+  if (days === 0) return items;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return items.filter(a => a.created_at && new Date(a.created_at) >= cutoff);
 }
 
-function getActiveJob() {
-  return {
-    jobId: sessionStorage.getItem('activeJobId'),
-    elapsed: parseInt(sessionStorage.getItem('activeJobElapsed') || '0')
-  };
-}
-// ─────────────────────────────────────────────────────────────────────────────
+// ── SESSION STORAGE ───────────────────────────────────────────────────────────
+function saveActiveJob(jobId, elapsed) { sessionStorage.setItem('activeJobId', jobId); sessionStorage.setItem('activeJobElapsed', elapsed || 0); }
+function clearActiveJob() { sessionStorage.removeItem('activeJobId'); sessionStorage.removeItem('activeJobElapsed'); }
+function getActiveJob() { return { jobId: sessionStorage.getItem('activeJobId'), elapsed: parseInt(sessionStorage.getItem('activeJobElapsed') || '0') }; }
 
 async function runAnalysis() {
   if (tags.length === 0) { alert("Inserisci almeno una keyword."); return; }
@@ -306,15 +312,11 @@ async function runAnalysis() {
   document.getElementById("section-nav").classList.remove("visible");
   document.getElementById("analyze-btn").disabled = true;
   try {
-    const res = await fetch("/api/admin/analyze", {
-      method: "POST", credentials: "include",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({keywords: tags})
-    });
+    const res = await fetch("/api/admin/analyze", { method: "POST", credentials: "include", headers: {"Content-Type": "application/json"}, body: JSON.stringify({keywords: tags}) });
     if (!res.ok) throw new Error("Server error: " + res.status);
     const data = await res.json();
     if (data.error) { showError(data.error); return; }
-    saveActiveJob(data.job_id, 0);  // FIX: persisti subito
+    saveActiveJob(data.job_id, 0);
     pollJob(data.job_id, 0);
   } catch(e) { showError("Errore: " + e.message); }
 }
@@ -331,52 +333,40 @@ async function updateAnalysis(id) {
   } catch(e) { alert("Errore nel caricamento dell'analisi: " + e.message); }
 }
 
-// ─── FIX: pollJob accetta elapsed iniziale, salva stato, timeout esplicito ───
 function pollJob(jobId, startElapsed) {
   if (pollInterval) clearInterval(pollInterval);
   let elapsed = startElapsed || 0;
-
   document.getElementById("empty-state").style.display = "none";
   document.getElementById("loading-state").style.display = "flex";
   document.getElementById("result").style.display = "none";
   document.getElementById("analyze-btn").disabled = true;
-
   pollInterval = setInterval(async () => {
     elapsed += 3;
-    saveActiveJob(jobId, elapsed);  // FIX: aggiorna elapsed nel sessionStorage
+    saveActiveJob(jobId, elapsed);
     document.getElementById("loading-sub").textContent = `Claude sta elaborando... (${elapsed}s)`;
-
-    // FIX: timeout esplicito
     if (elapsed >= POLL_TIMEOUT_S) {
-      clearInterval(pollInterval);
-      clearActiveJob();
+      clearInterval(pollInterval); clearActiveJob();
       showError(`Timeout dopo ${POLL_TIMEOUT_S}s. Il job potrebbe essere ancora in esecuzione — controlla la sidebar tra qualche minuto.`);
       return;
     }
-
     try {
       const res = await fetch(`/api/admin/job/${jobId}`, {credentials: "include"});
       const job = await res.json();
       if (job.status === "done") {
-        clearInterval(pollInterval);
-        clearActiveJob();  // FIX: pulisci sessionStorage
+        clearInterval(pollInterval); clearActiveJob();
         document.getElementById("analyze-btn").disabled = false;
         document.getElementById("loading-state").style.display = "none";
-        renderResult(job.result);
-        loadHistory();
+        renderResult(job.result); loadHistory();
       } else if (job.status === "error") {
-        clearInterval(pollInterval);
-        clearActiveJob();
+        clearInterval(pollInterval); clearActiveJob();
         showError("Errore: " + job.error);
       }
     } catch(e) {}
   }, 3000);
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 function showError(msg) {
-  clearInterval(pollInterval);
-  clearActiveJob();
+  clearInterval(pollInterval); clearActiveJob();
   document.getElementById("analyze-btn").disabled = false;
   document.getElementById("loading-state").style.display = "none";
   document.getElementById("result").style.display = "block";
@@ -395,8 +385,7 @@ function renderResult(data) {
   ).join("");
   const narrativeHtml = renderNarrativeMap(data.narrative_map || "");
   const scripts = splitScript(data.instagram_script || '');
-  scriptItText = scripts.it;
-  scriptEnText = scripts.en;
+  scriptItText = scripts.it; scriptEnText = scripts.en;
   const articles = data.articles || [];
   const sourcesHtml = articles.length > 0 ? `
     <div class="section-block sources-section" id="sec-fonti">
@@ -495,14 +484,13 @@ async function deleteAnalysis(id, btn) {
   if (!confirm("Eliminare questa analisi?")) return;
   try {
     const res = await fetch(`/api/admin/analyses/${id}`, { method: "DELETE", credentials: "include" });
-    if (res.ok) btn.closest(".history-item").remove();
+    if (res.ok) { btn.closest(".history-item").remove(); allAnalyses = allAnalyses.filter(a => a.id !== id); }
   } catch(e) { alert("Errore durante l'eliminazione."); }
 }
 
 function normalizeKw(kwStr) {
   return (kwStr || '').split(',').map(k => k.trim().toLowerCase()).filter(k => k).sort().join(', ');
 }
-
 function groupByNormalizedKw(items) {
   const chains = {};
   items.forEach(a => {
@@ -533,44 +521,50 @@ function renderChain(chain) {
   }).join('');
 }
 
+function renderHistory(data) {
+  const list = document.getElementById("history-list");
+  const filtered = filterByDays(data, activeDays);
+  if (!filtered.length) {
+    const label = activeDays === 0 ? 'nessuna analisi' : `nessuna analisi negli ultimi ${activeDays} giorni`;
+    list.innerHTML = `<div class="history-empty-filter">${label}</div>`;
+    return;
+  }
+  const tagBuckets = {};
+  filtered.forEach(a => {
+    const tag = (a.theme_tag && a.theme_tag.trim()) ? a.theme_tag.trim() : "Altro";
+    if (!tagBuckets[tag]) tagBuckets[tag] = [];
+    tagBuckets[tag].push(a);
+  });
+  const sortedTags = Object.keys(tagBuckets).sort((a, b) => {
+    if (a === "Altro") return 1; if (b === "Altro") return -1;
+    return tagBuckets[b][0].created_at.localeCompare(tagBuckets[a][0].created_at);
+  });
+  let html = '';
+  sortedTags.forEach(tag => {
+    const items = tagBuckets[tag];
+    const chains = groupByNormalizedKw(items);
+    const color = tagColor(tag);
+    html += `<div class="dossier-group">
+      <div class="dossier-header open" onclick="toggleDossier(this)">
+        <div class="dossier-dot" style="background:${color}"></div>
+        <div class="dossier-label">${tag}</div>
+        <div class="dossier-count">${items.length}</div>
+        <div class="dossier-chevron">▶</div>
+      </div>
+      <div class="dossier-items">
+        ${chains.map(([key, chain]) => renderChain(chain)).join('')}
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
 async function loadHistory() {
   try {
     const res = await fetch("/api/admin/analyses", {credentials: "include"});
-    const data = await res.json();
-    const list = document.getElementById("history-list");
-    if (!data || !data.length) {
-      list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>';
-      return;
-    }
-    const tagBuckets = {};
-    data.forEach(a => {
-      const tag = (a.theme_tag && a.theme_tag.trim()) ? a.theme_tag.trim() : "Altro";
-      if (!tagBuckets[tag]) tagBuckets[tag] = [];
-      tagBuckets[tag].push(a);
-    });
-    const sortedTags = Object.keys(tagBuckets).sort((a, b) => {
-      if (a === "Altro") return 1;
-      if (b === "Altro") return -1;
-      return tagBuckets[b][0].created_at.localeCompare(tagBuckets[a][0].created_at);
-    });
-    let html = '';
-    sortedTags.forEach(tag => {
-      const items = tagBuckets[tag];
-      const chains = groupByNormalizedKw(items);
-      const color = tagColor(tag);
-      html += `<div class="dossier-group">
-        <div class="dossier-header open" onclick="toggleDossier(this)">
-          <div class="dossier-dot" style="background:${color}"></div>
-          <div class="dossier-label">${tag}</div>
-          <div class="dossier-count">${items.length}</div>
-          <div class="dossier-chevron">▶</div>
-        </div>
-        <div class="dossier-items">
-          ${chains.map(([key, chain]) => renderChain(chain)).join('')}
-        </div>
-      </div>`;
-    });
-    list.innerHTML = html;
+    allAnalyses = await res.json();
+    if (!Array.isArray(allAnalyses)) allAnalyses = [];
+    renderHistory(allAnalyses);
   } catch(e) {
     document.getElementById("history-list").innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>';
   }
@@ -589,8 +583,7 @@ async function loadAnalysis(id) {
   renderResult({
     keywords: data.keywords.split(", "),
     article_count: data.article_count,
-    articles: [],
-    perspectives_used: {},
+    articles: [], perspectives_used: {},
     narrative_map: data.narrative_map,
     convergences: data.convergences,
     divergences: data.divergences,
@@ -601,14 +594,12 @@ async function loadAnalysis(id) {
   });
 }
 
-// ─── FIX: ripristino automatico polling al caricamento pagina ────────────────
 (function restoreActiveJob() {
   const { jobId, elapsed } = getActiveJob();
   if (!jobId) return;
   console.log(`[TB] Ripristino polling per job ${jobId} (elapsed: ${elapsed}s)`);
   pollJob(jobId, elapsed);
 })();
-// ─────────────────────────────────────────────────────────────────────────────
 
 loadHistory();
 </script>
