@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import anthropic
+import requests as req_lib
 from collections import defaultdict
 
 app = Flask(__name__)
@@ -21,6 +22,8 @@ from datetime import timedelta
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "theatrum2026")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
+ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 jobs = {}
@@ -611,6 +614,46 @@ def api_analysis_delete(analysis_id):
     conn.commit()
     conn.close()
     return jsonify({"deleted": analysis_id})
+
+# ─────────────────────────────────────────────
+# ELEVENLABS TTS
+# ─────────────────────────────────────────────
+@app.route("/api/admin/tts", methods=["POST"])
+def api_tts():
+    if not session.get("admin"): return jsonify({"error": "Non autorizzato"}), 403
+    if not ELEVENLABS_API_KEY: return jsonify({"error": "ElevenLabs API key non configurata"}), 500
+    if not ELEVENLABS_VOICE_ID: return jsonify({"error": "ElevenLabs Voice ID non configurato"}), 500
+    data = request.json
+    text = (data.get("text") or "").strip()
+    if not text: return jsonify({"error": "Testo vuoto"}), 400
+    try:
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
+        headers = {
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg"
+        }
+        payload = {
+            "text": text,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {
+                "stability": 0.5,
+                "similarity_boost": 0.75,
+                "speed": 1.15
+            }
+        }
+        r = req_lib.post(url, json=payload, headers=headers, timeout=60)
+        if r.status_code != 200:
+            return jsonify({"error": f"ElevenLabs error {r.status_code}: {r.text[:200]}"}), 500
+        from flask import Response
+        return Response(
+            r.content,
+            mimetype="audio/mpeg",
+            headers={"Content-Disposition": "attachment; filename=theatrum_belli_script.mp3"}
+        )
+    except Exception as e:
+        print(f"TTS error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────────
 # STARTUP

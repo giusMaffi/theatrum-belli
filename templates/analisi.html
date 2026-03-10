@@ -119,7 +119,7 @@ main { overflow-y: auto; }
 .script-tab { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.9rem; background: transparent; border: none; color: var(--text-dim); cursor: pointer; transition: all 0.15s; text-transform: uppercase; }
 .script-tab.active { background: var(--accent2); color: var(--bg); }
 .script-tab:not(.active):hover { color: var(--text-muted); background: var(--surface2); }
-.instagram-content { font-size: 0.9rem; line-height: 1.85; color: #ccc9c0; white-space: pre-wrap; }
+.instagram-content { font-size: 0.9rem; line-height: 1.85; color: #ccc9c0; white-space: pre-wrap; width: 100%; min-height: 280px; background: transparent; border: none; outline: none; resize: vertical; font-family: 'IBM Plex Sans', sans-serif; padding: 0; }
 .copy-btn { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; padding: 0.2rem 0.6rem; cursor: pointer; border-radius: 2px; }
 .copy-btn:hover { background: var(--accent2); color: var(--bg); }
 .source-item { padding: 0.55rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
@@ -280,8 +280,8 @@ function showScriptTab(lang) {
   const tabIt = document.getElementById('tab-it');
   const tabEn = document.getElementById('tab-en');
   if (!content) return;
-  if (lang === 'it') { content.textContent = scriptItText; tabIt.classList.add('active'); tabEn.classList.remove('active'); }
-  else { content.textContent = scriptEnText; tabEn.classList.add('active'); tabIt.classList.remove('active'); }
+  if (lang === 'it') { content.value = scriptItText; tabIt.classList.add('active'); tabEn.classList.remove('active'); }
+  else { content.value = scriptEnText; tabEn.classList.add('active'); tabIt.classList.remove('active'); }
 }
 
 // ── FILTRO DATE ───────────────────────────────────────────────────────────────
@@ -443,12 +443,13 @@ function renderResult(data) {
           <div class="instagram-header">
             <div class="section-title instagram-title" style="margin-bottom:0"><span class="icon">📱</span> Script Instagram (90 sec · IT/EN)</div>
             <button class="copy-btn" onclick="copyScript()">COPIA</button>
+            <button class="copy-btn" id="tts-btn" onclick="generateAudio()" style="border-color:var(--accent3);color:var(--accent3);margin-left:0.4rem">🔊 AUDIO</button>
           </div>
           <div class="script-tabs">
             <button class="script-tab active" id="tab-it" onclick="showScriptTab('it')">IT</button>
             <button class="script-tab" id="tab-en" onclick="showScriptTab('en')">EN</button>
           </div>
-          <div class="instagram-content" id="ig-script">${scriptItText}</div>
+          <textarea class="instagram-content" id="ig-script" spellcheck="false">${scriptItText}</textarea>
         </div>
       </div>
       ${sourcesHtml}
@@ -473,7 +474,7 @@ function renderNarrativeMap(text) {
 function copyScript() {
   const el = document.getElementById("ig-script");
   if (!el) return;
-  navigator.clipboard.writeText(el.textContent).then(() => {
+  navigator.clipboard.writeText(el.value || el.textContent).then(() => {
     const btn = document.querySelector(".copy-btn");
     btn.textContent = "COPIATO ✓";
     setTimeout(() => btn.textContent = "COPIA", 2000);
@@ -602,6 +603,43 @@ async function loadAnalysis(id) {
 })();
 
 loadHistory();
+
+async function generateAudio() {
+  const btn = document.getElementById('tts-btn');
+  const activeTab = document.querySelector('.script-tab.active');
+  const lang = activeTab && activeTab.id === 'tab-en' ? 'en' : 'it';
+  const el = document.getElementById('ig-script');
+  const text = (el ? (el.value || el.textContent) : (lang === 'it' ? scriptItText : scriptEnText)).trim();
+  if (!text) { alert('Nessuno script disponibile.'); return; }
+  btn.textContent = '⏳ GENERANDO...';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/admin/tts', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      alert('Errore: ' + (err.error || res.status));
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `theatrum_belli_${lang}_${Date.now()}.mp3`;
+    a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent = '✓ SCARICATO';
+    setTimeout(() => { btn.textContent = '🔊 AUDIO'; btn.disabled = false; }, 3000);
+  } catch(e) {
+    alert('Errore: ' + e.message);
+    btn.textContent = '🔊 AUDIO';
+    btn.disabled = false;
+  }
+}
 </script>
 </body>
 </html>
