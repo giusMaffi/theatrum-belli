@@ -287,6 +287,7 @@ let allAnalyses  = [];
 let activeDays   = 7;
 let scriptConfirmed = false;
 let currentVisualPrompts = null;
+let audioDuration = 132; // secondi — aggiornato dopo generazione MP3
 
 const POLL_TIMEOUT_S = 600;
 const PERSP_LABELS = {
@@ -303,11 +304,11 @@ function loadElSettings() {
   try {
     const s = JSON.parse(localStorage.getItem(EL_SETTINGS_KEY) || '{}');
     return {
-      stability:  s.stability  ?? 0.5,
+      stability:  s.stability  ?? 1.0,
       similarity: s.similarity ?? 0.75,
-      speed:      s.speed      ?? 1.15,
+      speed:      s.speed      ?? 1.08,
     };
-  } catch { return {stability:0.5, similarity:0.75, speed:1.15}; }
+  } catch { return {stability:1.0, similarity:0.75, speed:1.08}; }
 }
 
 function saveElSettings() {
@@ -580,7 +581,7 @@ function renderResult(data) {
             <div class="settings-row">
               <span class="settings-label">Stability</span>
               <input type="range" class="settings-slider" id="el-stability" min="0" max="1" step="0.01">
-              <span class="settings-value" id="el-stability-val">0.50</span>
+              <span class="settings-value" id="el-stability-val">1.00</span>
             </div>
             <div class="settings-row">
               <span class="settings-label">Similarity Boost</span>
@@ -590,7 +591,7 @@ function renderResult(data) {
             <div class="settings-row">
               <span class="settings-label">Speed</span>
               <input type="range" class="settings-slider" id="el-speed" min="0.5" max="2.0" step="0.05">
-              <span class="settings-value" id="el-speed-val">1.15</span>
+              <span class="settings-value" id="el-speed-val">1.08</span>
             </div>
             <div class="settings-hint">Le impostazioni vengono salvate nel browser e ricaricate automaticamente.</div>
           </div>
@@ -666,6 +667,20 @@ function copyScript() {
 }
 
 // ── GENERA AUDIO ───────────────────────────────────────────────────────────
+async function measureAudioDuration(blob) {
+  return new Promise((resolve) => {
+    const url    = URL.createObjectURL(blob);
+    const audio  = new Audio(url);
+    audio.addEventListener('loadedmetadata', () => {
+      const dur = Math.round(audio.duration);
+      URL.revokeObjectURL(url);
+      resolve(dur);
+    });
+    audio.addEventListener('error', () => { URL.revokeObjectURL(url); resolve(132); });
+    setTimeout(() => resolve(132), 5000); // fallback
+  });
+}
+
 async function generateAudio() {
   if (!scriptConfirmed) { alert("Conferma prima lo script."); return; }
   const btn  = document.getElementById('btn-audio');
@@ -681,12 +696,31 @@ async function generateAudio() {
     });
     if (!res.ok) { const err=await res.json(); alert('Errore: '+(err.error||res.status)); return; }
     const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href=url; a.download=`theatrum_belli_${Date.now()}.mp3`; a.click();
+
+    // Misura durata reale
+    audioDuration = await measureAudioDuration(blob);
+
+    // Aggiorna badge durata nei prompt visivi se già generati
+    const durBadge = document.querySelector('.visual-summary span:nth-child(2)');
+    if (durBadge) durBadge.textContent = '⏱ ' + secsToMMSS(audioDuration) + ' totali (reale)';
+
+    // Reset prompt visivi se già generati con durata diversa
+    if (currentVisualPrompts && Math.abs((currentVisualPrompts.total_duration||132) - audioDuration) > 5) {
+      currentVisualPrompts = null;
+      const vc = document.getElementById('visual-content');
+      if (vc) vc.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text-dim);padding:1rem 0;">
+        Audio generato: <strong style="color:var(--accent)">${secsToMMSS(audioDuration)}</strong> — rigenera i prompt visivi per aggiornare il timing.
+      </div>`;
+    }
+
+    // Download
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href=url; a.download=`theatrum_belli_${audioDuration}s_${Date.now()}.mp3`; a.click();
     URL.revokeObjectURL(url);
-    btn.textContent='✓ SCARICATO';
-    setTimeout(()=>{ btn.textContent='🔊 AUDIO'; btn.disabled=false; }, 3000);
+
+    btn.textContent=`✓ ${secsToMMSS(audioDuration)}`;
+    setTimeout(()=>{ btn.textContent='🔊 AUDIO'; btn.disabled=false; }, 4000);
   } catch(e) {
     alert('Errore: '+e.message); btn.textContent='🔊 AUDIO'; btn.disabled=false;
   }
@@ -714,7 +748,7 @@ async function generateVisual() {
     const res = await fetch('/api/admin/visual-prompts',{
       method:'POST', credentials:'include',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({script_it: script, keywords: tags.join(', ')})
+      body:JSON.stringify({script_it: script, keywords: tags.join(', '), duration_seconds: audioDuration})
     });
     if (!res.ok) { const err=await res.json(); throw new Error(err.error||res.status); }
     const data = await res.json();
@@ -740,7 +774,7 @@ function renderVisualPrompts(data) {
   const summaryHtml = `
     <div class="visual-summary">
       <span>📷 ${data.prompts.length} immagini</span>
-      <span>⏱ ${secsToMMSS(data.total_duration||132)} totali</span>
+      <span>⏱ ${secsToMMSS(data.total_duration||audioDuration)} totali</span>
       <span style="color:var(--accent)">MOV.1: 7</span>
       <span style="color:var(--accent3)">MOV.2: 5</span>
       <span style="color:var(--accent2)">MOV.3: 3</span>
@@ -896,23 +930,32 @@ async function loadAnalysis(id) {
   const res = await fetch(`/api/admin/analyses/${id}`,{credentials:"include"});
   const data = await res.json();
 
-  // Carica anche visual_prompts se presenti
+  let articles = [];
+  if (data.articles_json) {
+    try { articles = JSON.parse(data.articles_json); } catch{}
+  }
+
   let vp = null;
   if (data.visual_prompts) {
     try { vp = JSON.parse(data.visual_prompts); } catch{}
   }
+
+  // Ricostruisci perspectives_used dagli articoli salvati
+  const perspUsed = {};
+  articles.forEach(a => { if(a.perspective) perspUsed[a.perspective] = PERSP_LABELS[a.perspective]||a.perspective; });
 
   document.getElementById("empty-state").style.display="none";
   document.getElementById("loading-state").style.display="none";
   renderResult({
     keywords: data.keywords.split(", "),
     article_count: data.article_count,
-    articles:[], perspectives_used:{},
-    narrative_map: data.narrative_map,
-    convergences:  data.convergences,
-    divergences:   data.divergences,
-    legal:         data.legal,
-    thread:        data.thread,
+    articles: articles,
+    perspectives_used: perspUsed,
+    narrative_map:    data.narrative_map,
+    convergences:     data.convergences,
+    divergences:      data.divergences,
+    legal:            data.legal,
+    thread:           data.thread,
     instagram_script: data.instagram_script,
     has_history: false,
     visual_prompts: data.visual_prompts||null,

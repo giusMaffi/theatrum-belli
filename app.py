@@ -58,6 +58,7 @@ def init_db():
         c.execute(f"ALTER TABLE analyses ADD COLUMN IF NOT EXISTS {col} TEXT")
     c.execute("ALTER TABLE analyses ADD COLUMN IF NOT EXISTS theme_tag TEXT")
     c.execute("ALTER TABLE analyses ADD COLUMN IF NOT EXISTS visual_prompts TEXT")
+    c.execute("ALTER TABLE analyses ADD COLUMN IF NOT EXISTS articles_json TEXT")
 
     source_map = {
         "ANSA Mondo":"italian_mainstream","Repubblica Esteri":"italian_mainstream",
@@ -103,14 +104,14 @@ def save_article(source, title, link, summary, published, category, perspective)
         conn.close()
 
 def save_analysis(keywords, article_count, narrative_map, convergences, divergences,
-                  legal, thread, instagram_script, theme_tag="", visual_prompts=""):
+                  legal, thread, instagram_script, theme_tag="", visual_prompts="", articles_json=""):
     conn = get_conn(); c = conn.cursor()
     c.execute("""
         INSERT INTO analyses (keywords,article_count,narrative_map,convergences,divergences,
-                              legal,thread,instagram_script,created_at,theme_tag,visual_prompts)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                              legal,thread,instagram_script,created_at,theme_tag,visual_prompts,articles_json)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """, (keywords, article_count, narrative_map, convergences, divergences, legal, thread,
-          instagram_script, datetime.now(timezone.utc).isoformat(), theme_tag, visual_prompts))
+          instagram_script, datetime.now(timezone.utc).isoformat(), theme_tag, visual_prompts, articles_json))
     conn.commit(); conn.close()
 
 # ─────────────────────────────────────────────
@@ -281,43 +282,58 @@ def generate_theme_tag(keywords_str):
 
 def generate_visual_prompts(keywords_str, script_it, analysis_text, duration_seconds=132):
     """Terza chiamata Claude — genera 15 prompt visivi con timing calibrato sullo script IT."""
-    prompt = f"""Sei un direttore della fotografia specializzato in documentari geopolitici.
-Devi creare 15 prompt per immagini AI (Leonardo AI, formato 2:3 verticale) per un reel Instagram di {duration_seconds} secondi con voce over in italiano.
+    prompt = f"""You are a world-class cinematographer and AI prompt engineer specializing in geopolitical documentary visuals for Instagram reels.
 
-TEMA: {keywords_str}
+Create 15 image prompts for Leonardo AI (2:3 vertical format, 1024x1792px) for a {duration_seconds}-second reel about: {keywords_str}
 
-SCRIPT ITALIANO (voce over completo):
+VOICEOVER SCRIPT (Italian):
 {script_it}
 
-ANALISI (contesto):
-{analysis_text[:800]}
+---
 
-REGOLE:
-- Distribuisci le 15 immagini sui TRE MOVIMENTI dello script in modo proporzionale alla lunghezza del testo:
-  * Movimento 1 (cronaca, testo più lungo) → 7 immagini
-  * Movimento 2 (analisi) → 5 immagini  
-  * Movimento 3 (disagio, testo corto) → 3 immagini
-- Durate: mov.1 = 8-12s per immagine, mov.2 = 8-10s, mov.3 = 5-7s (più corte = più impatto)
-- La somma di tutte le durate deve essere esattamente {duration_seconds} secondi
-- Palette: dark, navy, ambra industriale, grigio fumo — nessun colore saturato
-- Stile: documentary photography, cinematic
-- NO persone riconoscibili, NO testi leggibili nelle immagini
-- Aggiungi elementi geografici specifici (mappe, bandiere, luoghi) dove rilevante per il tema
-- Alterna scene ampie (aerial, wide) a dettagli (close-up di oggetti, mappe, schermi)
-- Per il Movimento 3 usa immagini fredde e concrete: borse, contratti, numeri
+PROMPT STRUCTURE — follow this exact formula for every prompt:
+[SUBJECT & ACTION] + [LOCATION/GEOGRAPHY] + [LIGHTING] + [ATMOSPHERE/MOOD] + [CAMERA] + [TECHNICAL STYLE]
 
-Rispondi SOLO con JSON valido, nessun testo prima o dopo:
+REFERENCE EXAMPLES of high-quality prompts (use as quality benchmark):
+
+Example 1 — aerial military:
+"Aerial drone view of a massive oil tanker navigating through the narrow Strait of Hormuz at dusk, surrounding rocky coastlines barely visible through industrial haze, dramatic side-lighting casting long shadows across the ship's deck, oppressive atmosphere of geopolitical tension, shot on Phase One IQ4 150MP, ultra-sharp details, 2:3 vertical composition, documentary photojournalism style, muted teal and burnt amber palette, no text, no recognizable faces"
+
+Example 2 — governmental interior:
+"Empty government war room at 3am, long conference table reflecting harsh fluorescent overhead lighting, abandoned coffee cups and classified folders scattered across polished mahogany surface, single window showing dark city skyline, extreme wide angle lens distortion, hyper-realistic architectural photography, cold blue-grey palette with amber desk lamp accents, 2:3 vertical format, cinematic documentary still, no people, no readable text"
+
+Example 3 — financial/abstract:
+"Extreme close-up of a defense contract document being signed, fountain pen tip pressing into cream paper, shallow depth of field blurring the printed text beyond recognition, single dramatic spotlight from above, deep black background, macro photography on Hasselblad, crisp ink texture detail, cold clinical atmosphere, desaturated palette with only the gold pen nib catching warm light, 2:3 vertical composition"
+
+Example 4 — geographic/map:
+"Backlit satellite map of the Persian Gulf region projected onto a frosted glass screen in a dark intelligence briefing room, glowing cyan geographic contours against deep navy background, military grid overlays barely visible, dramatic rim lighting, cinematic spy thriller aesthetic, photorealistic render, 2:3 vertical format, no readable labels, no faces"
+
+Example 5 — street/civilian:
+"Long exposure night photography of a European petrol station, blurred car light trails on wet asphalt reflecting neon price signs showing high fuel costs, lone attendant silhouette out of focus in background, rainy urban atmosphere, Sony A7R shot at f/1.4, cinematic grain, desaturated with only fuel price display glowing amber-orange, 2:3 vertical, no readable text"
+
+---
+
+VISUAL RULES:
+- NO recognizable faces, NO readable text anywhere in the image
+- Palette: dark navy, industrial amber, smoke grey, slate — zero saturated colors
+- Alternate between: wide establishing shots, medium environmental shots, extreme close-up details
+- Every prompt must specify: camera/lens type, lighting direction, depth of field, color palette
+- Movements: 1 (7 images, 8-12s each) = raw news footage aesthetic / 2 (5 images, 8-10s each) = analytical cold observation / 3 (3 images, 5-7s each) = forensic financial detail
+- Total duration must sum to exactly {duration_seconds} seconds
+- Movement 3 must feel forensic and cold: contracts, stock tickers, factory floors, balance sheets (all unreadable)
+
+Respond ONLY with valid JSON, no text before or after:
 {{
   "total_duration": {duration_seconds},
   "prompts": [
     {{
       "id": 1,
       "movimento": 1,
-      "label": "nome breve scena (3-4 parole)",
+      "label": "scene name (3-4 words)",
       "timing_start": 0,
       "duration": 10,
-      "ken_burns": "descrizione movimento camera (es: zoom lento verso il centro, pan da sinistra)",
-      "prompt_en": "prompt completo in inglese per Leonardo AI — soggetto, atmosfera, palette, stile fotografico, composizione verticale 2:3"
+      "ken_burns": "slow zoom toward center / pan left to right / subtle zoom out",
+      "prompt_en": "[60-100 word professional prompt — MUST include: specific subject + exact location/geography related to the theme + precise lighting description + lens/camera specification + color palette + mood + 2:3 vertical composition — follow the quality and length of the reference examples above]"
     }}
   ]
 }}"""
@@ -445,8 +461,10 @@ def run_analysis_job(job_id, keywords, articles, previous):
         keywords_str = ", ".join(keywords)
         theme_tag    = generate_theme_tag(keywords_str)
 
+        articles_compact = [{"source":a["source"],"title":a["title"],"link":a["link"]} for a in articles]
         save_analysis(", ".join(keywords), len(articles), narrative_map, convergences,
-                      divergences, legal, thread, instagram, theme_tag, visual_prompts)
+                      divergences, legal, thread, instagram, theme_tag, visual_prompts,
+                      json.dumps(articles_compact, ensure_ascii=False))
 
         jobs[job_id]["status"] = "done"
         jobs[job_id]["result"] = {
@@ -644,9 +662,10 @@ def api_visual_prompts():
     data       = request.json
     script_it  = (data.get("script_it") or "").strip()
     keywords   = (data.get("keywords")  or "").strip()
+    duration   = int(data.get("duration_seconds", 132))
     if not script_it: return jsonify({"error":"Script vuoto"}), 400
     try:
-        raw_json = generate_visual_prompts(keywords, script_it, "", duration_seconds=132)
+        raw_json = generate_visual_prompts(keywords, script_it, "", duration_seconds=duration)
         parsed   = json.loads(raw_json)
         return jsonify(parsed)
     except json.JSONDecodeError:
