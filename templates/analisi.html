@@ -6,11 +6,7 @@
 <title>THEATRUM BELLI — Intelligence Lab</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21;
-  --border: #2a2a30; --accent: #c8a96e; --accent2: #e05c4b;
-  --accent3: #6ab4c8; --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855;
-}
+:root { --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21; --border: #2a2a30; --accent: #c8a96e; --accent2: #e05c4b; --accent3: #6ab4c8; --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 400; line-height: 1.6; }
 header { border-bottom: 1px solid var(--border); padding: 0.9rem 2rem; display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: sticky; top: 0; z-index: 100; }
@@ -51,21 +47,16 @@ input[type="text"]::placeholder { color: var(--text-dim); }
 .dossier-items { padding-left: 1.1rem; }
 .dossier-items.collapsed { display: none; }
 .dossier-header.open .dossier-chevron { transform: rotate(90deg); }
-/* HISTORY ITEM */
 .history-item { position: relative; padding: 0.6rem 0.7rem; padding-right: 3.2rem; border: 1px solid var(--border); margin-bottom: 0.35rem; cursor: pointer; transition: all 0.15s; border-radius: 2px; background: var(--surface); }
 .history-item:hover { border-color: var(--accent); background: var(--surface2); }
 .history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.15rem; font-weight: 500; }
 .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); }
-/* DELETE BTN */
 .delete-btn { position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.7rem; opacity: 0; padding: 0.2rem 0.3rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
 .history-item:hover .delete-btn { opacity: 1; }
 .delete-btn:hover { color: var(--accent2); }
-/* UPDATE BTN */
 .update-btn { position: absolute; right: 1.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.8rem; opacity: 0; padding: 0.2rem 0.3rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
 .history-item:hover .update-btn { opacity: 1; }
 .update-btn:hover { color: var(--accent) !important; }
-.history-date-group { margin-bottom: 1rem; }
-.history-date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
 main { overflow-y: auto; }
 .main-content { padding: 2rem; max-width: 900px; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 1rem; padding: 2rem; }
@@ -152,7 +143,6 @@ main { overflow-y: auto; }
     <a href="/admin/logout" class="btn btn-danger">Esci</a>
   </div>
 </header>
-
 <nav class="section-nav" id="section-nav">
   <a href="#sec-narrative" class="nav-anchor">🗺 Narrative</a>
   <a href="#sec-convergenze" class="nav-anchor">✓ Convergenze</a>
@@ -162,7 +152,6 @@ main { overflow-y: auto; }
   <a href="#sec-script" class="nav-anchor">📱 Script</a>
   <a href="#sec-fonti" class="nav-anchor">📰 Fonti</a>
 </nav>
-
 <div class="layout">
   <aside>
     <div style="margin-bottom:1.5rem">
@@ -180,7 +169,6 @@ main { overflow-y: auto; }
       <div id="history-list"><div style="font-size:0.7rem;color:var(--text-dim)">Caricamento...</div></div>
     </div>
   </aside>
-
   <main>
     <div class="empty-state" id="empty-state">
       <div class="empty-icon">◆</div>
@@ -206,6 +194,9 @@ let pollInterval = null;
 let scriptItText = '';
 let scriptEnText = '';
 
+// ─── FIX: timeout massimo polling (600s) ─────────────────────────────────────
+const POLL_TIMEOUT_S = 600;
+
 const PERSP_LABELS = {
   western_mainstream: "Mainstream Occidentale",
   italian_mainstream: "Stampa Italiana",
@@ -218,18 +209,12 @@ const PERSP_LABELS = {
   other: "Altro"
 };
 
-// ─── FEATURE 8.2: palette colori dinamica per tag tematici ───────────────────
-// Genera un colore deterministico dal nome del tag (hash semplice)
 function tagColor(tag) {
-  const palette = [
-    "#c08040", "#c06060", "#c0a040", "#60a060", "#6080c0",
-    "#a060c0", "#60b0a0", "#c07080", "#80a060", "#9060a0"
-  ];
+  const palette = ["#c08040","#c06060","#c0a040","#60a060","#6080c0","#a060c0","#60b0a0","#c07080","#80a060","#9060a0"];
   let hash = 0;
   for (let i = 0; i < tag.length; i++) hash = (hash * 31 + tag.charCodeAt(i)) & 0xffff;
   return palette[hash % palette.length];
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 function addTag() {
   const input = document.getElementById("kw-input");
@@ -244,10 +229,7 @@ document.getElementById("kw-input").addEventListener("keydown", e => {
   if (e.key === "Enter") addTag();
 });
 
-function removeTag(tag) {
-  tags = tags.filter(t => t !== tag);
-  renderTags();
-}
+function removeTag(tag) { tags = tags.filter(t => t !== tag); renderTags(); }
 
 function renderTags() {
   document.getElementById("tags-container").innerHTML = tags.map(t =>
@@ -282,9 +264,7 @@ function splitScript(text) {
   if (!text) return { it: '', en: '' };
   const enStartRegex = /\n\s*\n(Today |This |The |In |On |At |When |While |Inside |After |Before |During |Now |As |What |There )/;
   const match = text.search(enStartRegex);
-  if (match !== -1) {
-    return { it: text.slice(0, match).trim(), en: text.slice(match).trim() };
-  }
+  if (match !== -1) return { it: text.slice(0, match).trim(), en: text.slice(match).trim() };
   const lines = text.split('\n');
   const mid = Math.ceil(lines.length / 2);
   return { it: lines.slice(0, mid).join('\n').trim(), en: lines.slice(mid).join('\n').trim() };
@@ -295,16 +275,28 @@ function showScriptTab(lang) {
   const tabIt = document.getElementById('tab-it');
   const tabEn = document.getElementById('tab-en');
   if (!content) return;
-  if (lang === 'it') {
-    content.textContent = scriptItText;
-    tabIt.classList.add('active');
-    tabEn.classList.remove('active');
-  } else {
-    content.textContent = scriptEnText;
-    tabEn.classList.add('active');
-    tabIt.classList.remove('active');
-  }
+  if (lang === 'it') { content.textContent = scriptItText; tabIt.classList.add('active'); tabEn.classList.remove('active'); }
+  else { content.textContent = scriptEnText; tabEn.classList.add('active'); tabIt.classList.remove('active'); }
 }
+
+// ─── FIX: salva/ripristina jobId da sessionStorage ──────────────────────────
+function saveActiveJob(jobId, elapsed) {
+  sessionStorage.setItem('activeJobId', jobId);
+  sessionStorage.setItem('activeJobElapsed', elapsed || 0);
+}
+
+function clearActiveJob() {
+  sessionStorage.removeItem('activeJobId');
+  sessionStorage.removeItem('activeJobElapsed');
+}
+
+function getActiveJob() {
+  return {
+    jobId: sessionStorage.getItem('activeJobId'),
+    elapsed: parseInt(sessionStorage.getItem('activeJobElapsed') || '0')
+  };
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function runAnalysis() {
   if (tags.length === 0) { alert("Inserisci almeno una keyword."); return; }
@@ -322,11 +314,11 @@ async function runAnalysis() {
     if (!res.ok) throw new Error("Server error: " + res.status);
     const data = await res.json();
     if (data.error) { showError(data.error); return; }
-    pollJob(data.job_id);
+    saveActiveJob(data.job_id, 0);  // FIX: persisti subito
+    pollJob(data.job_id, 0);
   } catch(e) { showError("Errore: " + e.message); }
 }
 
-// ─── UPDATE ANALISI ──────────────────────────────────────────────────────────
 async function updateAnalysis(id) {
   try {
     const res = await fetch(`/api/admin/analyses/${id}`, {credentials: "include"});
@@ -338,32 +330,53 @@ async function updateAnalysis(id) {
     setTimeout(() => runAnalysis(), 400);
   } catch(e) { alert("Errore nel caricamento dell'analisi: " + e.message); }
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
-function pollJob(jobId) {
-  let elapsed = 0;
+// ─── FIX: pollJob accetta elapsed iniziale, salva stato, timeout esplicito ───
+function pollJob(jobId, startElapsed) {
+  if (pollInterval) clearInterval(pollInterval);
+  let elapsed = startElapsed || 0;
+
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("loading-state").style.display = "flex";
+  document.getElementById("result").style.display = "none";
+  document.getElementById("analyze-btn").disabled = true;
+
   pollInterval = setInterval(async () => {
     elapsed += 3;
+    saveActiveJob(jobId, elapsed);  // FIX: aggiorna elapsed nel sessionStorage
     document.getElementById("loading-sub").textContent = `Claude sta elaborando... (${elapsed}s)`;
+
+    // FIX: timeout esplicito
+    if (elapsed >= POLL_TIMEOUT_S) {
+      clearInterval(pollInterval);
+      clearActiveJob();
+      showError(`Timeout dopo ${POLL_TIMEOUT_S}s. Il job potrebbe essere ancora in esecuzione — controlla la sidebar tra qualche minuto.`);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/admin/job/${jobId}`, {credentials: "include"});
       const job = await res.json();
       if (job.status === "done") {
         clearInterval(pollInterval);
+        clearActiveJob();  // FIX: pulisci sessionStorage
         document.getElementById("analyze-btn").disabled = false;
         document.getElementById("loading-state").style.display = "none";
         renderResult(job.result);
         loadHistory();
       } else if (job.status === "error") {
         clearInterval(pollInterval);
+        clearActiveJob();
         showError("Errore: " + job.error);
       }
     } catch(e) {}
   }, 3000);
 }
+// ─────────────────────────────────────────────────────────────────────────────
 
 function showError(msg) {
   clearInterval(pollInterval);
+  clearActiveJob();
   document.getElementById("analyze-btn").disabled = false;
   document.getElementById("loading-state").style.display = "none";
   document.getElementById("result").style.display = "block";
@@ -374,20 +387,16 @@ function renderResult(data) {
   const result = document.getElementById("result");
   result.style.display = "block";
   document.getElementById("section-nav").classList.add("visible");
-
   const kwHeadline = data.keywords.map((k, i) =>
     i < data.keywords.length - 1 ? `${k}<span class="kw-sep">·</span>` : k
   ).join('');
-
   const perspBadges = Object.entries(data.perspectives_used || {}).map(([k, v]) =>
     `<span class="persp-badge persp-${k}">${v}</span>`
   ).join("");
-
   const narrativeHtml = renderNarrativeMap(data.narrative_map || "");
   const scripts = splitScript(data.instagram_script || '');
   scriptItText = scripts.it;
   scriptEnText = scripts.en;
-
   const articles = data.articles || [];
   const sourcesHtml = articles.length > 0 ? `
     <div class="section-block sources-section" id="sec-fonti">
@@ -399,20 +408,15 @@ function renderResult(data) {
             <span class="source-name">${a.source}</span>
             <a href="${a.link}" target="_blank" class="source-link">leggi →</a>
           </div>
-        </div>
-      `).join("")}
-    </div>
-  ` : `<div id="sec-fonti"></div>`;
-
+        </div>`).join("")}
+    </div>` : `<div id="sec-fonti"></div>`;
   const threadHtml = data.thread ? `
     <div class="section-block" id="sec-filo">
       <div class="thread-card">
         <div class="section-title thread-title"><span class="icon">🔗</span> Filo Narrativo</div>
         <div class="section-content">${renderMarkdown(data.thread)}</div>
       </div>
-    </div>
-  ` : `<div id="sec-filo"></div>`;
-
+    </div>` : `<div id="sec-filo"></div>`;
   result.innerHTML = `
     <div class="main-content">
       <div class="result-header">
@@ -459,8 +463,7 @@ function renderResult(data) {
         </div>
       </div>
       ${sourcesHtml}
-    </div>
-  `;
+    </div>`;
 }
 
 function renderNarrativeMap(text) {
@@ -468,12 +471,10 @@ function renderNarrativeMap(text) {
   const entries = text.split(/\n(?=\*\*)/);
   return entries.map(entry => {
     const match = entry.match(/^\*\*(.+?)\*\*[:\s]+([\s\S]+)/);
-    if (match) {
-      return `<div class="narrative-entry">
-        <div class="narrative-persp-col"><div class="narrative-persp">${match[1]}</div></div>
-        <div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(match[2].trim())}</div></div>
-      </div>`;
-    }
+    if (match) return `<div class="narrative-entry">
+      <div class="narrative-persp-col"><div class="narrative-persp">${match[1]}</div></div>
+      <div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(match[2].trim())}</div></div>
+    </div>`;
     const clean = entry.trim();
     if (!clean) return '';
     return `<div class="narrative-entry"><div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(clean)}</div></div></div>`;
@@ -494,16 +495,14 @@ async function deleteAnalysis(id, btn) {
   if (!confirm("Eliminare questa analisi?")) return;
   try {
     const res = await fetch(`/api/admin/analyses/${id}`, { method: "DELETE", credentials: "include" });
-    if (res.ok) { btn.closest(".history-item").remove(); }
+    if (res.ok) btn.closest(".history-item").remove();
   } catch(e) { alert("Errore durante l'eliminazione."); }
 }
 
-// Normalizza keyword: sort alfabetico — "iran, china" === "china, iran"
 function normalizeKw(kwStr) {
   return (kwStr || '').split(',').map(k => k.trim().toLowerCase()).filter(k => k).sort().join(', ');
 }
 
-// Raggruppa array di analisi per keyword normalizzate → catene temporali
 function groupByNormalizedKw(items) {
   const chains = {};
   items.forEach(a => {
@@ -515,84 +514,67 @@ function groupByNormalizedKw(items) {
   return Object.entries(chains).sort((a, b) => b[1][0].created_at.localeCompare(a[1][0].created_at));
 }
 
-// Renderizza catena temporale: item principale + versioni precedenti indentate
 function renderChain(chain) {
   return chain.map((a, i) => {
     if (i === 0) {
-      const aggiornamenti = chain.length > 1
-        ? ` · <span style="color:var(--accent3)">↺ ${chain.length - 1}</span>` : '';
-      return `
-        <div class="history-item" onclick="loadAnalysis(${a.id})">
-          <div class="history-kw">${a.keywords}</div>
-          <div class="history-meta">${a.article_count} art · ${formatTime(a.created_at)}${aggiornamenti}</div>
-          <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
-          <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
-        </div>`;
+      const aggiornamenti = chain.length > 1 ? ` · <span style="color:var(--accent3)">↺ ${chain.length - 1}</span>` : '';
+      return `<div class="history-item" onclick="loadAnalysis(${a.id})">
+        <div class="history-kw">${a.keywords}</div>
+        <div class="history-meta">${a.article_count} art · ${formatTime(a.created_at)}${aggiornamenti}</div>
+        <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
+        <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
+      </div>`;
     } else {
-      return `
-        <div class="history-item" style="margin-left:0.8rem;border-left:2px solid var(--border);border-radius:0 2px 2px 0;padding-right:2rem;" onclick="loadAnalysis(${a.id})">
-          <div class="history-meta" style="color:var(--text-dim)">↺ ${formatDate(a.created_at)} · ${formatTime(a.created_at)}</div>
-          <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
-        </div>`;
+      return `<div class="history-item" style="margin-left:0.8rem;border-left:2px solid var(--border);border-radius:0 2px 2px 0;padding-right:2rem;" onclick="loadAnalysis(${a.id})">
+        <div class="history-meta" style="color:var(--text-dim)">↺ ${formatDate(a.created_at)} · ${formatTime(a.created_at)}</div>
+        <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
+      </div>`;
     }
   }).join('');
 }
 
-// ─── FEATURE 8.2: loadHistory con tag tematici dinamici ──────────────────────
 async function loadHistory() {
   try {
     const res = await fetch("/api/admin/analyses", {credentials: "include"});
     const data = await res.json();
     const list = document.getElementById("history-list");
-
     if (!data || !data.length) {
       list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>';
       return;
     }
-
-    // Raggruppa per theme_tag — le analisi senza tag vanno in "Altro"
     const tagBuckets = {};
     data.forEach(a => {
       const tag = (a.theme_tag && a.theme_tag.trim()) ? a.theme_tag.trim() : "Altro";
       if (!tagBuckets[tag]) tagBuckets[tag] = [];
       tagBuckets[tag].push(a);
     });
-
-    // Ordina i tag: "Altro" sempre in fondo, gli altri per data dell'analisi più recente
     const sortedTags = Object.keys(tagBuckets).sort((a, b) => {
       if (a === "Altro") return 1;
       if (b === "Altro") return -1;
-      const latestA = tagBuckets[a][0].created_at;
-      const latestB = tagBuckets[b][0].created_at;
-      return latestB.localeCompare(latestA);
+      return tagBuckets[b][0].created_at.localeCompare(tagBuckets[a][0].created_at);
     });
-
     let html = '';
     sortedTags.forEach(tag => {
       const items = tagBuckets[tag];
       const chains = groupByNormalizedKw(items);
       const color = tagColor(tag);
-      html += `
-        <div class="dossier-group">
-          <div class="dossier-header open" onclick="toggleDossier(this)">
-            <div class="dossier-dot" style="background:${color}"></div>
-            <div class="dossier-label">${tag}</div>
-            <div class="dossier-count">${items.length}</div>
-            <div class="dossier-chevron">▶</div>
-          </div>
-          <div class="dossier-items">
-            ${chains.map(([key, chain]) => renderChain(chain)).join('')}
-          </div>
-        </div>`;
+      html += `<div class="dossier-group">
+        <div class="dossier-header open" onclick="toggleDossier(this)">
+          <div class="dossier-dot" style="background:${color}"></div>
+          <div class="dossier-label">${tag}</div>
+          <div class="dossier-count">${items.length}</div>
+          <div class="dossier-chevron">▶</div>
+        </div>
+        <div class="dossier-items">
+          ${chains.map(([key, chain]) => renderChain(chain)).join('')}
+        </div>
+      </div>`;
     });
-
     list.innerHTML = html;
   } catch(e) {
-    document.getElementById("history-list").innerHTML =
-      '<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>';
+    document.getElementById("history-list").innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>';
   }
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 function toggleDossier(header) {
   header.nextElementSibling.classList.toggle('collapsed');
@@ -618,6 +600,15 @@ async function loadAnalysis(id) {
     has_history: false
   });
 }
+
+// ─── FIX: ripristino automatico polling al caricamento pagina ────────────────
+(function restoreActiveJob() {
+  const { jobId, elapsed } = getActiveJob();
+  if (!jobId) return;
+  console.log(`[TB] Ripristino polling per job ${jobId} (elapsed: ${elapsed}s)`);
+  pollJob(jobId, elapsed);
+})();
+// ─────────────────────────────────────────────────────────────────────────────
 
 loadHistory();
 </script>
