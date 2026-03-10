@@ -370,13 +370,14 @@ Non ideologia. Non opinione. Conseguenze concrete per chi ascolta.
 — Lunghezza: 80-100 parole per lingua.
 
 MOVIMENTO 3 — IL COMMENTO: IL DISAGIO
-Breve. Tagliente. Senza retorica. Non dire "la guerra è sbagliata" — è ovvio e non crea nulla.
-— Mostra chi decide e chi paga, e che non si sovrappongono mai.
-— Nomina persone concrete in situazioni concrete — non categorie astratte.
-— La domanda che nessuno fa: chi ci guadagna? Non come accusa — come fatto.
-— Chiudi con una frase sospesa, non una domanda retorica. Qualcosa che l'ascoltatore porta via e non riesce a smettere di pensare.
-— Tono: lucido, non indignato. L'indignazione urla, la lucidità taglia.
-— Lunghezza: 40-60 parole per lingua. Meno è più.
+Breve. Freddo. Zero retorica. Zero moralismo.
+— Non fare domande retoriche. Non dire "chi pagherà" o "chi morirà" — è predicazione, non analisi.
+— Trova UN fatto economico concreto emerso dall'analisi — un titolo azionario salito, un contratto firmato, un'azienda che ha guadagnato, un numero preciso — che rivela chi ha tratto vantaggio da questa settimana di guerra.
+— Nominalo. Descrivi il fatto. Chiudi.
+— L'ascoltatore ci arriva da solo. Non guidarlo. Non commentare. Il fatto parla da solo — è questo che crea disagio, non le parole che ci metti intorno.
+— Esempio del tono giusto: "I contratti per quelle bombe sono già stati firmati. Lockheed Martin ha chiuso la settimana in rialzo del 7%." — nessuna accusa, solo fatti. L'ascoltatore si fa i conti da solo.
+— Tono: cronista, non predicatore. Freddo come un referto.
+— Lunghezza: 30-50 parole per lingua. Meno è più.
 
 Prima italiano (tutti e tre i movimenti in sequenza), poi inglese (tutti e tre i movimenti in sequenza).
 Niente elenchi, niente titoletti, niente markdown nel testo finale.
