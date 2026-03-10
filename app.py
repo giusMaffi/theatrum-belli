@@ -319,7 +319,8 @@ def generate_analysis(keywords_list, articles, previous_analyses=None):
         for pa in previous_analyses[:2]:
             history_context += f"\n[{pa['created_at'][:10]}]\n{pa['narrative_map'][:400]}...\n"
 
-    prompt = f"""Sei un analista di intelligence geopolitica. Il tuo metodo è la MAPPATURA DELLE NARRATIVE: non cerchi una verità unica, ma mappi cosa dice ogni prospettiva editoriale, dove convergono e dove divergono.
+    # ── CHIAMATA 1: sezioni 1-5 ──────────────────────────────────────────────
+    prompt_analysis = f"""Sei un analista di intelligence geopolitica. Il tuo metodo è la MAPPATURA DELLE NARRATIVE: non cerchi una verità unica, ma mappi cosa dice ogni prospettiva editoriale, dove convergono e dove divergono.
 
 TEMA: {keywords_str}
 PROSPETTIVE PRESENTI: {', '.join(perspectives_present)}
@@ -328,7 +329,7 @@ PROSPETTIVE ASSENTI (nessun articolo disponibile): {', '.join(perspectives_missi
 ARTICOLI PER PROSPETTIVA:
 {articles_text}
 
-Produci un'analisi in 6 sezioni. Usa ESATTAMENTE questi titoli di sezione:
+Produci un'analisi in 5 sezioni. Usa ESATTAMENTE questi titoli di sezione:
 
 ## 1. MAPPA DELLE NARRATIVE
 Per ogni prospettiva presente, sintetizza in 2-3 frasi cosa dice e quale frame interpretativo usa. Sii preciso e fedele a ciò che le fonti dicono realmente — non attribuire posizioni non documentate.
@@ -346,45 +347,62 @@ Valutazione basata su fatti convergenti (non su narrative di parte): Carta ONU, 
 ## 5. FILO NARRATIVO
 Se esistono analisi precedenti, come si è evoluta la situazione? Quali previsioni si sono avverate? Cosa è cambiato nel conflitto narrativo? Se è la prima analisi, stabilisci i marcatori per il futuro. Max 150 parole.
 
-## 6. SCRIPT (90 secondi, bilingue IT/EN)
+Rispondi SOLO con le 5 sezioni. Usa ESATTAMENTE i titoli indicati sopra."""
+
+    raw_analysis = call_claude(prompt_analysis)
+
+    # ── CHIAMATA 2: script con tutto il contesto elaborato ───────────────────
+    prompt_script = f"""Sei un giornalista geopolitico con vent'anni di esperienza. Devi scrivere uno script audio di 90 secondi per un canale Instagram/LinkedIn di intelligence geopolitica.
+
+Hai a disposizione l'analisi completa di questa settimana sul tema: {keywords_str}
+
+═══ ANALISI COMPLETA ═══
+{raw_analysis}
+═══ FINE ANALISI ═══
+
+Scrivi lo script usando TUTTO il materiale dell'analisi — non solo gli articoli grezzi. Il diritto internazionale, il filo narrativo, le convergenze e le divergenze sono il tuo materiale principale: usali per costruire profondità e contesto che i titoli di giornale non danno.
 
 Struttura in TRE MOVIMENTI OBBLIGATORI. Niente titoli, niente intestazioni nel testo finale.
 
 MOVIMENTO 1 — CRONACA RESPIRATA
 Racconta i fatti con respiro. Ogni fatto ha spazio per atterrare. Non correre da un dato all'altro.
-— Apri con il fatto più anomalo o pesante. Concreto, specifico, misurabile. Non un'opinione — un dato.
-— Sviluppa il contesto: chi ha deciso, cosa è successo, come hanno risposto le parti. Usa le prospettive delle fonti come materiale per costruire la scena, non per fare "chi dice cosa".
-— Ogni elemento importante ha almeno due frasi. Lascia che il precedente atterri prima di passare al prossimo.
-— Nomina sempre le testate esplicitamente quando citi comportamenti editoriali ("Il Jerusalem Post scrive...", "TASS documenta...").
-— Almeno un riferimento storico preciso ("come nel [anno], quando [fatto specifico]") che riveli se questo momento è nuovo o già visto.
-— Lunghezza: 220-250 parole per lingua. Ritmo variabile: frasi brevi per i fatti, frasi più distese per il contesto.
+— Apri con il fatto più anomalo o pesante. Concreto, specifico, misurabile.
+— Sviluppa il contesto usando le prospettive della Mappa delle Narrative come materiale per costruire la scena.
+— Ogni elemento importante ha almeno due frasi. Lascia che atterri prima di passare al prossimo.
+— Nomina sempre le testate esplicitamente quando citi comportamenti editoriali.
+— Usa il Filo Narrativo per aggiungere profondità storica: cosa era stato previsto, cosa si è avverato.
+— Almeno un riferimento storico preciso ("come nel [anno], quando [fatto specifico]").
+— Lunghezza: 220-250 parole per lingua. Ritmo variabile: frasi brevi per i fatti, più distese per il contesto.
 
 MOVIMENTO 2 — ANALISI CRUDA: COSA SIGNIFICA PER NOI
 Non ideologia. Non opinione. Conseguenze concrete per chi ascolta.
-— Rispondi a questa domanda: cosa cambia nella vita reale di un cittadino europeo, italiano, russo, indiano?
+— Usa le Convergenze e le Divergenze per identificare i fatti più solidi su cui basare l'analisi.
+— Usa la Prospettiva del Diritto Internazionale per mostrare il quadro legale — non come astrazione ma come conseguenza pratica per i cittadini.
+— Cosa cambia nella vita reale di un cittadino europeo, italiano, russo, indiano?
 — Traduci la geopolitica in economia domestica: bollette, inflazione, prezzi, lavoro, migrazioni.
-— Mostra la catena causale: questa decisione → questo effetto → questa conseguenza per te.
-— Sii specifico: non "i prezzi saliranno" ma "il petrolio a 120 dollari si traduce in X al pieno".
-— Includi almeno due geografie diverse per mostrare che le conseguenze non sono uniformi — chi paga di più e chi ci guadagna.
-— Tono: non allarmismo, non rassicurazione. Diagnosi. Come un medico che ti dice cosa hai, senza urlare e senza minimizzare.
+— Mostra la catena causale: questa violazione del diritto → questo effetto geopolitico → questa conseguenza per te.
+— Sii specifico con i numeri quando disponibili nell'analisi.
+— Includi almeno due geografie diverse per mostrare che le conseguenze non sono uniformi.
+— Tono: diagnosi. Come un medico che ti dice cosa hai, senza urlare e senza minimizzare.
 — Lunghezza: 80-100 parole per lingua.
 
 MOVIMENTO 3 — IL COMMENTO: IL DISAGIO
 Breve. Freddo. Zero retorica. Zero moralismo.
-— Non fare domande retoriche. Non dire "chi pagherà" o "chi morirà" — è predicazione, non analisi.
-— Trova UN fatto economico concreto emerso dall'analisi — un titolo azionario salito, un contratto firmato, un'azienda che ha guadagnato, un numero preciso — che rivela chi ha tratto vantaggio da questa settimana di guerra.
-— Nominalo. Descrivi il fatto. Chiudi.
-— L'ascoltatore ci arriva da solo. Non guidarlo. Non commentare. Il fatto parla da solo — è questo che crea disagio, non le parole che ci metti intorno.
-— Esempio del tono giusto: "I contratti per quelle bombe sono già stati firmati. Lockheed Martin ha chiuso la settimana in rialzo del 7%." — nessuna accusa, solo fatti. L'ascoltatore si fa i conti da solo.
-— Tono: cronista, non predicatore. Freddo come un referto.
+— Non fare domande retoriche. Non predicare.
+— Trova UN fatto economico concreto emerso dall'analisi — un titolo azionario salito, un contratto firmato, un'azienda che ha guadagnato, un numero preciso — che rivela chi ha tratto vantaggio da questa settimana.
+— Nominalo. Descrivi il fatto. Chiudi. L'ascoltatore ci arriva da solo.
+— Esempio del tono: "I contratti per quelle bombe sono già stati firmati. Lockheed Martin ha chiuso la settimana in rialzo del 7%." Nessuna accusa, solo fatti.
+— Tono: cronista, freddo come un referto.
 — Lunghezza: 30-50 parole per lingua. Meno è più.
 
 Prima italiano (tutti e tre i movimenti in sequenza), poi inglese (tutti e tre i movimenti in sequenza).
 Niente elenchi, niente titoletti, niente markdown nel testo finale.
+Rispondi SOLO con lo script. Nessun titolo, nessuna premessa."""
 
-Rispondi SOLO con le 6 sezioni. Usa ESATTAMENTE i titoli indicati sopra."""
+    raw_script = call_claude(prompt_script)
 
-    return call_claude(prompt)
+    # Combina i due output in un unico testo con il titolo della sezione 6
+    return raw_analysis + "\n\n## 6. SCRIPT (90 secondi, bilingue IT/EN)\n" + raw_script
 
 
 def run_analysis_job(job_id, keywords, articles, previous):
