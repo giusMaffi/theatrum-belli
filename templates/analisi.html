@@ -7,9 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21; --border: #2a2a30;
-  --accent: #c8a96e; --accent2: #e05c4b; --accent3: #6ab4c8;
-  --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855;
+  --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21;
+  --border: #2a2a30; --accent: #c8a96e; --accent2: #e05c4b;
+  --accent3: #6ab4c8; --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 400; line-height: 1.6; }
@@ -51,23 +51,19 @@ input[type="text"]::placeholder { color: var(--text-dim); }
 .dossier-items { padding-left: 1.1rem; }
 .dossier-items.collapsed { display: none; }
 .dossier-header.open .dossier-chevron { transform: rotate(90deg); }
-
 /* HISTORY ITEM */
 .history-item { position: relative; padding: 0.6rem 0.7rem; padding-right: 3.2rem; border: 1px solid var(--border); margin-bottom: 0.35rem; cursor: pointer; transition: all 0.15s; border-radius: 2px; background: var(--surface); }
 .history-item:hover { border-color: var(--accent); background: var(--surface2); }
 .history-kw { font-size: 0.75rem; color: var(--accent); margin-bottom: 0.15rem; font-weight: 500; }
 .history-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); }
-
 /* DELETE BTN */
 .delete-btn { position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.7rem; opacity: 0; padding: 0.2rem 0.3rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
 .history-item:hover .delete-btn { opacity: 1; }
 .delete-btn:hover { color: var(--accent2); }
-
-/* UPDATE BTN — sempre visibile ma dimesso, diventa dorato sull'hover dell'item */
+/* UPDATE BTN */
 .update-btn { position: absolute; right: 1.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.8rem; opacity: 0; padding: 0.2rem 0.3rem; line-height: 1; transition: opacity 0.15s, color 0.15s; }
 .history-item:hover .update-btn { opacity: 1; }
 .update-btn:hover { color: var(--accent) !important; }
-
 .history-date-group { margin-bottom: 1rem; }
 .history-date-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
 main { overflow-y: auto; }
@@ -146,7 +142,6 @@ main { overflow-y: auto; }
 </style>
 </head>
 <body>
-
 <header>
   <div>
     <div class="logo">THEATRUM <span>BELLI</span></div>
@@ -223,12 +218,18 @@ const PERSP_LABELS = {
   other: "Altro"
 };
 
-const DOSSIER_MAP = [
-  { label: "Medio Oriente", color: "#c08040", keys: ["iran","israel","gaza","palestina","hamas","hezbollah","libano","yemen","houthi","siria","beirut"] },
-  { label: "Russia · Ucraina", color: "#c06060", keys: ["russia","ucraina","ukraine","putin","zelensky","donbass","crimea","kyiv","mosca","nato"] },
-  { label: "Cina · Indo-Pacifico", color: "#c0a040", keys: ["china","cina","taiwan","beijing","pechino","india","pakistan","corea","korea"] },
-  { label: "Africa · Sahel", color: "#60a060", keys: ["africa","sahel","mali","niger","sudan","somalia","congo","burkina","etiopia"] },
-];
+// ─── FEATURE 8.2: palette colori dinamica per tag tematici ───────────────────
+// Genera un colore deterministico dal nome del tag (hash semplice)
+function tagColor(tag) {
+  const palette = [
+    "#c08040", "#c06060", "#c0a040", "#60a060", "#6080c0",
+    "#a060c0", "#60b0a0", "#c07080", "#80a060", "#9060a0"
+  ];
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) hash = (hash * 31 + tag.charCodeAt(i)) & 0xffff;
+  return palette[hash % palette.length];
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function addTag() {
   const input = document.getElementById("kw-input");
@@ -296,10 +297,12 @@ function showScriptTab(lang) {
   if (!content) return;
   if (lang === 'it') {
     content.textContent = scriptItText;
-    tabIt.classList.add('active'); tabEn.classList.remove('active');
+    tabIt.classList.add('active');
+    tabEn.classList.remove('active');
   } else {
     content.textContent = scriptEnText;
-    tabEn.classList.add('active'); tabIt.classList.remove('active');
+    tabEn.classList.add('active');
+    tabIt.classList.remove('active');
   }
 }
 
@@ -323,8 +326,7 @@ async function runAnalysis() {
   } catch(e) { showError("Errore: " + e.message); }
 }
 
-// ─── UPDATE ANALISI ───────────────────────────────────────────────────────────
-// Carica le keyword dell'analisi nel form e avvia una nuova analisi aggiornata.
+// ─── UPDATE ANALISI ──────────────────────────────────────────────────────────
 async function updateAnalysis(id) {
   try {
     const res = await fetch(`/api/admin/analyses/${id}`, {credentials: "include"});
@@ -334,9 +336,7 @@ async function updateAnalysis(id) {
     renderTags();
     document.getElementById("kw-input").scrollIntoView({behavior: "smooth", block: "center"});
     setTimeout(() => runAnalysis(), 400);
-  } catch(e) {
-    alert("Errore nel caricamento dell'analisi: " + e.message);
-  }
+  } catch(e) { alert("Errore nel caricamento dell'analisi: " + e.message); }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -384,12 +384,10 @@ function renderResult(data) {
   ).join("");
 
   const narrativeHtml = renderNarrativeMap(data.narrative_map || "");
-
   const scripts = splitScript(data.instagram_script || '');
   scriptItText = scripts.it;
   scriptEnText = scripts.en;
 
-  // Sezione fonti: visibile solo se ci sono articoli (analisi live), nascosta se da storico
   const articles = data.articles || [];
   const sourcesHtml = articles.length > 0 ? `
     <div class="section-block sources-section" id="sec-fonti">
@@ -500,17 +498,6 @@ async function deleteAnalysis(id, btn) {
   } catch(e) { alert("Errore durante l'eliminazione."); }
 }
 
-function buildHistoryItem(a) {
-  return `
-    <div class="history-item" onclick="loadAnalysis(${a.id})">
-      <div class="history-kw">${a.keywords}</div>
-      <div class="history-meta">${a.article_count} articoli · ${formatTime(a.created_at)}</div>
-      <button class="update-btn" title="Aggiorna analisi" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
-      <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
-    </div>
-  `;
-}
-
 // Normalizza keyword: sort alfabetico — "iran, china" === "china, iran"
 function normalizeKw(kwStr) {
   return (kwStr || '').split(',').map(k => k.trim().toLowerCase()).filter(k => k).sort().join(', ');
@@ -524,18 +511,16 @@ function groupByNormalizedKw(items) {
     if (!chains[key]) chains[key] = [];
     chains[key].push(a);
   });
-  // Ogni catena: dalla più recente alla più vecchia
   Object.values(chains).forEach(chain => chain.sort((a, b) => b.created_at.localeCompare(a.created_at)));
-  // Catene ordinate per data della più recente
   return Object.entries(chains).sort((a, b) => b[1][0].created_at.localeCompare(a[1][0].created_at));
 }
 
-// Renderizza una catena temporale: item principale + versioni precedenti indentate
+// Renderizza catena temporale: item principale + versioni precedenti indentate
 function renderChain(chain) {
   return chain.map((a, i) => {
     if (i === 0) {
-      // Analisi più recente — item principale con bottone UPDATE
-      const aggiornamenti = chain.length > 1 ? ` · <span style="color:var(--accent3)">↺ ${chain.length - 1}</span>` : '';
+      const aggiornamenti = chain.length > 1
+        ? ` · <span style="color:var(--accent3)">↺ ${chain.length - 1}</span>` : '';
       return `
         <div class="history-item" onclick="loadAnalysis(${a.id})">
           <div class="history-kw">${a.keywords}</div>
@@ -544,7 +529,6 @@ function renderChain(chain) {
           <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
         </div>`;
     } else {
-      // Versioni precedenti — indentate con indicatore data
       return `
         <div class="history-item" style="margin-left:0.8rem;border-left:2px solid var(--border);border-radius:0 2px 2px 0;padding-right:2rem;" onclick="loadAnalysis(${a.id})">
           <div class="history-meta" style="color:var(--text-dim)">↺ ${formatDate(a.created_at)} · ${formatTime(a.created_at)}</div>
@@ -554,42 +538,45 @@ function renderChain(chain) {
   }).join('');
 }
 
+// ─── FEATURE 8.2: loadHistory con tag tematici dinamici ──────────────────────
 async function loadHistory() {
   try {
     const res = await fetch("/api/admin/analyses", {credentials: "include"});
     const data = await res.json();
     const list = document.getElementById("history-list");
+
     if (!data || !data.length) {
       list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Nessuna analisi ancora.</div>';
       return;
     }
 
-    // Smista nei dossier tematici
-    const buckets = {};
-    DOSSIER_MAP.forEach(d => { buckets[d.label] = []; });
-    buckets['__ungrouped__'] = [];
-
+    // Raggruppa per theme_tag — le analisi senza tag vanno in "Altro"
+    const tagBuckets = {};
     data.forEach(a => {
-      const kw = (a.keywords || '').toLowerCase();
-      let matched = false;
-      for (const d of DOSSIER_MAP) {
-        if (d.keys.some(k => kw.includes(k))) { buckets[d.label].push(a); matched = true; break; }
-      }
-      if (!matched) buckets['__ungrouped__'].push(a);
+      const tag = (a.theme_tag && a.theme_tag.trim()) ? a.theme_tag.trim() : "Altro";
+      if (!tagBuckets[tag]) tagBuckets[tag] = [];
+      tagBuckets[tag].push(a);
+    });
+
+    // Ordina i tag: "Altro" sempre in fondo, gli altri per data dell'analisi più recente
+    const sortedTags = Object.keys(tagBuckets).sort((a, b) => {
+      if (a === "Altro") return 1;
+      if (b === "Altro") return -1;
+      const latestA = tagBuckets[a][0].created_at;
+      const latestB = tagBuckets[b][0].created_at;
+      return latestB.localeCompare(latestA);
     });
 
     let html = '';
-
-    // Dossier tematici con catene temporali
-    DOSSIER_MAP.forEach(d => {
-      const items = buckets[d.label];
-      if (!items.length) return;
+    sortedTags.forEach(tag => {
+      const items = tagBuckets[tag];
       const chains = groupByNormalizedKw(items);
+      const color = tagColor(tag);
       html += `
         <div class="dossier-group">
           <div class="dossier-header open" onclick="toggleDossier(this)">
-            <div class="dossier-dot" style="background:${d.color}"></div>
-            <div class="dossier-label">${d.label}</div>
+            <div class="dossier-dot" style="background:${color}"></div>
+            <div class="dossier-label">${tag}</div>
             <div class="dossier-count">${items.length}</div>
             <div class="dossier-chevron">▶</div>
           </div>
@@ -599,20 +586,13 @@ async function loadHistory() {
         </div>`;
     });
 
-    // Non classificate
-    if (buckets['__ungrouped__'].length > 0) {
-      if (DOSSIER_MAP.some(d => buckets[d.label].length > 0)) {
-        html += `<div class="sidebar-title" style="margin-top:1rem">Altro</div>`;
-      }
-      const chains = groupByNormalizedKw(buckets['__ungrouped__']);
-      html += chains.map(([key, chain]) => renderChain(chain)).join('');
-    }
-
     list.innerHTML = html;
   } catch(e) {
-    document.getElementById("history-list").innerHTML = '<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>';
+    document.getElementById("history-list").innerHTML =
+      '<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>';
   }
 }
+// ─────────────────────────────────────────────────────────────────────────────
 
 function toggleDossier(header) {
   header.nextElementSibling.classList.toggle('collapsed');
@@ -627,7 +607,7 @@ async function loadAnalysis(id) {
   renderResult({
     keywords: data.keywords.split(", "),
     article_count: data.article_count,
-    articles: [],           // storico: niente lista articoli (non salvata nel DB)
+    articles: [],
     perspectives_used: {},
     narrative_map: data.narrative_map,
     convergences: data.convergences,
