@@ -545,13 +545,19 @@ def api_analyze():
     data = request.json
     keywords = [k.strip().lower() for k in data.get("keywords", []) if k.strip()]
     if not keywords: return jsonify({"error": "Inserisci almeno una keyword"}), 400
+    days = int(data.get("days", 7))  # default 7 giorni; 0 = tutto
     conn = get_conn()
     c = conn.cursor(cursor_factory=RealDictCursor)
     conditions = " OR ".join(["(LOWER(title) LIKE %s OR LOWER(summary) LIKE %s)" for _ in keywords])
     params = []
     for kw in keywords: params.extend([f"%{kw}%", f"%{kw}%"])
+    date_filter = ""
+    if days > 0:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        date_filter = " AND fetched_at >= %s"
+        params.append(cutoff)
     c.execute(f"""SELECT source, title, link, summary, published, category, perspective
-                  FROM articles WHERE {conditions} ORDER BY id DESC LIMIT 500""", params)
+                  FROM articles WHERE ({conditions}){date_filter} ORDER BY id DESC LIMIT 500""", params)
     all_articles = [dict(r) for r in c.fetchall()]
     kw_conditions = " OR ".join(["LOWER(keywords) LIKE %s" for _ in keywords])
     kw_params = [f"%{kw}%" for kw in keywords]

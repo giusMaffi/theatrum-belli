@@ -312,7 +312,7 @@ async function runAnalysis() {
   document.getElementById("section-nav").classList.remove("visible");
   document.getElementById("analyze-btn").disabled = true;
   try {
-    const res = await fetch("/api/admin/analyze", { method: "POST", credentials: "include", headers: {"Content-Type": "application/json"}, body: JSON.stringify({keywords: tags}) });
+    const res = await fetch("/api/admin/analyze", { method: "POST", credentials: "include", headers: {"Content-Type": "application/json"}, body: JSON.stringify({keywords: tags, days: activeDays}) });
     if (!res.ok) throw new Error("Server error: " + res.status);
     const data = await res.json();
     if (data.error) { showError(data.error); return; }
