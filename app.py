@@ -513,12 +513,12 @@ PARTE 2 — SCRIPT AUDIO (2:12, italiano)
 ════════════════════════════════════
 
 ## SCRIPT AUDIO
-Versione parlata dell'articolo sopra — stessa voce, stessi fatti, stessa chiusura.
-Tre movimenti senza titoli né markdown nel testo:
+Versione parlata dell'articolo sopra — stessa voce, stessi fatti.
+Tre movimenti continui, senza titoli né markdown nel testo:
 
 MOVIMENTO 1 (220-250 parole): Cronaca respirata. Apri col fatto più anomalo. Cita le testate. Un riferimento storico preciso. Ritmo variabile.
 MOVIMENTO 2 (80-100 parole): Conseguenze concrete per italiani/europei. Catena causale geopolitica→economia. Numeri. Tono: diagnosi medica.
-MOVIMENTO 3 (30-50 parole): UN solo fatto economico — stesso dato che chiude l'articolo. Freddo. Zero moralismo. Chiudi con: "— {author['nome']} continua a monitorare."
+MOVIMENTO 3 (20-30 parole): Chiusura umana — NON ripetere dati finanziari o azionari, quelli sono già stati detti. Una sola frase che chiude la prospettiva. Poi su riga separata: "— {author['nome']} continua a monitorare."
 
 Rispondi SOLO con i due blocchi nel formato esatto sopra. Nient'altro."""
 
@@ -815,7 +815,6 @@ def api_genera_articolo(analisi_id):
     conn.close()
     try:
         author = assign_author(keywords_str, analisi.get('theme_tag',''))
-        # Genera articolo direttamente dall'analisi salvata
         prompt_articolo = f"""Sei un giornalista geopolitico di lungo corso. Scrivi un articolo editoriale completo per Theatrum Belli.
 
 TEMA: {keywords_str}
@@ -854,12 +853,12 @@ Voce: osservatore freddo che conosce la storia. Niente "dovremmo", niente morali
 Conseguenze concrete per il cittadino europeo/italiano. Catena causale geopolitica→economia domestica.
 Bollette, prezzi, lavoro, logistica. Numeri specifici dove possibile.
 Chiudi con UN fatto economico secco — titolo azionario, contratto firmato, percentuale.
-Poi, su una riga separata, la firma: "— {author['nome']} continua a monitorare."
+Poi su riga separata: "— {author['nome']} continua a monitorare."
 Tono: referto medico. 120-160 parole.
 
-POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — al massimo 3 hashtag specifici]
+POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — max 3 hashtag]
 
-PROMPT_IMMAGINE: [prompt in inglese per Flux AI, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9, photojournalism style]
+PROMPT_IMMAGINE: [prompt inglese per Flux AI, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9]
 
 Rispondi in questo formato esatto — niente altro."""
 
@@ -887,7 +886,15 @@ Rispondi in questo formato esatto — niente altro."""
               art['analisi_id'], art['status'], art['created_at'], art['published_at']))
         new_id = c2.fetchone()[0]
         conn2.commit(); conn2.close()
-        return jsonify({"success": True, "articolo_id": new_id, "slug": final_slug, "articolo": art})
+
+        return jsonify({
+            "success": True,
+            "articolo_id": new_id,
+            "slug": final_slug,
+            "titolo": art['titolo'],
+            "autore_nome": art['autore_nome'],
+            "autore_ruolo": art['autore_ruolo'],
+        })
     except Exception as e:
         print(f"[ERROR] genera_articolo: {e}")
         return jsonify({"error": str(e)}), 500
