@@ -469,13 +469,18 @@ Evoluzione rispetto ad analisi precedenti, o marcatori per il futuro. Max 150 pa
 Rispondi SOLO con le 5 sezioni."""
     raw_analysis = call_claude(prompt_analysis)
 
-    # ── 2. ARTICOLO EDITORIALE (prima dello script) ──────────────────
+    # ── 2. ARTICOLO + SCRIPT in una sola chiamata ────────────────────
     author = assign_author(keywords_str)
-    prompt_articolo = f"""Sei un giornalista geopolitico di lungo corso. Scrivi un articolo editoriale completo per Theatrum Belli.
+    prompt_articolo_script = f"""Sei un giornalista geopolitico di lungo corso che lavora per Theatrum Belli.
+Devi produrre DUE output in una sola risposta: prima l'articolo editoriale, poi lo script audio.
 
 TEMA: {keywords_str}
 ANALISI INTELLIGENCE:
 {raw_analysis}
+
+════════════════════════════════════
+PARTE 1 — ARTICOLO EDITORIALE
+════════════════════════════════════
 
 Scrivi UN SOLO titolo editoriale — non descrittivo, non scolastico, colpisci come un headline di guerra fredda, max 12 parole.
 Poi l'articolo in 3 sezioni esatte.
@@ -496,45 +501,33 @@ Voce: osservatore freddo che conosce la storia. Niente "dovremmo", niente morali
 Conseguenze concrete per il cittadino europeo/italiano. Catena causale geopolitica→economia domestica.
 Bollette, prezzi, lavoro, logistica. Numeri specifici dove possibile.
 Chiudi con UN fatto economico secco — titolo azionario, contratto firmato, percentuale.
-Poi, su una riga separata, la firma: "— {author['nome']} continua a monitorare."
+Poi, su una riga separata: "— {author['nome']} continua a monitorare."
 Tono: referto medico. 120-160 parole.
 
-POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — al massimo 3 hashtag specifici]
+POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — max 3 hashtag]
 
-PROMPT_IMMAGINE: [prompt in inglese per Flux AI, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9, photojournalism style]
+PROMPT_IMMAGINE: [prompt inglese per Flux AI, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9]
 
-Rispondi in questo formato esatto — niente altro."""
-    raw_articolo = call_claude(prompt_articolo, max_tokens=3000)
+════════════════════════════════════
+PARTE 2 — SCRIPT AUDIO (2:12, italiano)
+════════════════════════════════════
 
-    # ── 3. SCRIPT AUDIO (derivato dall'articolo) ─────────────────────
-    prompt_script = f"""Sei un giornalista geopolitico con vent'anni di esperienza.
-Hai già scritto questo articolo editoriale per Theatrum Belli:
+## SCRIPT AUDIO
+Versione parlata dell'articolo sopra — stessa voce, stessi fatti, stessa chiusura.
+Tre movimenti senza titoli né markdown nel testo:
 
-{raw_articolo}
+MOVIMENTO 1 (220-250 parole): Cronaca respirata. Apri col fatto più anomalo. Cita le testate. Un riferimento storico preciso. Ritmo variabile.
+MOVIMENTO 2 (80-100 parole): Conseguenze concrete per italiani/europei. Catena causale geopolitica→economia. Numeri. Tono: diagnosi medica.
+MOVIMENTO 3 (30-50 parole): UN solo fatto economico — stesso dato che chiude l'articolo. Freddo. Zero moralismo. Chiudi con: "— {author['nome']} continua a monitorare."
 
-Adesso trasformalo in uno script audio di 2 minuti e 12 secondi (132 secondi) per un reel Instagram.
-Lo script è SOLO IN ITALIANO. Deve essere la versione parlata dello stesso articolo — stessa voce, stessi fatti, stessa conclusione.
+Rispondi SOLO con i due blocchi nel formato esatto sopra. Nient'altro."""
 
-TRE MOVIMENTI OBBLIGATORI (niente titoli nel testo, niente markdown):
+    raw_combined = call_claude(prompt_articolo_script, max_tokens=4500)
 
-MOVIMENTO 1 — CRONACA RESPIRATA (220-250 parole)
-Apri con il fatto più anomalo. Ogni elemento ha spazio per atterrare.
-Nomina le testate esplicitamente. Almeno un riferimento storico preciso.
-Ritmo variabile.
-
-MOVIMENTO 2 — ANALISI CRUDA (80-100 parole)
-Conseguenze concrete per cittadini europei e italiani.
-Catena causale: geopolitica → economia domestica. Numeri specifici.
-Tono: diagnosi medica.
-
-MOVIMENTO 3 — IL DISAGIO (30-50 parole)
-UN solo fatto economico concreto — titolo azionario, contratto, numero preciso.
-Deve essere lo stesso fatto che chiude l'articolo.
-Freddo come un referto. Zero domande retoriche. Zero moralismo.
-Chiudi con: "— {author['nome']} continua a monitorare."
-
-Rispondi SOLO con lo script in italiano. Niente altro."""
-    raw_script = call_claude(prompt_script)
+    # Separa articolo e script
+    script_match = re.search(r'## SCRIPT AUDIO\n(.*?)$', raw_combined, re.DOTALL)
+    raw_script = script_match.group(1).strip() if script_match else ""
+    raw_articolo = raw_combined[:script_match.start()].strip() if script_match else raw_combined
 
     visual_prompts_json = generate_visual_prompts(keywords_str, raw_script, raw_analysis, duration_seconds=132)
 
