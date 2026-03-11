@@ -1,265 +1,183 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ articolo.titolo }} — Theatrum Belli</title>
-    <meta name="description" content="{{ (articolo.sezione_dati or '')[:160] }}">
-    <meta property="og:title" content="{{ articolo.titolo }} — Theatrum Belli">
-    <meta property="og:description" content="{{ (articolo.sezione_dati or '')[:200] }}">
-    <meta property="og:type" content="article">
-    {% if articolo.immagine_url %}
-    <meta property="og:image" content="{{ articolo.immagine_url }}">
-    {% endif %}
-    <link rel="canonical" href="https://theatrumbelli.com/articoli/{{ articolo.slug }}">
-    <style>
-        :root {
-            --bg: #0a0a0f;
-            --surface: #111118;
-            --border: #1e1e2e;
-            --accent: #c8a96e;
-            --accent2: #7b6fd4;
-            --text: #e8e4d9;
-            --muted: #6b6b7a;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; line-height: 1.8; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ articolo.titolo }} — Theatrum Belli</title>
+  <meta name="description" content="{{ articolo.sezione_dati[:160] if articolo.sezione_dati else articolo.titolo }}">
+  <meta property="og:title" content="{{ articolo.titolo }} — Theatrum Belli">
+  <meta property="og:description" content="{{ articolo.sezione_dati[:200] if articolo.sezione_dati else '' }}">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://theatrumbelli.com/articoli/{{ articolo.slug }}">
+  {% if articolo.immagine_url %}<meta property="og:image" content="{{ articolo.immagine_url }}">{% endif %}
+  <link rel="canonical" href="https://theatrumbelli.com/articoli/{{ articolo.slug }}">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21;
+      --border: #2a2a30; --accent: #c8a96e; --accent2: #e05c4b;
+      --accent3: #6ab4c8; --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.7; }
 
-        header {
-            border-bottom: 1px solid var(--border);
-            padding: 1.2rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            background: rgba(10,10,15,0.95);
-            backdrop-filter: blur(10px);
-            z-index: 100;
-        }
-        .logo {
-            font-family: 'Georgia', serif;
-            font-size: 1.3rem;
-            letter-spacing: 0.15em;
-            color: var(--accent);
-            text-decoration: none;
-            text-transform: uppercase;
-        }
-        .logo span { color: var(--muted); font-size: 0.75rem; display: block; letter-spacing: 0.05em; margin-top: 2px; }
-        nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; margin-left: 1.5rem; font-family: 'Courier New', monospace; transition: color 0.2s; }
-        nav a:hover { color: var(--accent); }
+    /* HEADER */
+    header { border-bottom: 1px solid var(--border); padding: 0.9rem 2rem; display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: sticky; top: 0; z-index: 100; }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.15em; color: var(--accent); text-decoration: none; }
+    .logo span { color: var(--accent2); }
+    .logo-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.15em; margin-top: 2px; }
+    .header-nav { display: flex; gap: 0.8rem; align-items: center; }
+    .btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.8rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-radius: 2px; text-decoration: none; display: inline-block; }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        .article-wrap {
-            max-width: 760px;
-            margin: 0 auto;
-            padding: 4rem 2rem 6rem;
-        }
+    /* LAYOUT */
+    .page-wrap { max-width: 780px; margin: 0 auto; padding: 3rem 2rem 5rem; }
 
-        .breadcrumb {
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            color: var(--muted);
-            margin-bottom: 2rem;
-        }
-        .breadcrumb a { color: var(--muted); text-decoration: none; }
-        .breadcrumb a:hover { color: var(--accent); }
-        .breadcrumb span { margin: 0 0.5rem; }
+    /* META SOPRA */
+    .article-meta-top { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .cat-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; padding: 0.2rem 0.6rem; border: 1px solid var(--accent); color: var(--accent); border-radius: 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .date-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); }
 
-        .article-cat {
-            font-family: 'Courier New', monospace;
-            font-size: 0.78rem;
-            color: var(--accent);
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-        }
+    /* TITOLO */
+    .article-title { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; line-height: 1.2; color: var(--text); margin-bottom: 1.8rem; letter-spacing: 0.01em; }
 
-        h1 {
-            font-size: 2rem;
-            font-weight: 400;
-            line-height: 1.35;
-            margin-bottom: 1.5rem;
-            color: var(--text);
-        }
+    /* SEZIONI */
+    .section-block { margin-bottom: 2.5rem; }
+    .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
+    .section-label .icon { font-size: 0.75rem; }
+    .section-text { font-size: 1rem; color: #ccc9c0; line-height: 1.85; }
+    .section-text p { margin-bottom: 0.8rem; }
+    .section-text strong { color: var(--text); font-weight: 600; }
 
-        .article-meta {
-            font-family: 'Courier New', monospace;
-            font-size: 0.78rem;
-            color: var(--muted);
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-            padding: 0.8rem 0;
-            margin-bottom: 3rem;
-            display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-        }
+    /* SEPARATORE */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 
-        {% if articolo.immagine_url %}
-        .hero-img {
-            width: 100%;
-            aspect-ratio: 16/9;
-            object-fit: cover;
-            margin-bottom: 3rem;
-            border: 1px solid var(--border);
-        }
-        {% endif %}
+    /* FIRMA AUTORE */
+    .author-block {
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      background: var(--surface);
+      padding: 1.2rem 1.5rem;
+      margin-top: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    .author-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, #1a1a20, #2a2a35);
+      border: 1px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--accent); flex-shrink: 0;
+    }
+    .author-info {}
+    .author-name { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.95rem; font-weight: 500; color: var(--text); margin-bottom: 0.2rem; }
+    .author-role { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--text-dim); letter-spacing: 0.04em; }
+    .author-brand { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--accent); margin-top: 0.3rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
-        .section {
-            margin-bottom: 3rem;
-        }
-        .section-label {
-            font-family: 'Courier New', monospace;
-            font-size: 0.78rem;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: var(--accent);
-            margin-bottom: 1.2rem;
-            padding-bottom: 0.6rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-        .section-label::before {
-            content: '▸';
-            font-size: 0.6rem;
-        }
+    /* SHARE */
+    .share-block { margin-top: 2rem; display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+    .share-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+    .share-btn { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; padding: 0.3rem 0.8rem; border: 1px solid var(--border); color: var(--text-muted); text-decoration: none; border-radius: 2px; transition: all 0.2s; }
+    .share-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        .section-body {
-            font-size: 1.05rem;
-            line-height: 1.85;
-            color: var(--text);
-            white-space: pre-wrap;
-        }
+    /* BACK LINK */
+    .back-link { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--text-dim); text-decoration: none; margin-top: 2.5rem; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid transparent; transition: all 0.2s; }
+    .back-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
-        .section-conseguenze .section-body {
-            font-size: 1rem;
-        }
-        .section-conseguenze .section-label { color: var(--accent2); border-color: var(--accent2); }
+    /* FOOTER */
+    footer { border-top: 1px solid var(--border); padding: 1.5rem 2rem; text-align: center; }
+    .footer-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-dim); }
 
-        .share-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 2rem;
-            margin-top: 4rem;
-        }
-        .share-box h3 {
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-            letter-spacing: 0.1em;
-            color: var(--muted);
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-        }
-        .share-box p {
-            font-size: 0.9rem;
-            color: var(--muted);
-            margin-bottom: 1rem;
-        }
-        .share-btn {
-            display: inline-block;
-            padding: 0.5rem 1.2rem;
-            border: 1px solid var(--border);
-            color: var(--muted);
-            text-decoration: none;
-            font-family: 'Courier New', monospace;
-            font-size: 0.78rem;
-            letter-spacing: 0.05em;
-            margin-right: 0.5rem;
-            transition: all 0.2s;
-        }
-        .share-btn:hover { border-color: var(--accent); color: var(--accent); }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--muted);
-            text-decoration: none;
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-            margin-top: 3rem;
-            transition: color 0.2s;
-        }
-        .back-link:hover { color: var(--accent); }
-
-        footer {
-            border-top: 1px solid var(--border);
-            padding: 2rem;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            color: var(--muted);
-        }
-    </style>
+    @media (max-width: 640px) {
+      .article-title { font-size: 1.6rem; }
+      .page-wrap { padding: 2rem 1.2rem 4rem; }
+      .author-block { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <a href="/" class="logo">Theatrum Belli <span>Intelligence Geopolitica</span></a>
-        <nav>
-            <a href="/">Feed</a>
-            <a href="/articoli">Analisi</a>
-        </nav>
-    </header>
 
-    <div class="article-wrap">
-        <div class="breadcrumb">
-            <a href="/">Home</a><span>/</span>
-            <a href="/articoli">Analisi</a><span>/</span>
-            {{ articolo.categoria }}
-        </div>
+<header>
+  <a href="/" style="text-decoration:none">
+    <div class="logo">THEATRUM <span>BELLI</span></div>
+    <div class="logo-sub">INTELLIGENCE GEOPOLITICA</div>
+  </a>
+  <nav class="header-nav">
+    <a href="/" class="btn">Feed</a>
+    <a href="/articoli" class="btn">← Archivio</a>
+  </nav>
+</header>
 
-        <div class="article-cat">{{ articolo.categoria }}</div>
+<div class="page-wrap">
 
-        <h1>{{ articolo.titolo or 'Analisi Geopolitica' }}</h1>
+  <div class="article-meta-top">
+    <span class="cat-badge">{{ articolo.categoria }}</span>
+    <span class="date-badge">
+      {% if articolo.published_at %}
+        {{ articolo.published_at[:10] }}
+      {% else %}
+        {{ articolo.created_at[:10] }}
+      {% endif %}
+    </span>
+  </div>
 
-        <div class="article-meta">
-            <span>📅 {% if articolo.published_at %}{{ articolo.published_at[:10] }}{% else %}{{ articolo.created_at[:10] }}{% endif %}</span>
-            {% if articolo.tags %}
-            <span>🔑 {{ articolo.tags }}</span>
-            {% endif %}
-        </div>
+  <h1 class="article-title">{{ articolo.titolo }}</h1>
 
-        {% if articolo.immagine_url %}
-        <img src="{{ articolo.immagine_url }}" alt="{{ articolo.titolo }}" class="hero-img">
-        {% endif %}
+  {% if articolo.sezione_dati %}
+  <div class="section-block">
+    <div class="section-label"><span class="icon">◉</span> Il Dato che Conta</div>
+    <div class="section-text">{{ articolo.sezione_dati | replace('\n', '<br>') | safe }}</div>
+  </div>
+  {% endif %}
 
-        {% if articolo.sezione_dati %}
-        <div class="section">
-            <div class="section-label">Il Dato Che Conta</div>
-            <div class="section-body">{{ articolo.sezione_dati }}</div>
-        </div>
-        {% endif %}
+  {% if articolo.sezione_analisi %}
+  <div class="section-block">
+    <div class="section-label"><span class="icon">◆</span> Theatrum Belli — Analisi</div>
+    <div class="section-text">{{ articolo.sezione_analisi | replace('\n', '<br>') | safe }}</div>
+  </div>
+  {% endif %}
 
-        {% if articolo.sezione_analisi %}
-        <div class="section">
-            <div class="section-label">Theatrum Belli — Analisi</div>
-            <div class="section-body">{{ articolo.sezione_analisi }}</div>
-        </div>
-        {% endif %}
+  {% if articolo.sezione_conseguenze %}
+  <div class="section-block">
+    <div class="section-label"><span class="icon">▸</span> Cosa Significa per Te</div>
+    <div class="section-text">{{ articolo.sezione_conseguenze | replace('\n', '<br>') | safe }}</div>
+  </div>
+  {% endif %}
 
-        {% if articolo.sezione_conseguenze %}
-        <div class="section section-conseguenze">
-            <div class="section-label">Cosa Significa Per Te</div>
-            <div class="section-body">{{ articolo.sezione_conseguenze }}</div>
-        </div>
-        {% endif %}
+  <hr class="divider">
 
-        <div class="share-box">
-            <h3>Condividi questa analisi</h3>
-            <p>Se trovi utile questa analisi, condividila. La trasparenza sui meccanismi di potere è un bene comune.</p>
-            <a href="https://twitter.com/intent/tweet?url=https://theatrumbelli.com/articoli/{{ articolo.slug }}&text={{ articolo.titolo | urlencode }}"
-               class="share-btn" target="_blank" rel="noopener">Twitter/X</a>
-            <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://theatrumbelli.com/articoli/{{ articolo.slug }}"
-               class="share-btn" target="_blank" rel="noopener">LinkedIn</a>
-        </div>
-
-        <a href="/articoli" class="back-link">← Torna all'archivio</a>
+  <!-- FIRMA AUTORE -->
+  {% if articolo.autore_nome %}
+  <div class="author-block">
+    <div class="author-avatar">{{ articolo.autore_nome[0] }}{{ articolo.autore_nome.split(' ')[1][0] if articolo.autore_nome.split(' ')|length > 1 else '' }}</div>
+    <div class="author-info">
+      <div class="author-name">{{ articolo.autore_nome }}</div>
+      <div class="author-role">{{ articolo.autore_ruolo }}</div>
+      <div class="author-brand">Theatrum Belli</div>
     </div>
+  </div>
+  {% endif %}
 
-    <footer>
-        &copy; 2026 Theatrum Belli — <a href="/">theatrumbelli.com</a>
-    </footer>
+  <div class="share-block">
+    <span class="share-label">Condividi</span>
+    <a href="https://twitter.com/intent/tweet?text={{ articolo.titolo | urlencode }}&url=https://theatrumbelli.com/articoli/{{ articolo.slug }}" target="_blank" class="share-btn">Twitter / X</a>
+    <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://theatrumbelli.com/articoli/{{ articolo.slug }}" target="_blank" class="share-btn">LinkedIn</a>
+  </div>
+
+  <a href="/articoli" class="back-link">← Tutti gli articoli</a>
+
+</div>
+
+<footer>
+  <div class="footer-text">© 2026 Theatrum Belli — theatrumbelli.com</div>
+</footer>
+
 </body>
 </html>

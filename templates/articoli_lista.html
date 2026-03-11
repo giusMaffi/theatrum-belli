@@ -1,227 +1,128 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Articoli — Theatrum Belli | Intelligence Geopolitica</title>
-    <meta name="description" content="Analisi geopolitica multi-fonte. Fatti, meccanismi di potere e conseguenze concrete per i cittadini europei.">
-    <meta property="og:title" content="Theatrum Belli — Intelligence Geopolitica">
-    <meta property="og:description" content="Analisi geopolitica che sintetizza media occidentali, russi, cinesi, arabi e think tank.">
-    <meta property="og:type" content="website">
-    <link rel="canonical" href="https://theatrumbelli.com/articoli">
-    <style>
-        :root {
-            --bg: #0a0a0f;
-            --surface: #111118;
-            --border: #1e1e2e;
-            --accent: #c8a96e;
-            --accent2: #7b6fd4;
-            --text: #e8e4d9;
-            --muted: #6b6b7a;
-            --danger: #c0392b;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; line-height: 1.7; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Articoli — Theatrum Belli | Intelligence Geopolitica</title>
+  <meta name="description" content="Analisi editoriale geopolitica da prospettiva multipla. Intelligence sintetizzata in formato leggibile.">
+  <link rel="canonical" href="https://theatrumbelli.com/articoli">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0d0f; --surface: #141417; --surface2: #1c1c21;
+      --border: #2a2a30; --accent: #c8a96e; --accent2: #e05c4b;
+      --accent3: #6ab4c8; --text: #e8e4dc; --text-muted: #9a9690; --text-dim: #5a5855;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.6; }
 
-        header {
-            border-bottom: 1px solid var(--border);
-            padding: 1.2rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            background: rgba(10,10,15,0.95);
-            backdrop-filter: blur(10px);
-            z-index: 100;
-        }
-        .logo {
-            font-family: 'Georgia', serif;
-            font-size: 1.3rem;
-            letter-spacing: 0.15em;
-            color: var(--accent);
-            text-decoration: none;
-            text-transform: uppercase;
-        }
-        .logo span { color: var(--muted); font-size: 0.75rem; display: block; letter-spacing: 0.05em; margin-top: 2px; }
-        nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; margin-left: 1.5rem; font-family: 'Courier New', monospace; letter-spacing: 0.05em; transition: color 0.2s; }
-        nav a:hover { color: var(--accent); }
+    header { border-bottom: 1px solid var(--border); padding: 0.9rem 2rem; display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: sticky; top: 0; z-index: 100; }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.15em; color: var(--accent); text-decoration: none; }
+    .logo span { color: var(--accent2); }
+    .logo-sub { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.15em; margin-top: 2px; }
+    .header-nav { display: flex; gap: 0.8rem; }
+    .btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.1em; padding: 0.3rem 0.8rem; cursor: pointer; text-transform: uppercase; transition: all 0.2s; border-radius: 2px; text-decoration: none; display: inline-block; }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        .hero {
-            padding: 4rem 2rem 2rem;
-            max-width: 1100px;
-            margin: 0 auto;
-            border-bottom: 1px solid var(--border);
-        }
-        .hero h1 {
-            font-size: 2rem;
-            font-weight: 400;
-            color: var(--accent);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-        }
-        .hero p { color: var(--muted); font-size: 0.95rem; font-family: 'Courier New', monospace; }
+    .page-header { padding: 3rem 2rem 1.5rem; max-width: 1100px; margin: 0 auto; border-bottom: 1px solid var(--border); }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .page-subtitle { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.1em; }
 
-        .filters {
-            max-width: 1100px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .filter-btn {
-            padding: 0.4rem 1rem;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--muted);
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            font-size: 0.78rem;
-            letter-spacing: 0.05em;
-            transition: all 0.2s;
-            text-decoration: none;
-            border-radius: 2px;
-        }
-        .filter-btn:hover, .filter-btn.active {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: rgba(200,169,110,0.05);
-        }
+    /* FILTRI */
+    .filter-bar { max-width: 1100px; margin: 0 auto; padding: 1rem 2rem; display: flex; gap: 0.5rem; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+    .filter-link { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; padding: 0.25rem 0.7rem; border: 1px solid var(--border); color: var(--text-dim); border-radius: 2px; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
+    .filter-link:hover { border-color: var(--accent); color: var(--text-muted); }
+    .filter-link.active { border-color: var(--accent); color: var(--accent); background: rgba(200,169,110,0.08); }
 
-        .grid {
-            max-width: 1100px;
-            margin: 0 auto 4rem;
-            padding: 0 2rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 1.5rem;
-        }
+    /* GRID */
+    .articles-grid { max-width: 1100px; margin: 0 auto; padding: 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.2rem; }
 
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 1.8rem;
-            transition: border-color 0.2s, transform 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0;
-            width: 3px; height: 100%;
-            background: var(--accent);
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .card:hover { border-color: rgba(200,169,110,0.3); transform: translateY(-2px); }
-        .card:hover::before { opacity: 1; }
+    /* CARD */
+    .article-card { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 1.4rem; text-decoration: none; display: flex; flex-direction: column; gap: 0.8rem; transition: all 0.2s; }
+    .article-card:hover { border-color: var(--accent); background: var(--surface2); transform: translateY(-1px); }
+    .card-meta { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .cat-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; padding: 0.15rem 0.5rem; border: 1px solid var(--accent); color: var(--accent); border-radius: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .date-badge { font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: var(--text-dim); }
+    .card-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .article-card:hover .card-title { color: var(--accent); }
+    .card-excerpt { font-size: 0.83rem; color: var(--text-muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 0.6rem; border-top: 1px solid var(--border); }
+    .card-author { font-family: 'IBM Plex Mono', monospace; font-size: 0.57rem; color: var(--text-dim); }
+    .card-arrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--accent); opacity: 0; transition: opacity 0.2s; }
+    .article-card:hover .card-arrow { opacity: 1; }
 
-        .card-cat {
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            color: var(--accent);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            margin-bottom: 0.8rem;
-        }
-        .card h2 {
-            font-size: 1.05rem;
-            font-weight: 400;
-            line-height: 1.5;
-            margin-bottom: 1rem;
-            color: var(--text);
-        }
-        .card h2 a { color: inherit; text-decoration: none; }
-        .card h2 a:hover { color: var(--accent); }
+    /* EMPTY */
+    .empty-state { text-align: center; padding: 5rem 2rem; }
+    .empty-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim); line-height: 2; }
 
-        .card-meta {
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            color: var(--muted);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .card-tags {
-            font-family: 'Courier New', monospace;
-            font-size: 0.7rem;
-            color: var(--muted);
-            margin-top: 0.8rem;
-            opacity: 0.7;
-        }
+    footer { border-top: 1px solid var(--border); padding: 1.5rem 2rem; text-align: center; margin-top: 3rem; }
+    .footer-text { font-family: 'IBM Plex Mono', monospace; font-size: 0.58rem; color: var(--text-dim); }
 
-        .empty {
-            grid-column: 1/-1;
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--muted);
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); }
 
-        footer {
-            border-top: 1px solid var(--border);
-            padding: 2rem;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            color: var(--muted);
-        }
-        footer a { color: var(--muted); }
-    </style>
+    @media (max-width: 640px) {
+      .articles-grid { grid-template-columns: 1fr; padding: 1rem; }
+      .page-header { padding: 2rem 1rem 1rem; }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <a href="/" class="logo">Theatrum Belli <span>Intelligence Geopolitica</span></a>
-        <nav>
-            <a href="/">Feed</a>
-            <a href="/articoli">Analisi</a>
-        </nav>
-    </header>
 
-    <div class="hero">
-        <h1>Archivio Analisi</h1>
-        <p>Sintesi intelligence multi-fonte — prospettiva multipla, conseguenze concrete</p>
+<header>
+  <a href="/" style="text-decoration:none">
+    <div class="logo">THEATRUM <span>BELLI</span></div>
+    <div class="logo-sub">INTELLIGENCE GEOPOLITICA</div>
+  </a>
+  <nav class="header-nav">
+    <a href="/" class="btn">Feed</a>
+  </nav>
+</header>
+
+<div class="page-header">
+  <div class="page-title">Archivio Analisi</div>
+  <div class="page-subtitle">Sintesi intelligence multi-fonte — prospettiva multipla, conseguenze concrete</div>
+</div>
+
+<div class="filter-bar">
+  <a href="/articoli" class="filter-link {% if categoria_filtro == 'all' %}active{% endif %}">Tutto</a>
+  {% for cat in categorie %}
+  <a href="/articoli?categoria={{ cat | urlencode }}" class="filter-link {% if categoria_filtro == cat %}active{% endif %}">{{ cat }}</a>
+  {% endfor %}
+</div>
+
+{% if articoli %}
+<div class="articles-grid">
+  {% for art in articoli %}
+  <a href="/articoli/{{ art.slug }}" class="article-card">
+    <div class="card-meta">
+      <span class="cat-badge">{{ art.categoria }}</span>
+      <span class="date-badge">{{ art.published_at[:10] if art.published_at else art.created_at[:10] }}</span>
     </div>
-
-    <div class="filters">
-        <a href="/articoli" class="filter-btn {% if categoria_filtro == 'all' %}active{% endif %}">Tutto</a>
-        {% for cat in categorie %}
-        <a href="/articoli?categoria={{ cat | urlencode }}"
-           class="filter-btn {% if categoria_filtro == cat %}active{% endif %}">
-            {{ cat }}
-        </a>
-        {% endfor %}
+    <div class="card-title">{{ art.titolo }}</div>
+    {% if art.tags %}
+    <div class="card-excerpt">{{ art.tags }}</div>
+    {% endif %}
+    <div class="card-footer">
+      <span class="card-author">{% if art.autore_nome %}{{ art.autore_nome }}{% else %}Theatrum Belli{% endif %}</span>
+      <span class="card-arrow">leggi →</span>
     </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-text">
+    Nessun articolo pubblicato.<br>
+    Gli articoli vengono generati dall'area admin dalle analisi.
+  </div>
+</div>
+{% endif %}
 
-    <div class="grid">
-        {% if articoli %}
-            {% for art in articoli %}
-            <article class="card">
-                <div class="card-cat">{{ art.categoria }}</div>
-                <h2><a href="/articoli/{{ art.slug }}">{{ art.titolo or 'Senza titolo' }}</a></h2>
-                <div class="card-meta">
-                    <span>{% if art.published_at %}{{ art.published_at[:10] }}{% else %}{{ art.created_at[:10] }}{% endif %}</span>
-                </div>
-                {% if art.tags %}
-                <div class="card-tags">{{ art.tags }}</div>
-                {% endif %}
-            </article>
-            {% endfor %}
-        {% else %}
-            <div class="empty">
-                Nessun articolo pubblicato.<br>
-                Gli articoli vengono generati dall'area admin dalle analisi.
-            </div>
-        {% endif %}
-    </div>
+<footer>
+  <div class="footer-text">© 2026 Theatrum Belli — theatrumbelli.com</div>
+</footer>
 
-    <footer>
-        &copy; 2026 Theatrum Belli —
-        <a href="/">theatrumbelli.com</a>
-    </footer>
 </body>
 </html>
