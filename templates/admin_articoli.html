@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Articoli — Theatrum Belli</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --border: #1e1e2e;
+            --accent: #c8a96e;
+            --text: #e8e4d9;
+            --muted: #6b6b7a;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        .logo { color: var(--accent); font-size: 1.1rem; letter-spacing: 0.1em; text-decoration: none; }
+        .subtitle { color: var(--muted); font-size: 0.8rem; }
+        nav a { color: var(--muted); text-decoration: none; font-size: 0.8rem; margin-right: 1.2rem; transition: color 0.2s; }
+        nav a:hover { color: var(--accent); }
+
+        main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .page-title {
+            font-size: 1.2rem;
+            color: var(--accent);
+            letter-spacing: 0.08em;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+        }
+        .stat { display: flex; flex-direction: column; gap: 0.3rem; }
+        .stat-val { color: var(--accent); font-size: 1.2rem; }
+        .stat-label { color: var(--muted); font-size: 0.72rem; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        th {
+            text-align: left;
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(30,30,46,0.5);
+            vertical-align: top;
+        }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.68rem;
+            letter-spacing: 0.06em;
+            border-radius: 2px;
+        }
+        .status-bozza    { background: rgba(243,156,18,0.15); color: var(--warning); border: 1px solid rgba(243,156,18,0.3); }
+        .status-pubblicato { background: rgba(46,204,113,0.15); color: var(--success); border: 1px solid rgba(46,204,113,0.3); }
+        .status-archiviato { background: rgba(107,107,122,0.15); color: var(--muted); border: 1px solid rgba(107,107,122,0.3); }
+
+        .btn {
+            padding: 0.3rem 0.8rem;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.03em;
+            margin-right: 0.3rem;
+            transition: all 0.2s;
+        }
+        .btn:hover     { border-color: var(--accent); color: var(--accent); }
+        .btn-pub:hover { border-color: var(--success); color: var(--success); }
+        .btn-del:hover { border-color: var(--danger); color: var(--danger); }
+        .btn-view { text-decoration: none; display: inline-block; }
+
+        .title-cell { max-width: 280px; }
+        .title-cell a { color: var(--text); text-decoration: none; font-size: 0.85rem; line-height: 1.4; }
+        .title-cell a:hover { color: var(--accent); }
+        .title-cell .slug { color: var(--muted); font-size: 0.7rem; margin-top: 0.3rem; }
+
+        #modal {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        #modal.open { display: flex; align-items: flex-start; justify-content: center; padding: 2rem; }
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute; top: 1rem; right: 1rem;
+            background: none; border: none; color: var(--muted);
+            font-size: 1.2rem; cursor: pointer; transition: color 0.2s;
+        }
+        .modal-close:hover { color: var(--accent); }
+        .modal-title { color: var(--accent); font-size: 1rem; margin-bottom: 1.5rem; }
+
+        .field { margin-bottom: 1.2rem; }
+        .field label { display: block; color: var(--muted); font-size: 0.75rem; letter-spacing: 0.06em; margin-bottom: 0.4rem; text-transform: uppercase; }
+        .field input, .field textarea, .field select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.6rem 0.8rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.83rem;
+            line-height: 1.6;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .field textarea { resize: vertical; min-height: 120px; }
+        .field input:focus, .field textarea:focus { border-color: var(--accent); }
+
+        .modal-actions { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+        .btn-save {
+            background: rgba(200,169,110,0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .btn-save:hover { background: rgba(200,169,110,0.2); }
+
+        .toast {
+            position: fixed; bottom: 2rem; right: 2rem;
+            padding: 0.8rem 1.5rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            font-size: 0.82rem;
+            color: var(--text);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 2000;
+        }
+        .toast.show { opacity: 1; }
+        .toast.ok { border-color: var(--success); color: var(--success); }
+        .toast.err { border-color: var(--danger); color: var(--danger); }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/admin" class="logo">THEATRUM BELLI</a>
+        <span class="subtitle">// Admin</span>
+        <nav>
+            <a href="/admin">Analisi</a>
+            <a href="/admin/articoli" style="color:var(--accent)">Articoli</a>
+            <a href="/articoli" target="_blank">Vista Pubblica ↗</a>
+            <a href="/admin/logout">Esci</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="page-title">Gestione Articoli</div>
+
+        {% set bozze = articoli | selectattr('status', 'equalto', 'bozza') | list %}
+        {% set pubblicati = articoli | selectattr('status', 'equalto', 'pubblicato') | list %}
+        <div class="stats-bar">
+            <div class="stat"><span class="stat-val">{{ articoli | length }}</span><span class="stat-label">Totali</span></div>
+            <div class="stat"><span class="stat-val">{{ bozze | length }}</span><span class="stat-label">Bozze</span></div>
+            <div class="stat"><span class="stat-val">{{ pubblicati | length }}</span><span class="stat-label">Pubblicati</span></div>
+        </div>
+
+        {% if articoli %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Titolo / Slug</th>
+                    <th>Categoria</th>
+                    <th>Status</th>
+                    <th>Data</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for art in articoli %}
+                <tr data-id="{{ art.id }}">
+                    <td class="title-cell">
+                        <a href="#" onclick="openModal({{ art.id }}); return false;">
+                            {{ art.titolo or '— senza titolo —' }}
+                        </a>
+                        <div class="slug">{{ art.slug }}</div>
+                    </td>
+                    <td>{{ art.categoria }}</td>
+                    <td><span class="status-badge status-{{ art.status }}">{{ art.status }}</span></td>
+                    <td>{{ (art.published_at or art.created_at)[:10] }}</td>
+                    <td>
+                        {% if art.status == 'pubblicato' %}
+                        <a href="/articoli/{{ art.slug }}" target="_blank" class="btn btn-view">Vedi</a>
+                        <button class="btn" onclick="archiviaArticolo({{ art.id }})">Archivia</button>
+                        {% elif art.status == 'bozza' %}
+                        <button class="btn btn-pub" onclick="pubblicaArticolo({{ art.id }})">Pubblica</button>
+                        {% endif %}
+                        <button class="btn" onclick="openModal({{ art.id }})">Modifica</button>
+                        <button class="btn btn-del" onclick="eliminaArticolo({{ art.id }})">Elimina</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            Nessun articolo ancora.<br>
+            Vai in <a href="/admin" style="color:var(--accent)">Analisi</a> e usa il bottone
+            <strong style="color:var(--accent)">📝 GENERA ARTICOLO</strong> su un'analisi.
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Modal Modifica -->
+    <div id="modal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <div class="modal-title">Modifica Articolo</div>
+            <input type="hidden" id="edit-id">
+            <div class="field">
+                <label>Titolo</label>
+                <input type="text" id="edit-titolo">
+            </div>
+            <div class="field">
+                <label>Il Dato Che Conta</label>
+                <textarea id="edit-dati" rows="6"></textarea>
+            </div>
+            <div class="field">
+                <label>Theatrum Belli — Analisi</label>
+                <textarea id="edit-analisi" rows="6"></textarea>
+            </div>
+            <div class="field">
+                <label>Cosa Significa Per Te</label>
+                <textarea id="edit-conseguenze" rows="5"></textarea>
+            </div>
+            <div class="field">
+                <label>Post Social (Instagram)</label>
+                <textarea id="edit-social" rows="4"></textarea>
+            </div>
+            <div class="field">
+                <label>Prompt Immagine AI</label>
+                <textarea id="edit-prompt" rows="3"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-save" onclick="salvaModifiche()">Salva</button>
+                <button class="btn" onclick="closeModal()">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let articoliCache = {};
+
+        function toast(msg, type='ok') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => t.className = 'toast', 2500);
+        }
+
+        async function openModal(id) {
+            try {
+                const r = await fetch(`/api/admin/articoli/${id}`);
+                const art = await r.json();
+                articoliCache[id] = art;
+                document.getElementById('edit-id').value = id;
+                document.getElementById('edit-titolo').value = art.titolo || '';
+                document.getElementById('edit-dati').value = art.sezione_dati || '';
+                document.getElementById('edit-analisi').value = art.sezione_analisi || '';
+                document.getElementById('edit-conseguenze').value = art.sezione_conseguenze || '';
+                document.getElementById('edit-social').value = art.post_social || '';
+                document.getElementById('edit-prompt').value = art.immagine_prompt || '';
+                document.getElementById('modal').classList.add('open');
+            } catch(e) {
+                toast('Errore caricamento', 'err');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open');
+        }
+
+        async function salvaModifiche() {
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                titolo: document.getElementById('edit-titolo').value,
+                sezione_dati: document.getElementById('edit-dati').value,
+                sezione_analisi: document.getElementById('edit-analisi').value,
+                sezione_conseguenze: document.getElementById('edit-conseguenze').value,
+                post_social: document.getElementById('edit-social').value,
+                immagine_prompt: document.getElementById('edit-prompt').value,
+            };
+            const r = await fetch(`/api/admin/articoli/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(data)
+            });
+            const res = await r.json();
+            if (res.success) {
+                toast('Salvato ✓');
+                closeModal();
+                setTimeout(() => location.reload(), 600);
+            } else {
+                toast(res.error || 'Errore', 'err');
+            }
+        }
+
+        async function pubblicaArticolo(id) {
+            if (!confirm('Pubblicare questo articolo sul sito?')) return;
+            const r = await fetch(`/api/admin/articoli/${id}/pubblica`, {method:'POST'});
+            const res = await r.json();
+            if (res.success) { toast('Pubblicato ✓'); setTimeout(() => location.reload(), 800); }
+            else toast(res.error || 'Errore', 'err');
+        }
+
+        async function archiviaArticolo(id) {
+            if (!confirm('Archiviare questo articolo?')) return;
+            const r = await fetch(`/api/admin/articoli/${id}/archivia`, {method:'POST'});
+            const res = await r.json();
+            if (res.success) { toast('Archiviato'); setTimeout(() => location.reload(), 800); }
+            else toast(res.error || 'Errore', 'err');
+        }
+
+        async function eliminaArticolo(id) {
+            if (!confirm('Eliminare definitivamente questo articolo?')) return;
+            const r = await fetch(`/api/admin/articoli/${id}`, {method:'DELETE'});
+            const res = await r.json();
+            if (res.deleted) { toast('Eliminato'); setTimeout(() => location.reload(), 600); }
+            else toast(res.error || 'Errore', 'err');
+        }
+    </script>
+</body>
+</html>

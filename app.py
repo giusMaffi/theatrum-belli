@@ -4,6 +4,7 @@ import os
 import re
 import json
 import uuid
+import unicodedata
 from datetime import datetime, timezone, timedelta
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for, Response
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -19,9 +20,9 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = 86400 * 7
 
-ADMIN_PASSWORD    = os.environ.get("ADMIN_PASSWORD", "theatrum2026")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "theatrum2026")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-ELEVENLABS_API_KEY  = os.environ.get("ELEVENLABS_API_KEY", "")
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 ELEVENLABS_VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
@@ -39,18 +40,28 @@ def init_db():
     c.execute("""
         CREATE TABLE IF NOT EXISTS articles (
             id SERIAL PRIMARY KEY,
-            source TEXT, title TEXT, link TEXT UNIQUE,
-            summary TEXT, published TEXT, category TEXT,
-            perspective TEXT, fetched_at TEXT
+            source TEXT,
+            title TEXT,
+            link TEXT UNIQUE,
+            summary TEXT,
+            published TEXT,
+            category TEXT,
+            perspective TEXT,
+            fetched_at TEXT
         )
     """)
     c.execute("ALTER TABLE articles ADD COLUMN IF NOT EXISTS perspective TEXT DEFAULT 'other'")
     c.execute("""
         CREATE TABLE IF NOT EXISTS analyses (
             id SERIAL PRIMARY KEY,
-            keywords TEXT, article_count INTEGER,
-            narrative_map TEXT, convergences TEXT, divergences TEXT,
-            legal TEXT, thread TEXT, instagram_script TEXT,
+            keywords TEXT,
+            article_count INTEGER,
+            narrative_map TEXT,
+            convergences TEXT,
+            divergences TEXT,
+            legal TEXT,
+            thread TEXT,
+            instagram_script TEXT,
             created_at TEXT
         )
     """)
@@ -59,6 +70,27 @@ def init_db():
     c.execute("ALTER TABLE analyses ADD COLUMN IF NOT EXISTS theme_tag TEXT")
     c.execute("ALTER TABLE analyses ADD COLUMN IF NOT EXISTS visual_prompts TEXT")
     c.execute("ALTER TABLE analyses ADD COLUMN IF NOT EXISTS articles_json TEXT")
+
+    # ── NUOVA tabella articoli editoriali ──
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS articoli (
+            id SERIAL PRIMARY KEY,
+            slug TEXT UNIQUE,
+            titolo TEXT,
+            categoria TEXT,
+            tags TEXT,
+            sezione_dati TEXT,
+            sezione_analisi TEXT,
+            sezione_conseguenze TEXT,
+            immagine_prompt TEXT,
+            immagine_url TEXT,
+            post_social TEXT,
+            analisi_id INTEGER,
+            status TEXT DEFAULT 'bozza',
+            created_at TEXT,
+            published_at TEXT
+        )
+    """)
 
     source_map = {
         "ANSA Mondo":"italian_mainstream","Repubblica Esteri":"italian_mainstream",
@@ -94,7 +126,8 @@ def save_article(source, title, link, summary, published, category, perspective)
     try:
         c.execute("""
             INSERT INTO articles (source,title,link,summary,published,category,perspective,fetched_at)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (link) DO NOTHING
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT (link) DO NOTHING
         """, (source, title, link[:500] if link else "", summary[:500] if summary else "",
               published, category, perspective, datetime.now(timezone.utc).isoformat()))
         conn.commit()
@@ -110,8 +143,9 @@ def save_analysis(keywords, article_count, narrative_map, convergences, divergen
         INSERT INTO analyses (keywords,article_count,narrative_map,convergences,divergences,
                               legal,thread,instagram_script,created_at,theme_tag,visual_prompts,articles_json)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """, (keywords, article_count, narrative_map, convergences, divergences, legal, thread,
-          instagram_script, datetime.now(timezone.utc).isoformat(), theme_tag, visual_prompts, articles_json))
+    """, (keywords, article_count, narrative_map, convergences, divergences, legal,
+          thread, instagram_script, datetime.now(timezone.utc).isoformat(),
+          theme_tag, visual_prompts, articles_json))
     conn.commit(); conn.close()
 
 # ─────────────────────────────────────────────
@@ -211,8 +245,8 @@ def fetch_all():
         try:
             feed = feedparser.parse(url)
             for entry in feed.entries[:30]:
-                title   = entry.get("title", "")
-                link    = entry.get("link", "")
+                title = entry.get("title", "")
+                link = entry.get("link", "")
                 summary = re.sub(r"<[^>]+>", "", entry.get("summary", ""))
                 published = entry.get("published", datetime.now().isoformat())
                 if not link or not title: continue
@@ -237,14 +271,14 @@ def select_balanced_articles(all_articles, max_total=25, max_per_perspective=4):
             selected.append(a); seen_links.add(a['link'])
     perspectives = list(by_perspective.keys())
     per_perspective_count = defaultdict(int)
-    for a in selected: per_perspective_count[a.get('perspective','other')] += 1
+    for a in selected:
+        per_perspective_count[a.get('perspective','other')] += 1
     remaining = [a for a in all_articles[10:] if a['link'] not in seen_links]
     i = 0
     while len(selected) < max_total and i < len(remaining) * 2:
         for persp in perspectives:
             if len(selected) >= max_total: break
-            candidates = [a for a in remaining
-                          if a.get('perspective')==persp
+            candidates = [a for a in remaining if a.get('perspective')==persp
                           and a['link'] not in seen_links
                           and per_perspective_count[persp] < max_per_perspective]
             if candidates:
@@ -261,7 +295,8 @@ def call_claude(prompt, max_tokens=5000):
     try:
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         msg = client.messages.create(
-            model="claude-sonnet-4-20250514", max_tokens=max_tokens,
+            model="claude-sonnet-4-20250514",
+            max_tokens=max_tokens,
             messages=[{"role":"user","content":prompt}]
         )
         return msg.content[0].text
@@ -278,10 +313,10 @@ def generate_theme_tag(keywords_str):
     try:
         tag = call_claude(prompt, max_tokens=20).strip().strip('.')
         return tag if len(tag) <= 40 and '\n' not in tag else "Altro"
-    except Exception: return "Altro"
+    except Exception:
+        return "Altro"
 
 def generate_visual_prompts(keywords_str, script_it, analysis_text, duration_seconds=132):
-    """Terza chiamata Claude — genera 15 prompt visivi con timing calibrato sullo script IT."""
     prompt = f"""You are a world-class cinematographer and AI prompt engineer specializing in geopolitical documentary visuals for Instagram reels.
 
 Create 15 image prompts for Leonardo AI (2:3 vertical format, 1024x1792px) for a {duration_seconds}-second reel about: {keywords_str}
@@ -290,29 +325,17 @@ VOICEOVER SCRIPT (Italian):
 {script_it}
 
 ---
-
 PROMPT STRUCTURE — follow this exact formula for every prompt:
 [SUBJECT & ACTION] + [LOCATION/GEOGRAPHY] + [LIGHTING] + [ATMOSPHERE/MOOD] + [CAMERA] + [TECHNICAL STYLE]
 
 REFERENCE EXAMPLES of high-quality prompts (use as quality benchmark):
-
-Example 1 — aerial military:
-"Aerial drone view of a massive oil tanker navigating through the narrow Strait of Hormuz at dusk, surrounding rocky coastlines barely visible through industrial haze, dramatic side-lighting casting long shadows across the ship's deck, oppressive atmosphere of geopolitical tension, shot on Phase One IQ4 150MP, ultra-sharp details, 2:3 vertical composition, documentary photojournalism style, muted teal and burnt amber palette, no text, no recognizable faces"
-
-Example 2 — governmental interior:
-"Empty government war room at 3am, long conference table reflecting harsh fluorescent overhead lighting, abandoned coffee cups and classified folders scattered across polished mahogany surface, single window showing dark city skyline, extreme wide angle lens distortion, hyper-realistic architectural photography, cold blue-grey palette with amber desk lamp accents, 2:3 vertical format, cinematic documentary still, no people, no readable text"
-
-Example 3 — financial/abstract:
-"Extreme close-up of a defense contract document being signed, fountain pen tip pressing into cream paper, shallow depth of field blurring the printed text beyond recognition, single dramatic spotlight from above, deep black background, macro photography on Hasselblad, crisp ink texture detail, cold clinical atmosphere, desaturated palette with only the gold pen nib catching warm light, 2:3 vertical composition"
-
-Example 4 — geographic/map:
-"Backlit satellite map of the Persian Gulf region projected onto a frosted glass screen in a dark intelligence briefing room, glowing cyan geographic contours against deep navy background, military grid overlays barely visible, dramatic rim lighting, cinematic spy thriller aesthetic, photorealistic render, 2:3 vertical format, no readable labels, no faces"
-
-Example 5 — street/civilian:
-"Long exposure night photography of a European petrol station, blurred car light trails on wet asphalt reflecting neon price signs showing high fuel costs, lone attendant silhouette out of focus in background, rainy urban atmosphere, Sony A7R shot at f/1.4, cinematic grain, desaturated with only fuel price display glowing amber-orange, 2:3 vertical, no readable text"
+Example 1 — aerial military: "Aerial drone view of a massive oil tanker navigating through the narrow Strait of Hormuz at dusk, surrounding rocky coastlines barely visible through industrial haze, dramatic side-lighting casting long shadows across the ship's deck, oppressive atmosphere of geopolitical tension, shot on Phase One IQ4 150MP, ultra-sharp details, 2:3 vertical composition, documentary photojournalism style, muted teal and burnt amber palette, no text, no recognizable faces"
+Example 2 — governmental interior: "Empty government war room at 3am, long conference table reflecting harsh fluorescent overhead lighting, abandoned coffee cups and classified folders scattered across polished mahogany surface, single window showing dark city skyline, extreme wide angle lens distortion, hyper-realistic architectural photography, cold blue-grey palette with amber desk lamp accents, 2:3 vertical format, cinematic documentary still, no people, no readable text"
+Example 3 — financial/abstract: "Extreme close-up of a defense contract document being signed, fountain pen tip pressing into cream paper, shallow depth of field blurring the printed text beyond recognition, single dramatic spotlight from above, deep black background, macro photography on Hasselblad, crisp ink texture detail, cold clinical atmosphere, desaturated palette with only the gold pen nib catching warm light, 2:3 vertical composition"
+Example 4 — geographic/map: "Backlit satellite map of the Persian Gulf region projected onto a frosted glass screen in a dark intelligence briefing room, glowing cyan geographic contours against deep navy background, military grid overlays barely visible, dramatic rim lighting, cinematic spy thriller aesthetic, photorealistic render, 2:3 vertical format, no readable labels, no faces"
+Example 5 — street/civilian: "Long exposure night photography of a European petrol station, blurred car light trails on wet asphalt reflecting neon price signs showing high fuel costs, lone attendant silhouette out of focus in background, rainy urban atmosphere, Sony A7R shot at f/1.4, cinematic grain, desaturated with only fuel price display glowing amber-orange, 2:3 vertical, no readable text"
 
 ---
-
 VISUAL RULES:
 - NO recognizable faces, NO readable text anywhere in the image
 - Palette: dark navy, industrial amber, smoke grey, slate — zero saturated colors
@@ -337,7 +360,6 @@ Respond ONLY with valid JSON, no text before or after:
     }}
   ]
 }}"""
-
     raw = call_claude(prompt, max_tokens=4000)
     try:
         json_match = re.search(r'\{[\s\S]*\}', raw)
@@ -347,32 +369,31 @@ Respond ONLY with valid JSON, no text before or after:
 
 def generate_analysis(keywords_list, articles, previous_analyses=None):
     by_perspective = defaultdict(list)
-    for a in articles: by_perspective[a.get('perspective','other')].append(a)
-
+    for a in articles:
+        by_perspective[a.get('perspective','other')].append(a)
     articles_text = ""
     for persp, arts in by_perspective.items():
         label = PERSPECTIVE_LABELS.get(persp, persp)
         articles_text += f"\n\n=== {label.upper()} ===\n"
         for a in arts:
             articles_text += f"• [{a['source']}] {a['title']}\n  {a['summary'][:150]}\n"
-
     perspectives_present = [PERSPECTIVE_LABELS.get(p,p) for p in by_perspective.keys()]
-    perspectives_missing = [PERSPECTIVE_LABELS.get(p,p) for p in PERSPECTIVE_LABELS.keys() if p not in by_perspective]
+    perspectives_missing = [PERSPECTIVE_LABELS.get(p,p) for p in PERSPECTIVE_LABELS.keys()
+                            if p not in by_perspective]
     keywords_str = ", ".join(keywords_list)
-
     history_context = ""
     if previous_analyses:
         history_context = "\n\nANALISI PRECEDENTI SULLO STESSO TEMA:\n"
         for pa in previous_analyses[:2]:
             history_context += f"\n[{pa['created_at'][:10]}]\n{pa['narrative_map'][:400]}...\n"
 
-    # ── CHIAMATA 1: analisi ──────────────────────────────────────────────────
     prompt_analysis = f"""Sei un analista di intelligence geopolitica. Metodo: MAPPATURA DELLE NARRATIVE.
 
 TEMA: {keywords_str}
 PROSPETTIVE PRESENTI: {', '.join(perspectives_present)}
 PROSPETTIVE ASSENTI: {', '.join(perspectives_missing) if perspectives_missing else 'nessuna'}
 {history_context}
+
 ARTICOLI:
 {articles_text}
 
@@ -397,7 +418,6 @@ Rispondi SOLO con le 5 sezioni."""
 
     raw_analysis = call_claude(prompt_analysis)
 
-    # ── CHIAMATA 2: script IT ────────────────────────────────────────────────
     prompt_script = f"""Sei un giornalista geopolitico con vent'anni di esperienza.
 Scrivi uno script audio di 2 minuti e 12 secondi (132 secondi) per un reel Instagram di intelligence geopolitica.
 Lo script è SOLO IN ITALIANO.
@@ -410,14 +430,12 @@ ANALISI COMPLETA:
 TRE MOVIMENTI OBBLIGATORI (niente titoli nel testo, niente markdown):
 
 MOVIMENTO 1 — CRONACA RESPIRATA (220-250 parole)
-Apri con il fatto più anomalo. Ogni elemento ha spazio per atterrare.
-Nomina le testate esplicitamente. Almeno un riferimento storico preciso.
-Usa il Filo Narrativo per la profondità storica. Ritmo variabile.
+Apri con il fatto più anomalo. Ogni elemento ha spazio per atterrare. Nomina le testate esplicitamente.
+Almeno un riferimento storico preciso. Usa il Filo Narrativo per la profondità storica. Ritmo variabile.
 
 MOVIMENTO 2 — ANALISI CRUDA (80-100 parole)
-Conseguenze concrete per cittadini europei e italiani.
-Catena causale: geopolitica → economia domestica. Numeri specifici.
-Tono: diagnosi medica. Almeno due geografie diverse.
+Conseguenze concrete per cittadini europei e italiani. Catena causale: geopolitica → economia domestica.
+Numeri specifici. Tono: diagnosi medica. Almeno due geografie diverse.
 
 MOVIMENTO 3 — IL DISAGIO (30-50 parole)
 UN solo fatto economico concreto — titolo azionario, contratto, numero preciso.
@@ -427,12 +445,9 @@ Esempio tono: "I contratti per quelle bombe sono già stati firmati. Lockheed Ma
 Rispondi SOLO con lo script in italiano. Niente altro."""
 
     raw_script = call_claude(prompt_script)
-
-    # ── CHIAMATA 3: prompt visivi ────────────────────────────────────────────
     visual_prompts_json = generate_visual_prompts(keywords_str, raw_script, raw_analysis, duration_seconds=132)
 
     return (raw_analysis + "\n\n## 6. SCRIPT (2:12, IT)\n" + raw_script), visual_prompts_json
-
 
 def run_analysis_job(job_id, keywords, articles, previous):
     jobs[job_id]["status"] = "running"
@@ -455,36 +470,153 @@ def run_analysis_job(job_id, keywords, articles, previous):
         instagram     = extract_fuzzy(raw, "SCRIPT")
 
         by_perspective = defaultdict(list)
-        for a in articles: by_perspective[a.get('perspective','other')].append(a)
+        for a in articles:
+            by_perspective[a.get('perspective','other')].append(a)
         perspectives_used = {p: PERSPECTIVE_LABELS.get(p,p) for p in by_perspective.keys()}
-
         keywords_str = ", ".join(keywords)
-        theme_tag    = generate_theme_tag(keywords_str)
+        theme_tag = generate_theme_tag(keywords_str)
+        articles_compact = [{"source":a["source"],"title":a["title"],"link":a["link"]}
+                            for a in articles]
 
-        articles_compact = [{"source":a["source"],"title":a["title"],"link":a["link"]} for a in articles]
         save_analysis(", ".join(keywords), len(articles), narrative_map, convergences,
                       divergences, legal, thread, instagram, theme_tag, visual_prompts,
                       json.dumps(articles_compact, ensure_ascii=False))
 
         jobs[job_id]["status"] = "done"
         jobs[job_id]["result"] = {
-            "keywords": keywords, "article_count": len(articles),
-            "articles": articles[:15], "perspectives_used": perspectives_used,
-            "narrative_map": narrative_map, "convergences": convergences,
-            "divergences": divergences, "legal": legal, "thread": thread,
-            "instagram_script": instagram, "has_history": len(previous) > 0,
-            "theme_tag": theme_tag, "visual_prompts": visual_prompts,
+            "keywords": keywords,
+            "article_count": len(articles),
+            "articles": articles[:15],
+            "perspectives_used": perspectives_used,
+            "narrative_map": narrative_map,
+            "convergences": convergences,
+            "divergences": divergences,
+            "legal": legal,
+            "thread": thread,
+            "instagram_script": instagram,
+            "has_history": len(previous) > 0,
+            "theme_tag": theme_tag,
+            "visual_prompts": visual_prompts,
         }
     except Exception as e:
         jobs[job_id]["status"] = "error"
-        jobs[job_id]["error"]  = str(e)
+        jobs[job_id]["error"] = str(e)
         print(f"[ERROR] Job {job_id}: {e}")
+
+# ─────────────────────────────────────────────
+# SISTEMA EDITORIALE — helper functions
+# ─────────────────────────────────────────────
+def make_slug(titolo):
+    s = unicodedata.normalize('NFD', titolo)
+    s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
+    s = s.lower().strip()
+    s = re.sub(r'[^a-z0-9\s-]', '', s)
+    s = re.sub(r'[\s_-]+', '-', s)
+    s = s[:80].strip('-')
+    ts = datetime.now().strftime('%Y%m%d')
+    return f"{ts}-{s}"
+
+def generate_articolo_from_analisi(analisi, keywords_str):
+    narrative_map     = analisi.get('narrative_map', '')
+    convergences      = analisi.get('convergences', '')
+    divergences       = analisi.get('divergences', '')
+    legal             = analisi.get('legal', '')
+    thread            = analisi.get('thread', '')
+    instagram_script  = analisi.get('instagram_script', '')
+
+    prompt = f"""Devi scrivere un articolo editoriale completo per Theatrum Belli sul tema: {keywords_str}
+
+Hai a disposizione questa analisi intelligence:
+
+MAPPA NARRATIVE:
+{narrative_map}
+
+CONVERGENZE:
+{convergences}
+
+DIVERGENZE:
+{divergences}
+
+DIRITTO INTERNAZIONALE:
+{legal}
+
+FILO NARRATIVO:
+{thread}
+
+SCRIPT AUDIO (per tono e ritmo):
+{instagram_script[:800] if instagram_script else ''}
+
+Scrivi UN SOLO titolo editoriale (NON descrittivo, NON scolastico — deve colpire come un headline di guerra fredda, max 12 parole), poi l'articolo in 3 sezioni ESATTE con questi titoli precisi.
+
+TITOLO: [titolo impattante]
+
+## IL DATO CHE CONTA
+Fatti nudi incrociati da più fonti. Apri con il dato più anomalo o inatteso. Cita le testate esplicitamente. Almeno un riferimento storico preciso. Niente interpretazioni — solo fatti verificati e la tensione tra di essi. 200-280 parole.
+
+## THEATRUM BELLI — ANALISI
+Meccanismi nascosti, contraddizioni strutturali, paradossi di potere. Chi guadagna, chi perde, quali architetture di interesse sono in gioco. Voce: osservatore freddo che conosce la storia. Niente "dovremmo", niente moralismo. 200-280 parole.
+
+## COSA SIGNIFICA PER TE
+Conseguenze concrete per il cittadino europeo/italiano. Catena causale geopolitica→economia domestica. Bollette, prezzi, lavoro, logistica. Numeri specifici dove possibile. Chiudi con UN fatto economico secco — titolo azionario, contratto firmato, percentuale. Tono: referto medico. 120-160 parole.
+
+POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — al massimo 3 hashtag specifici]
+PROMPT_IMMAGINE: [prompt in inglese per Flux AI, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9, photojournalism style]
+
+Rispondi in questo formato esatto — niente altro."""
+
+    return call_claude(prompt, max_tokens=3000)
+
+def parse_articolo_response(raw, analisi_id, keywords_str):
+    """Parsa la risposta Claude e restituisce dict con tutti i campi."""
+    # Estrai titolo
+    titolo = ""
+    m = re.search(r'TITOLO:\s*(.+)', raw)
+    if m:
+        titolo = m.group(1).strip().strip('[]')
+
+    def extract_sec(text, header):
+        m2 = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\nPOST_SOCIAL:|\nPROMPT_IMMAGINE:|\Z)",
+                       text, re.DOTALL)
+        return m2.group(1).strip() if m2 else ""
+
+    sezione_dati        = extract_sec(raw, "IL DATO CHE CONTA")
+    sezione_analisi     = extract_sec(raw, "THEATRUM BELLI — ANALISI")
+    sezione_conseguenze = extract_sec(raw, "COSA SIGNIFICA PER TE")
+
+    m_social = re.search(r'POST_SOCIAL:\s*(.*?)(?=\nPROMPT_IMMAGINE:|\Z)', raw, re.DOTALL)
+    post_social = m_social.group(1).strip().strip('[]') if m_social else ""
+
+    m_prompt = re.search(r'PROMPT_IMMAGINE:\s*(.*?)$', raw, re.DOTALL)
+    immagine_prompt = m_prompt.group(1).strip().strip('[]') if m_prompt else ""
+
+    # Categoria automatica dal keywords
+    categoria = categorize(keywords_str)
+
+    slug = make_slug(titolo or keywords_str)
+
+    return {
+        "slug": slug,
+        "titolo": titolo,
+        "categoria": categoria,
+        "tags": keywords_str,
+        "sezione_dati": sezione_dati,
+        "sezione_analisi": sezione_analisi,
+        "sezione_conseguenze": sezione_conseguenze,
+        "immagine_prompt": immagine_prompt,
+        "immagine_url": "",
+        "post_social": post_social,
+        "analisi_id": analisi_id,
+        "status": "bozza",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "published_at": None,
+    }
 
 # ─────────────────────────────────────────────
 # ROUTES PUBBLICHE
 # ─────────────────────────────────────────────
 @app.route("/")
-def index(): return render_template("index.html")
+def index():
+    return render_template("index.html")
 
 @app.route("/api/news")
 def api_news():
@@ -494,7 +626,7 @@ def api_news():
     query = "SELECT source,title,link,summary,published,category,fetched_at FROM articles WHERE 1=1"
     params = []
     if category != "all": query += " AND category=%s"; params.append(category)
-    if source   != "all": query += " AND source=%s";   params.append(source)
+    if source != "all": query += " AND source=%s"; params.append(source)
     query += " ORDER BY fetched_at DESC LIMIT %s OFFSET %s"; params.extend([limit, offset])
     c.execute(query, params); rows = [dict(r) for r in c.fetchall()]; conn.close()
     return jsonify(rows)
@@ -517,10 +649,38 @@ def manual_refresh():
     return jsonify({"status":"refresh started"})
 
 @app.route("/api/categories")
-def api_categories(): return jsonify(list(CATEGORY_TAGS.keys()))
+def api_categories():
+    return jsonify(list(CATEGORY_TAGS.keys()))
 
 @app.route("/api/sources")
-def api_sources(): return jsonify(list(FEEDS.keys()))
+def api_sources():
+    return jsonify(list(FEEDS.keys()))
+
+# ── Pagine pubbliche articoli ──────────────────────────────────────────
+@app.route("/articoli")
+def articoli_lista():
+    categoria = request.args.get("categoria", "all")
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    if categoria != "all":
+        c.execute("""SELECT id,slug,titolo,categoria,tags,created_at,published_at,immagine_url
+                     FROM articoli WHERE status='pubblicato' AND categoria=%s
+                     ORDER BY published_at DESC LIMIT 50""", (categoria,))
+    else:
+        c.execute("""SELECT id,slug,titolo,categoria,tags,created_at,published_at,immagine_url
+                     FROM articoli WHERE status='pubblicato'
+                     ORDER BY published_at DESC LIMIT 50""")
+    rows = [dict(r) for r in c.fetchall()]; conn.close()
+    return render_template("articoli_lista.html", articoli=rows, categoria_filtro=categoria,
+                           categorie=list(CATEGORY_TAGS.keys()))
+
+@app.route("/articoli/<slug>")
+def articolo_detail(slug):
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM articoli WHERE slug=%s AND status='pubblicato'", (slug,))
+    row = c.fetchone(); conn.close()
+    if not row:
+        return "Articolo non trovato", 404
+    return render_template("articolo_detail.html", articolo=dict(row))
 
 # ─────────────────────────────────────────────
 # ROUTES ADMIN
@@ -544,6 +704,15 @@ def admin_login():
 def admin_logout():
     session.pop("admin", None); return redirect(url_for("index"))
 
+@app.route("/admin/articoli")
+def admin_articoli():
+    if not session.get("admin"): return redirect(url_for("admin_login"))
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("""SELECT id,slug,titolo,categoria,status,created_at,published_at
+                 FROM articoli ORDER BY created_at DESC LIMIT 100""")
+    rows = [dict(r) for r in c.fetchall()]; conn.close()
+    return render_template("admin_articoli.html", articoli=rows)
+
 @app.route("/api/admin/analyze", methods=["POST"])
 def api_analyze():
     if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
@@ -565,7 +734,8 @@ def api_analyze():
     all_articles = [dict(r) for r in c.fetchall()]
     kw_conditions = " OR ".join(["LOWER(keywords) LIKE %s" for _ in keywords])
     kw_params = [f"%{kw}%" for kw in keywords]
-    c.execute(f"SELECT narrative_map,created_at FROM analyses WHERE {kw_conditions} ORDER BY created_at DESC LIMIT 2", kw_params)
+    c.execute(f"SELECT narrative_map,created_at FROM analyses WHERE {kw_conditions} ORDER BY created_at DESC LIMIT 2",
+              kw_params)
     previous = [dict(r) for r in c.fetchall()]
     conn.close()
     if not all_articles:
@@ -609,13 +779,118 @@ def api_analysis_delete(analysis_id):
     conn.commit(); conn.close()
     return jsonify({"deleted":analysis_id})
 
+# ── Genera articolo da analisi ─────────────────────────────────────────
+@app.route("/api/admin/articoli/genera/<int:analisi_id>", methods=["POST"])
+def api_genera_articolo(analisi_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM analyses WHERE id=%s", (analisi_id,))
+    analisi = c.fetchone()
+    if not analisi:
+        conn.close()
+        return jsonify({"error":"Analisi non trovata"}), 404
+    analisi = dict(analisi)
+    keywords_str = analisi.get('keywords', '')
+    conn.close()
+
+    try:
+        raw = generate_articolo_from_analisi(analisi, keywords_str)
+        art = parse_articolo_response(raw, analisi_id, keywords_str)
+
+        # Assicura slug univoco
+        conn2 = get_conn(); c2 = conn2.cursor()
+        base_slug = art['slug']
+        final_slug = base_slug
+        counter = 1
+        while True:
+            c2.execute("SELECT id FROM articoli WHERE slug=%s", (final_slug,))
+            if not c2.fetchone(): break
+            final_slug = f"{base_slug}-{counter}"; counter += 1
+        art['slug'] = final_slug
+
+        c2.execute("""
+            INSERT INTO articoli (slug,titolo,categoria,tags,sezione_dati,sezione_analisi,
+                                  sezione_conseguenze,immagine_prompt,immagine_url,post_social,
+                                  analisi_id,status,created_at,published_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id
+        """, (art['slug'], art['titolo'], art['categoria'], art['tags'],
+              art['sezione_dati'], art['sezione_analisi'], art['sezione_conseguenze'],
+              art['immagine_prompt'], art['immagine_url'], art['post_social'],
+              art['analisi_id'], art['status'], art['created_at'], art['published_at']))
+        new_id = c2.fetchone()[0]
+        conn2.commit(); conn2.close()
+
+        return jsonify({"success": True, "articolo_id": new_id, "slug": final_slug, "articolo": art})
+    except Exception as e:
+        print(f"[ERROR] genera_articolo: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/admin/articoli")
+def api_admin_articoli_list():
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("""SELECT id,slug,titolo,categoria,status,created_at,published_at
+                 FROM articoli ORDER BY created_at DESC LIMIT 100""")
+    rows = [dict(r) for r in c.fetchall()]; conn.close()
+    return jsonify(rows)
+
+@app.route("/api/admin/articoli/<int:articolo_id>")
+def api_admin_articolo_detail(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM articoli WHERE id=%s", (articolo_id,))
+    row = c.fetchone(); conn.close()
+    if not row: return jsonify({"error":"Non trovato"}), 404
+    return jsonify(dict(row))
+
+@app.route("/api/admin/articoli/<int:articolo_id>/pubblica", methods=["POST"])
+def api_pubblica_articolo(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor()
+    c.execute("""UPDATE articoli SET status='pubblicato', published_at=%s WHERE id=%s""",
+              (datetime.now(timezone.utc).isoformat(), articolo_id))
+    conn.commit(); conn.close()
+    return jsonify({"success": True, "status": "pubblicato"})
+
+@app.route("/api/admin/articoli/<int:articolo_id>/archivia", methods=["POST"])
+def api_archivia_articolo(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor()
+    c.execute("UPDATE articoli SET status='archiviato' WHERE id=%s", (articolo_id,))
+    conn.commit(); conn.close()
+    return jsonify({"success": True, "status": "archiviato"})
+
+@app.route("/api/admin/articoli/<int:articolo_id>", methods=["PUT"])
+def api_update_articolo(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    data = request.json
+    allowed = ['titolo','sezione_dati','sezione_analisi','sezione_conseguenze',
+               'post_social','immagine_prompt','immagine_url','categoria','tags']
+    updates = {k: v for k, v in data.items() if k in allowed}
+    if not updates: return jsonify({"error":"Nessun campo valido"}), 400
+    set_clause = ", ".join([f"{k}=%s" for k in updates])
+    conn = get_conn(); c = conn.cursor()
+    c.execute(f"UPDATE articoli SET {set_clause} WHERE id=%s",
+              list(updates.values()) + [articolo_id])
+    conn.commit(); conn.close()
+    return jsonify({"success": True})
+
+@app.route("/api/admin/articoli/<int:articolo_id>", methods=["DELETE"])
+def api_delete_articolo(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor()
+    c.execute("DELETE FROM articoli WHERE id=%s", (articolo_id,))
+    conn.commit(); conn.close()
+    return jsonify({"deleted": articolo_id})
+
 # ─────────────────────────────────────────────
 # ELEVENLABS TTS
 # ─────────────────────────────────────────────
 @app.route("/api/admin/tts", methods=["POST"])
 def api_tts():
     if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
-    if not ELEVENLABS_API_KEY:  return jsonify({"error":"ElevenLabs API key non configurata"}), 500
+    if not ELEVENLABS_API_KEY: return jsonify({"error":"ElevenLabs API key non configurata"}), 500
     if not ELEVENLABS_VOICE_ID: return jsonify({"error":"ElevenLabs Voice ID non configurato"}), 500
     data = request.json
     text       = (data.get("text") or "").strip()
@@ -627,7 +902,8 @@ def api_tts():
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
         headers = {"xi-api-key":ELEVENLABS_API_KEY,"Content-Type":"application/json","Accept":"audio/mpeg"}
         payload = {
-            "text": text, "model_id": "eleven_multilingual_v2",
+            "text": text,
+            "model_id": "eleven_multilingual_v2",
             "voice_settings": {"stability":stability,"similarity_boost":similarity,"speed":speed}
         }
         r = req_lib.post(url, json=payload, headers=headers, timeout=60)
@@ -639,12 +915,35 @@ def api_tts():
         print(f"TTS error: {e}"); return jsonify({"error":str(e)}), 500
 
 # ─────────────────────────────────────────────
+# VISUAL PROMPTS (on-demand)
+# ─────────────────────────────────────────────
+@app.route("/api/admin/visual-prompts", methods=["POST"])
+def api_visual_prompts():
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    data = request.json
+    script_it = (data.get("script_it") or "").strip()
+    keywords  = (data.get("keywords") or "").strip()
+    duration  = int(data.get("duration_seconds", 132))
+    if not script_it: return jsonify({"error":"Script vuoto"}), 400
+    try:
+        raw_json = generate_visual_prompts(keywords, script_it, "", duration_seconds=duration)
+        parsed = json.loads(raw_json)
+        return jsonify(parsed)
+    except json.JSONDecodeError:
+        return jsonify({"error":"Risposta JSON non valida da Claude", "raw": raw_json[:500]}), 500
+    except Exception as e:
+        print(f"Visual prompts error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────────────────────
 # STARTUP
 # ─────────────────────────────────────────────
 init_db()
+
 _startup_thread = threading.Thread(target=fetch_all)
 _startup_thread.daemon = True
 _startup_thread.start()
+
 _scheduler = BackgroundScheduler()
 _scheduler.add_job(fetch_all, "interval", hours=1, id="fetch_feeds")
 _scheduler.start()
@@ -652,24 +951,3 @@ _scheduler.start()
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
-
-# ─────────────────────────────────────────────
-# VISUAL PROMPTS (on-demand)
-# ─────────────────────────────────────────────
-@app.route("/api/admin/visual-prompts", methods=["POST"])
-def api_visual_prompts():
-    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
-    data       = request.json
-    script_it  = (data.get("script_it") or "").strip()
-    keywords   = (data.get("keywords")  or "").strip()
-    duration   = int(data.get("duration_seconds", 132))
-    if not script_it: return jsonify({"error":"Script vuoto"}), 400
-    try:
-        raw_json = generate_visual_prompts(keywords, script_it, "", duration_seconds=duration)
-        parsed   = json.loads(raw_json)
-        return jsonify(parsed)
-    except json.JSONDecodeError:
-        return jsonify({"error":"Risposta JSON non valida da Claude", "raw": raw_json[:500]}), 500
-    except Exception as e:
-        print(f"Visual prompts error: {e}")
-        return jsonify({"error": str(e)}), 500

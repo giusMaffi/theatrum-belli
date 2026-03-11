@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articoli — Theatrum Belli | Intelligence Geopolitica</title>
+    <meta name="description" content="Analisi geopolitica multi-fonte. Fatti, meccanismi di potere e conseguenze concrete per i cittadini europei.">
+    <meta property="og:title" content="Theatrum Belli — Intelligence Geopolitica">
+    <meta property="og:description" content="Analisi geopolitica che sintetizza media occidentali, russi, cinesi, arabi e think tank.">
+    <meta property="og:type" content="website">
+    <link rel="canonical" href="https://theatrumbelli.com/articoli">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --border: #1e1e2e;
+            --accent: #c8a96e;
+            --accent2: #7b6fd4;
+            --text: #e8e4d9;
+            --muted: #6b6b7a;
+            --danger: #c0392b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; line-height: 1.7; }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            background: rgba(10,10,15,0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        .logo {
+            font-family: 'Georgia', serif;
+            font-size: 1.3rem;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+        .logo span { color: var(--muted); font-size: 0.75rem; display: block; letter-spacing: 0.05em; margin-top: 2px; }
+        nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; margin-left: 1.5rem; font-family: 'Courier New', monospace; letter-spacing: 0.05em; transition: color 0.2s; }
+        nav a:hover { color: var(--accent); }
+
+        .hero {
+            padding: 4rem 2rem 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            border-bottom: 1px solid var(--border);
+        }
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 400;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        .hero p { color: var(--muted); font-size: 0.95rem; font-family: 'Courier New', monospace; }
+
+        .filters {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.05em;
+            transition: all 0.2s;
+            text-decoration: none;
+            border-radius: 2px;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(200,169,110,0.05);
+        }
+
+        .grid {
+            max-width: 1100px;
+            margin: 0 auto 4rem;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 1.8rem;
+            transition: border-color 0.2s, transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 100%;
+            background: var(--accent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .card:hover { border-color: rgba(200,169,110,0.3); transform: translateY(-2px); }
+        .card:hover::before { opacity: 1; }
+
+        .card-cat {
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.8rem;
+        }
+        .card h2 {
+            font-size: 1.05rem;
+            font-weight: 400;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+        .card h2 a { color: inherit; text-decoration: none; }
+        .card h2 a:hover { color: var(--accent); }
+
+        .card-meta {
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .card-tags {
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .empty {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--muted);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+        footer a { color: var(--muted); }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">Theatrum Belli <span>Intelligence Geopolitica</span></a>
+        <nav>
+            <a href="/">Feed</a>
+            <a href="/articoli">Analisi</a>
+        </nav>
+    </header>
+
+    <div class="hero">
+        <h1>Archivio Analisi</h1>
+        <p>Sintesi intelligence multi-fonte — prospettiva multipla, conseguenze concrete</p>
+    </div>
+
+    <div class="filters">
+        <a href="/articoli" class="filter-btn {% if categoria_filtro == 'all' %}active{% endif %}">Tutto</a>
+        {% for cat in categorie %}
+        <a href="/articoli?categoria={{ cat | urlencode }}"
+           class="filter-btn {% if categoria_filtro == cat %}active{% endif %}">
+            {{ cat }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="grid">
+        {% if articoli %}
+            {% for art in articoli %}
+            <article class="card">
+                <div class="card-cat">{{ art.categoria }}</div>
+                <h2><a href="/articoli/{{ art.slug }}">{{ art.titolo or 'Senza titolo' }}</a></h2>
+                <div class="card-meta">
+                    <span>{% if art.published_at %}{{ art.published_at[:10] }}{% else %}{{ art.created_at[:10] }}{% endif %}</span>
+                </div>
+                {% if art.tags %}
+                <div class="card-tags">{{ art.tags }}</div>
+                {% endif %}
+            </article>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                Nessun articolo pubblicato.<br>
+                Gli articoli vengono generati dall'area admin dalle analisi.
+            </div>
+        {% endif %}
+    </div>
+
+    <footer>
+        &copy; 2026 Theatrum Belli —
+        <a href="/">theatrumbelli.com</a>
+    </footer>
+</body>
+</html>

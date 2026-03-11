@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ articolo.titolo }} — Theatrum Belli</title>
+    <meta name="description" content="{{ (articolo.sezione_dati or '')[:160] }}">
+    <meta property="og:title" content="{{ articolo.titolo }} — Theatrum Belli">
+    <meta property="og:description" content="{{ (articolo.sezione_dati or '')[:200] }}">
+    <meta property="og:type" content="article">
+    {% if articolo.immagine_url %}
+    <meta property="og:image" content="{{ articolo.immagine_url }}">
+    {% endif %}
+    <link rel="canonical" href="https://theatrumbelli.com/articoli/{{ articolo.slug }}">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --border: #1e1e2e;
+            --accent: #c8a96e;
+            --accent2: #7b6fd4;
+            --text: #e8e4d9;
+            --muted: #6b6b7a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Georgia', serif; line-height: 1.8; }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            background: rgba(10,10,15,0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        .logo {
+            font-family: 'Georgia', serif;
+            font-size: 1.3rem;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+        .logo span { color: var(--muted); font-size: 0.75rem; display: block; letter-spacing: 0.05em; margin-top: 2px; }
+        nav a { color: var(--muted); text-decoration: none; font-size: 0.85rem; margin-left: 1.5rem; font-family: 'Courier New', monospace; transition: color 0.2s; }
+        nav a:hover { color: var(--accent); }
+
+        .article-wrap {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 4rem 2rem 6rem;
+        }
+
+        .breadcrumb {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+        .breadcrumb a { color: var(--muted); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--accent); }
+        .breadcrumb span { margin: 0 0.5rem; }
+
+        .article-cat {
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            color: var(--accent);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 400;
+            line-height: 1.35;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+
+        .article-meta {
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 0.8rem 0;
+            margin-bottom: 3rem;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        {% if articolo.immagine_url %}
+        .hero-img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            margin-bottom: 3rem;
+            border: 1px solid var(--border);
+        }
+        {% endif %}
+
+        .section {
+            margin-bottom: 3rem;
+        }
+        .section-label {
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .section-label::before {
+            content: '▸';
+            font-size: 0.6rem;
+        }
+
+        .section-body {
+            font-size: 1.05rem;
+            line-height: 1.85;
+            color: var(--text);
+            white-space: pre-wrap;
+        }
+
+        .section-conseguenze .section-body {
+            font-size: 1rem;
+        }
+        .section-conseguenze .section-label { color: var(--accent2); border-color: var(--accent2); }
+
+        .share-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            margin-top: 4rem;
+        }
+        .share-box h3 {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .share-box p {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+        .share-btn {
+            display: inline-block;
+            padding: 0.5rem 1.2rem;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            text-decoration: none;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.05em;
+            margin-right: 0.5rem;
+            transition: all 0.2s;
+        }
+        .share-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--muted);
+            text-decoration: none;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            margin-top: 3rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--accent); }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">Theatrum Belli <span>Intelligence Geopolitica</span></a>
+        <nav>
+            <a href="/">Feed</a>
+            <a href="/articoli">Analisi</a>
+        </nav>
+    </header>
+
+    <div class="article-wrap">
+        <div class="breadcrumb">
+            <a href="/">Home</a><span>/</span>
+            <a href="/articoli">Analisi</a><span>/</span>
+            {{ articolo.categoria }}
+        </div>
+
+        <div class="article-cat">{{ articolo.categoria }}</div>
+
+        <h1>{{ articolo.titolo or 'Analisi Geopolitica' }}</h1>
+
+        <div class="article-meta">
+            <span>📅 {% if articolo.published_at %}{{ articolo.published_at[:10] }}{% else %}{{ articolo.created_at[:10] }}{% endif %}</span>
+            {% if articolo.tags %}
+            <span>🔑 {{ articolo.tags }}</span>
+            {% endif %}
+        </div>
+
+        {% if articolo.immagine_url %}
+        <img src="{{ articolo.immagine_url }}" alt="{{ articolo.titolo }}" class="hero-img">
+        {% endif %}
+
+        {% if articolo.sezione_dati %}
+        <div class="section">
+            <div class="section-label">Il Dato Che Conta</div>
+            <div class="section-body">{{ articolo.sezione_dati }}</div>
+        </div>
+        {% endif %}
+
+        {% if articolo.sezione_analisi %}
+        <div class="section">
+            <div class="section-label">Theatrum Belli — Analisi</div>
+            <div class="section-body">{{ articolo.sezione_analisi }}</div>
+        </div>
+        {% endif %}
+
+        {% if articolo.sezione_conseguenze %}
+        <div class="section section-conseguenze">
+            <div class="section-label">Cosa Significa Per Te</div>
+            <div class="section-body">{{ articolo.sezione_conseguenze }}</div>
+        </div>
+        {% endif %}
+
+        <div class="share-box">
+            <h3>Condividi questa analisi</h3>
+            <p>Se trovi utile questa analisi, condividila. La trasparenza sui meccanismi di potere è un bene comune.</p>
+            <a href="https://twitter.com/intent/tweet?url=https://theatrumbelli.com/articoli/{{ articolo.slug }}&text={{ articolo.titolo | urlencode }}"
+               class="share-btn" target="_blank" rel="noopener">Twitter/X</a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://theatrumbelli.com/articoli/{{ articolo.slug }}"
+               class="share-btn" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+
+        <a href="/articoli" class="back-link">← Torna all'archivio</a>
+    </div>
+
+    <footer>
+        &copy; 2026 Theatrum Belli — <a href="/">theatrumbelli.com</a>
+    </footer>
+</body>
+</html>

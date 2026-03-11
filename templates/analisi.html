@@ -1,790 +1,384 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>THEATRUM BELLI — Intelligence Lab</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg:#0d0d0f; --surface:#141417; --surface2:#1c1c21; --border:#2a2a30;
-  --accent:#c8a96e; --accent2:#e05c4b; --accent3:#6ab4c8;
-  --text:#e8e4dc; --text-muted:#9a9690; --text-dim:#5a5855;
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-weight:400;line-height:1.6;}
-header{border-bottom:1px solid var(--border);padding:0.9rem 2rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg);position:sticky;top:0;z-index:100;}
-.logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;letter-spacing:0.15em;color:var(--accent);}
-.logo span{color:var(--accent2);}
-.logo-sub{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;margin-top:2px;}
-.header-right{display:flex;gap:0.8rem;align-items:center;}
-.btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;padding:0.3rem 0.8rem;cursor:pointer;text-transform:uppercase;transition:all 0.2s;border-radius:2px;text-decoration:none;display:inline-block;}
-.btn:hover{border-color:var(--accent);color:var(--accent);}
-.btn-danger{border-color:#3a2020;color:var(--accent2);}
-.btn-danger:hover{background:var(--accent2);color:var(--bg);border-color:var(--accent2);}
-.section-nav{display:none;position:sticky;top:58px;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;overflow-x:auto;}
-.section-nav.visible{display:flex;}
-.nav-anchor{font-family:'IBM Plex Mono',monospace;font-size:0.57rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);padding:0.55rem 0.75rem;text-decoration:none;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap;flex-shrink:0;}
-.nav-anchor:hover{color:var(--accent);border-bottom-color:var(--accent);}
-.layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 58px);}
-aside{border-right:1px solid var(--border);padding:1.2rem;overflow-y:auto;background:var(--bg);position:sticky;top:58px;height:calc(100vh - 58px);}
-.sidebar-title{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:0.8rem;padding-bottom:0.35rem;border-bottom:1px solid var(--border);}
-.keyword-tags{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.7rem;min-height:32px;}
-.tag{background:#1a1a20;border:1px solid var(--accent);font-family:'IBM Plex Mono',monospace;font-size:0.65rem;padding:0.2rem 0.55rem;border-radius:2px;display:flex;align-items:center;gap:0.35rem;color:var(--accent);}
-.tag button{background:none;border:none;color:var(--accent2);cursor:pointer;font-size:0.9rem;line-height:1;padding:0;opacity:0.7;}
-.tag button:hover{opacity:1;}
-.keyword-input-row{display:flex;gap:0.4rem;margin-bottom:0.5rem;}
-input[type="text"]{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:0.75rem;padding:0.45rem 0.7rem;outline:none;border-radius:2px;}
-input[type="text"]:focus{border-color:var(--accent);}
-input[type="text"]::placeholder{color:var(--text-dim);}
-.hint{font-family:'IBM Plex Mono',monospace;font-size:0.57rem;color:var(--text-dim);line-height:1.6;margin-bottom:0.8rem;}
-.analyze-btn{width:100%;background:var(--accent);border:none;color:#0d0d0f;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;padding:0.75rem;cursor:pointer;transition:all 0.2s;border-radius:2px;}
-.analyze-btn:hover{background:#d4b97e;}
-.analyze-btn:disabled{opacity:0.35;cursor:default;}
-.date-filter{display:flex;gap:0.3rem;margin-bottom:0.8rem;}
-.filter-btn{flex:1;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.07em;padding:0.25rem 0;cursor:pointer;border-radius:2px;transition:all 0.15s;text-transform:uppercase;}
-.filter-btn:hover{border-color:var(--accent);color:var(--text-muted);}
-.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(200,169,110,0.08);}
-.dossier-group{margin-bottom:0.4rem;}
-.dossier-header{display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;cursor:pointer;border-radius:2px;transition:background 0.15s;}
-.dossier-header:hover{background:var(--surface2);}
-.dossier-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.dossier-label{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);flex:1;}
-.dossier-count{font-family:'IBM Plex Mono',monospace;font-size:0.52rem;color:var(--text-dim);}
-.dossier-chevron{font-size:0.5rem;color:var(--text-dim);transition:transform 0.15s;}
-.dossier-items{padding-left:1.1rem;}
-.dossier-items.collapsed{display:none;}
-.dossier-header.open .dossier-chevron{transform:rotate(90deg);}
-.history-item{position:relative;padding:0.6rem 0.7rem;padding-right:3.2rem;border:1px solid var(--border);margin-bottom:0.35rem;cursor:pointer;transition:all 0.15s;border-radius:2px;background:var(--surface);}
-.history-item:hover{border-color:var(--accent);background:var(--surface2);}
-.history-kw{font-size:0.75rem;color:var(--accent);margin-bottom:0.15rem;font-weight:500;}
-.history-meta{font-family:'IBM Plex Mono',monospace;font-size:0.57rem;color:var(--text-dim);}
-.delete-btn{position:absolute;right:0.3rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.7rem;opacity:0;padding:0.2rem 0.3rem;line-height:1;transition:opacity 0.15s,color 0.15s;}
-.history-item:hover .delete-btn{opacity:1;}
-.delete-btn:hover{color:var(--accent2);}
-.update-btn{position:absolute;right:1.6rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.8rem;opacity:0;padding:0.2rem 0.3rem;line-height:1;transition:opacity 0.15s,color 0.15s;}
-.history-item:hover .update-btn{opacity:1;}
-.update-btn:hover{color:var(--accent)!important;}
-main{overflow-y:auto;}
-.main-content{padding:2rem;max-width:900px;}
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;padding:2rem;}
-.empty-icon{font-size:2.5rem;opacity:0.2;}
-.empty-text{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--text-dim);text-align:center;line-height:1.9;}
-#loading-state{display:none;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;padding:2rem;}
-.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.loading-text{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;}
-.loading-sub{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-dim);}
-#result{display:none;}
-.result-header{margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
-.result-kw-headline{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--accent);letter-spacing:0.04em;line-height:1.2;margin-bottom:0.5rem;}
-.result-kw-headline .kw-sep{color:var(--text-dim);font-size:1.1rem;margin:0 0.3rem;}
-.result-meta{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.6rem;}
-.perspectives-bar{display:flex;flex-wrap:wrap;gap:0.35rem;}
-.persp-badge{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;padding:0.15rem 0.5rem;border-radius:10px;border:1px solid;}
-.persp-western_mainstream{border-color:#4a7ab5;color:#7aaad5;background:#0d1520;}
-.persp-italian_mainstream{border-color:#5a8a40;color:#8aba70;background:#0d150a;}
-.persp-pro_israel{border-color:#b5844a;color:#d5a47a;background:#150e05;}
-.persp-arab_media{border-color:#b54a4a;color:#d57a7a;background:#150a0a;}
-.persp-alternative_left{border-color:#8a4ab5;color:#aa7ad5;background:#100a15;}
-.persp-russian_state{border-color:#b54a4a;color:#c07070;background:#150808;}
-.persp-chinese_state{border-color:#b58a4a;color:#d5aa7a;background:#150d05;}
-.persp-think_tank{border-color:#4ab5a0;color:#7ad5c0;background:#051510;}
-.persp-other{border-color:#555;color:#888;background:#111;}
-.section-title{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent);margin-bottom:1rem;padding-bottom:0.35rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
-.section-title .icon{font-size:0.8rem;}
-.section-block{margin-bottom:2rem;}
-.narrative-grid{display:grid;gap:0;border:1px solid var(--border);border-radius:2px;overflow:hidden;}
-.narrative-entry{display:grid;grid-template-columns:155px 1fr;border-bottom:1px solid var(--border);}
-.narrative-entry:last-child{border-bottom:none;}
-.narrative-persp-col{padding:0.9rem 1rem;background:var(--surface);border-right:1px solid var(--border);display:flex;align-items:flex-start;}
-.narrative-persp{font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:500;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;line-height:1.5;}
-.narrative-text-col{padding:0.9rem 1.2rem;}
-.narrative-text{font-size:0.88rem;color:var(--text);line-height:1.75;}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.section-card{background:var(--surface);border:1px solid var(--border);padding:1.4rem;border-radius:2px;}
-.section-content{font-size:0.88rem;color:#ccc9c0;line-height:1.85;}
-.convergence-card{border-color:#1a3020;background:#0d150d;}
-.divergence-card{border-color:#301a1a;background:#150d0d;}
-.legal-card{background:var(--surface);border:1px solid var(--border);padding:1.4rem;border-radius:2px;}
-.thread-card{background:#0d0d18;border:1px solid #1a1a30;padding:1.4rem;border-radius:2px;}
-.thread-title{color:var(--accent3);}
-
-/* ── INSTAGRAM CARD ─────────────────────────────────────────────────────── */
-.instagram-card{background:var(--surface);border:1px solid #2a1a1a;padding:1.4rem;border-radius:2px;}
-.instagram-title{color:var(--accent2);}
-.instagram-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:0.5rem;}
-.instagram-header-left{display:flex;align-items:center;gap:0.8rem;}
-.instagram-header-right{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;}
-
-/* Script textarea */
-.script-textarea{
-  font-size:0.9rem;line-height:1.85;color:#ccc9c0;white-space:pre-wrap;
-  width:100%;min-height:320px;background:var(--surface2);
-  border:1px solid var(--border);outline:none;resize:vertical;
-  font-family:'IBM Plex Sans',sans-serif;padding:1rem;border-radius:2px;
-  transition:border-color 0.2s;
-}
-.script-textarea:focus{border-color:var(--accent);}
-.script-textarea.confirmed{border-color:#2a3a2a;background:#0d120d;color:#b8d4b8;}
-.script-textarea:disabled{opacity:0.7;cursor:default;}
-
-/* Bottoni azione script */
-.action-btn{
-  font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;
-  padding:0.35rem 0.8rem;cursor:pointer;border-radius:2px;transition:all 0.2s;
-  text-transform:uppercase;border:1px solid;
-}
-.btn-confirm{border-color:var(--accent);color:var(--accent);background:transparent;}
-.btn-confirm:hover{background:var(--accent);color:var(--bg);}
-.btn-confirm.active{background:var(--accent);color:var(--bg);}
-.btn-audio{border-color:var(--accent3);color:var(--accent3);background:transparent;}
-.btn-audio:hover:not(:disabled){background:var(--accent3);color:var(--bg);}
-.btn-audio:disabled{opacity:0.35;cursor:default;}
-.btn-visual{border-color:#9a7ab5;color:#9a7ab5;background:transparent;}
-.btn-visual:hover:not(:disabled){background:#9a7ab5;color:var(--bg);}
-.btn-visual:disabled{opacity:0.35;cursor:default;}
-.btn-copy{border-color:var(--border);color:var(--text-muted);background:transparent;}
-.btn-copy:hover{border-color:var(--accent2);color:var(--accent2);}
-
-/* Settings ElevenLabs */
-.settings-panel{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:2px;padding:1rem;margin-bottom:1rem;
-  display:none;
-}
-.settings-panel.open{display:block;}
-.settings-title{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;text-transform:uppercase;
-  letter-spacing:0.12em;color:var(--accent);margin-bottom:0.8rem;}
-.settings-row{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.6rem;}
-.settings-label{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--text-muted);width:110px;flex-shrink:0;}
-.settings-slider{flex:1;accent-color:var(--accent);}
-.settings-value{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--accent);width:35px;text-align:right;}
-.settings-hint{font-family:'IBM Plex Mono',monospace;font-size:0.53rem;color:var(--text-dim);margin-top:0.4rem;}
-
-/* ── PROMPT VISIVI ──────────────────────────────────────────────────────── */
-.visual-card{background:var(--surface);border:1px solid #1a1a2a;padding:1.4rem;border-radius:2px;}
-.visual-title{color:#9a7ab5;}
-.visual-loading{display:flex;align-items:center;gap:0.8rem;padding:1rem 0;
-  font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text-dim);}
-.visual-grid{display:flex;flex-direction:column;gap:0.8rem;margin-top:1rem;}
-.prompt-card{background:var(--surface2);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
-.prompt-card.mov-1{border-left:3px solid var(--accent);}
-.prompt-card.mov-2{border-left:3px solid var(--accent3);}
-.prompt-card.mov-3{border-left:3px solid var(--accent2);}
-.prompt-header{display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0.8rem;background:rgba(255,255,255,0.02);}
-.prompt-num{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-dim);width:20px;}
-.prompt-label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text);flex:1;font-weight:500;}
-.prompt-timing{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--accent);white-space:nowrap;}
-.prompt-mov-badge{font-family:'IBM Plex Mono',monospace;font-size:0.5rem;padding:0.1rem 0.4rem;border-radius:10px;}
-.prompt-mov-badge.m1{background:rgba(200,169,110,0.15);color:var(--accent);}
-.prompt-mov-badge.m2{background:rgba(106,180,200,0.15);color:var(--accent3);}
-.prompt-mov-badge.m3{background:rgba(224,92,75,0.15);color:var(--accent2);}
-.prompt-body{padding:0.6rem 0.8rem;padding-top:0;}
-.prompt-kb{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--text-dim);margin-bottom:0.4rem;}
-.prompt-text{font-size:0.8rem;color:#b0aaa0;line-height:1.6;margin-bottom:0.5rem;}
-.prompt-copy-btn{font-family:'IBM Plex Mono',monospace;font-size:0.52rem;padding:0.2rem 0.6rem;
-  border:1px solid var(--border);background:transparent;color:var(--text-dim);
-  cursor:pointer;border-radius:2px;transition:all 0.15s;}
-.prompt-copy-btn:hover{border-color:#9a7ab5;color:#9a7ab5;}
-.visual-summary{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--text-dim);
-  padding:0.5rem 0;border-bottom:1px solid var(--border);margin-bottom:0.8rem;
-  display:flex;gap:1.5rem;}
-.visual-summary span{color:var(--text-muted);}
-
-/* Fonti */
-.source-item{padding:0.55rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:start;gap:1rem;}
-.source-title-text{font-size:0.82rem;color:var(--text);flex:1;line-height:1.4;}
-.source-right{display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;white-space:nowrap;}
-.source-name{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--text-muted);}
-.source-link{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--accent2);text-decoration:none;}
-.source-link:hover{text-decoration:underline;}
-.error-msg{background:rgba(224,92,75,0.08);border:1px solid #3a1a1a;color:#e07060;padding:1rem;font-family:'IBM Plex Mono',monospace;font-size:0.75rem;border-radius:2px;}
-.section-content strong,.narrative-text strong{color:var(--text);font-weight:600;}
-.history-empty-filter{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-dim);text-align:center;padding:1rem 0;}
-::-webkit-scrollbar{width:3px;}
-::-webkit-scrollbar-track{background:var(--bg);}
-::-webkit-scrollbar-thumb{background:var(--border);}
-@media(max-width:900px){
-  .layout{grid-template-columns:1fr;}
-  .two-col{grid-template-columns:1fr;}
-  aside{border-right:none;border-bottom:1px solid var(--border);position:static;height:auto;}
-  .narrative-entry{grid-template-columns:1fr;}
-  .narrative-persp-col{border-right:none;border-bottom:1px solid var(--border);}
-  .section-nav{display:none!important;}
-}
-</style>
-</head>
-<body>
-<header>
-  <div>
-    <div class="logo">THEATRUM <span>BELLI</span></div>
-    <div class="logo-sub">INTELLIGENCE LAB — ACCESSO RISERVATO</div>
-  </div>
-  <div class="header-right">
-    <a href="/" class="btn">← Dashboard</a>
-    <a href="/admin/logout" class="btn btn-danger">Esci</a>
-  </div>
-</header>
-
-<nav class="section-nav" id="section-nav">
-  <a href="#sec-narrative"   class="nav-anchor">🗺 Narrative</a>
-  <a href="#sec-convergenze" class="nav-anchor">✓ Convergenze</a>
-  <a href="#sec-divergenze"  class="nav-anchor">↔ Divergenze</a>
-  <a href="#sec-diritto"     class="nav-anchor">📜 Diritto</a>
-  <a href="#sec-filo"        class="nav-anchor">🔗 Filo</a>
-  <a href="#sec-script"      class="nav-anchor">📱 Script</a>
-  <a href="#sec-visual"      class="nav-anchor">🎬 Visivi</a>
-  <a href="#sec-fonti"       class="nav-anchor">📰 Fonti</a>
-</nav>
-
-<div class="layout">
-  <aside>
-    <div style="margin-bottom:1.5rem">
-      <div class="sidebar-title">Keyword Analysis</div>
-      <div class="keyword-tags" id="tags-container"></div>
-      <div class="keyword-input-row">
-        <input type="text" id="kw-input" placeholder="es. Gaza, Iran...">
-        <button class="btn" style="border-color:var(--accent);color:var(--accent);padding:0.45rem 0.7rem" onclick="addTag()">+</button>
-      </div>
-      <div class="hint">Premi Enter o + per aggiungere.<br>Combina keyword per analisi trasversali.</div>
-      <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">◆ GENERA ANALISI</button>
-    </div>
-    <div>
-      <div class="sidebar-title">Analisi Precedenti</div>
-      <div class="date-filter">
-        <button class="filter-btn active" data-days="7"  onclick="setFilter(7,this)">7g</button>
-        <button class="filter-btn"        data-days="30" onclick="setFilter(30,this)">30g</button>
-        <button class="filter-btn"        data-days="0"  onclick="setFilter(0,this)">Tutto</button>
-      </div>
-      <div id="history-list"><div style="font-size:0.7rem;color:var(--text-dim)">Caricamento...</div></div>
-    </div>
-  </aside>
-
-  <main>
-    <div class="empty-state" id="empty-state">
-      <div class="empty-icon">◆</div>
-      <div class="empty-text">
-        Inserisci le keyword e genera un'analisi.<br><br>
-        Il sistema mappa le narrative di<br>8 prospettive editoriali diverse<br>e mostra convergenze e conflitti.
-      </div>
-    </div>
-    <div id="loading-state">
-      <div class="spinner"></div>
-      <div class="loading-text">ANALISI IN CORSO</div>
-      <div class="loading-sub" id="loading-sub">Elaborazione con Claude...</div>
-    </div>
-    <div id="result"></div>
-  </main>
-</div>
-
-<script>
-// ── STATE ──────────────────────────────────────────────────────────────────
-let tags = [];
-let pollInterval = null;
-let scriptItText = '';
-let allAnalyses  = [];
-let activeDays   = 7;
-let scriptConfirmed = false;
-let currentVisualPrompts = null;
-let audioDuration = 132; // secondi — aggiornato dopo generazione MP3
-
-const POLL_TIMEOUT_S = 600;
-const PERSP_LABELS = {
-  western_mainstream:"Mainstream Occidentale", italian_mainstream:"Stampa Italiana",
-  pro_israel:"Stampa Israeliana", arab_media:"Media Arabi",
-  alternative_left:"Critica Alternativa", russian_state:"Media Russi",
-  chinese_state:"Media Cinesi", think_tank:"Think Tank", other:"Altro"
-};
-
-// ── ELEVENLABS SETTINGS (localStorage) ────────────────────────────────────
-const EL_SETTINGS_KEY = 'tb_el_settings';
-
-function loadElSettings() {
-  try {
-    const s = JSON.parse(localStorage.getItem(EL_SETTINGS_KEY) || '{}');
-    return {
-      stability:  s.stability  ?? 1.0,
-      similarity: s.similarity ?? 0.75,
-      speed:      s.speed      ?? 1.08,
-    };
-  } catch { return {stability:1.0, similarity:0.75, speed:1.08}; }
-}
-
-function saveElSettings() {
-  const s = {
-    stability:  parseFloat(document.getElementById('el-stability').value),
-    similarity: parseFloat(document.getElementById('el-similarity').value),
-    speed:      parseFloat(document.getElementById('el-speed').value),
+<!DOCTYPE html> <html lang="it"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>THEATRUM BELLI — Intelligence Lab</title> <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"> <style> :root { --bg:#0d0d0f; --surface:#141417; --surface2:#1c1c21; --border:#2a2a30; --accent:#c8a96e; --accent2:#e05c4b; --accent3:#6ab4c8; --text:#e8e4dc; --text-muted:#9a9690; --text-dim:#5a5855; } *{margin:0;padding:0;box-sizing:border-box;} body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-weight:400;line-height:1.6;} header{border-bottom:1px solid var(--border);padding:0.9rem 2rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg);position:sticky;top:0;z-index:100;} .logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;letter-spacing:0.15em;color:var(--accent);} .logo span{color:var(--accent2);} .logo-sub{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:0.15em;margin-top:2px;} .header-right{display:flex;gap:0.8rem;align-items:center;} .btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.1em;padding:0.3rem 0.8rem;cursor:pointer;text-transform:uppercase;transition:all 0.2s;border-radius:2px;text-decoration:none;display:inline-block;} .btn:hover{border-color:var(--accent);color:var(--accent);} .btn-danger{border-color:#3a2020;color:var(--accent2);} .btn-danger:hover{background:var(--accent2);color:var(--bg);border-color:var(--accent2);} .section-nav{display:none;position:sticky;top:58px;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:0 1.5rem;overflow-x:auto;} .section-nav.visible{display:flex;} .nav-anchor{font-family:'IBM Plex Mono',monospace;font-size:0.57rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);padding:0.55rem 0.75rem;text-decoration:none;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap;flex-shrink:0;} .nav-anchor:hover{color:var(--accent);border-bottom-color:var(--accent);} .layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 58px);} aside{border-right:1px solid var(--border);padding:1.2rem;overflow-y:auto;background:var(--bg);position:sticky;top:58px;height:calc(100vh - 58px);} .sidebar-title{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:0.8rem;padding-bottom:0.35rem;border-bottom:1px solid var(--border);} .keyword-tags{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.7rem;min-height:32px;} .tag{background:#1a1a20;border:1px solid var(--accent);font-family:'IBM Plex Mono',monospace;font-size:0.65rem;padding:0.2rem 0.55rem;border-radius:2px;display:flex;align-items:center;gap:0.35rem;color:var(--accent);} .tag button{background:none;border:none;color:var(--accent2);cursor:pointer;font-size:0.9rem;line-height:1;padding:0;opacity:0.7;} .tag button:hover{opacity:1;} .keyword-input-row{display:flex;gap:0.4rem;margin-bottom:0.5rem;} input[type="text"]{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:0.75rem;padding:0.45rem 0.7rem;outline:none;border-radius:2px;} input[type="text"]:focus{border-color:var(--accent);} input[type="text"]::placeholder{color:var(--text-dim);} .hint{font-family:'IBM Plex Mono',monospace;font-size:0.57rem;color:var(--text-dim);line-height:1.6;margin-bottom:0.8rem;} .analyze-btn{width:100%;background:var(--accent);border:none;color:#0d0d0f;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;padding:0.75rem;cursor:pointer;transition:all 0.2s;border-radius:2px;} .analyze-btn:hover{background:#d4b97e;} .analyze-btn:disabled{opacity:0.35;cursor:default;} .date-filter{display:flex;gap:0.3rem;margin-bottom:0.8rem;} .filter-btn{flex:1;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.07em;padding:0.25rem 0;cursor:pointer;border-radius:2px;transition:all 0.15s;text-transform:uppercase;} .filter-btn:hover{border-color:var(--accent);color:var(--text-muted);} .filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(200,169,110,0.08);} .dossier-group{margin-bottom:0.4rem;} .dossier-header{display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;cursor:pointer;border-radius:2px;transition:background 0.15s;} .dossier-header:hover{background:var(--surface2);} .dossier-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;} .dossier-label{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);flex:1;} .dossier-count{font-family:'IBM Plex Mono',monospace;font-size:0.52rem;color:var(--text-dim);} .dossier-chevron{font-size:0.5rem;color:var(--text-dim);transition:transform 0.15s;} .dossier-items{padding-left:1.1rem;} .dossier-items.collapsed{display:none;} .dossier-header.open .dossier-chevron{transform:rotate(90deg);} .history-item{position:relative;padding:0.6rem 0.7rem;padding-right:3.2rem;border:1px solid var(--border);margin-bottom:0.35rem;cursor:pointer;transition:all 0.15s;border-radius:2px;background:var(--surface);} .history-item:hover{border-color:var(--accent);background:var(--surface2);} .history-kw{font-size:0.75rem;color:var(--accent);margin-bottom:0.15rem;font-weight:500;} .history-meta{font-family:'IBM Plex Mono',monospace;font-size:0.57rem;color:var(--text-dim);} .delete-btn{position:absolute;right:0.3rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.7rem;opacity:0;padding:0.2rem 0.3rem;line-height:1;transition:opacity 0.15s,color 0.15s;} .history-item:hover .delete-btn{opacity:1;} .delete-btn:hover{color:var(--accent2);} .update-btn{position:absolute;right:1.6rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.8rem;opacity:0;padding:0.2rem 0.3rem;line-height:1;transition:opacity 0.15s,color 0.15s;} .history-item:hover .update-btn{opacity:1;} .update-btn:hover{color:var(--accent)!important;} main{overflow-y:auto;} .main-content{padding:2rem;max-width:900px;} .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;padding:2rem;} .empty-icon{font-size:2.5rem;opacity:0.2;} .empty-text{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--text-dim);text-align:center;line-height:1.9;} #loading-state{display:none;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:1rem;padding:2rem;} .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;} @keyframes spin{to{transform:rotate(360deg);}} .loading-text{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;} .loading-sub{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-dim);} #result{display:none;} .result-header{margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);} .result-kw-headline{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--accent);letter-spacing:0.04em;line-height:1.2;margin-bottom:0.5rem;} .result-kw-headline .kw-sep{color:var(--text-dim);font-size:1.1rem;margin:0 0.3rem;} .result-meta{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:0.6rem;} .perspectives-bar{display:flex;flex-wrap:wrap;gap:0.35rem;} .persp-badge{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;padding:0.15rem 0.5rem;border-radius:10px;border:1px solid;} .persp-western_mainstream{border-color:#4a7ab5;color:#7aaad5;background:#0d1520;} .persp-italian_mainstream{border-color:#5a8a40;color:#8aba70;background:#0d150a;} .persp-pro_israel{border-color:#b5844a;color:#d5a47a;background:#150e05;} .persp-arab_media{border-color:#b54a4a;color:#d57a7a;background:#150a0a;} .persp-alternative_left{border-color:#8a4ab5;color:#aa7ad5;background:#100a15;} .persp-russian_state{border-color:#b54a4a;color:#c07070;background:#150808;} .persp-chinese_state{border-color:#b58a4a;color:#d5aa7a;background:#150d05;} .persp-think_tank{border-color:#4ab5a0;color:#7ad5c0;background:#051510;} .persp-other{border-color:#555;color:#888;background:#111;} .section-title{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent);margin-bottom:1rem;padding-bottom:0.35rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;} .section-title .icon{font-size:0.8rem;} .section-block{margin-bottom:2rem;} .narrative-grid{display:grid;gap:0;border:1px solid var(--border);border-radius:2px;overflow:hidden;} .narrative-entry{display:grid;grid-template-columns:155px 1fr;border-bottom:1px solid var(--border);} .narrative-entry:last-child{border-bottom:none;} .narrative-persp-col{padding:0.9rem 1rem;background:var(--surface);border-right:1px solid var(--border);display:flex;align-items:flex-start;} .narrative-persp{font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:500;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;line-height:1.5;} .narrative-text-col{padding:0.9rem 1.2rem;} .narrative-text{font-size:0.88rem;color:var(--text);line-height:1.75;} .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;} .section-card{background:var(--surface);border:1px solid var(--border);padding:1.4rem;border-radius:2px;} .section-content{font-size:0.88rem;color:#ccc9c0;line-height:1.85;} .convergence-card{border-color:#1a3020;background:#0d150d;} .divergence-card{border-color:#301a1a;background:#150d0d;} .legal-card{background:var(--surface);border:1px solid var(--border);padding:1.4rem;border-radius:2px;} .thread-card{background:#0d0d18;border:1px solid #1a1a30;padding:1.4rem;border-radius:2px;} .thread-title{color:var(--accent3);} .instagram-card{background:var(--surface);border:1px solid #2a1a1a;padding:1.4rem;border-radius:2px;} .instagram-title{color:var(--accent2);} .instagram-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:0.5rem;} .instagram-header-left{display:flex;align-items:center;gap:0.8rem;} .instagram-header-right{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;} .script-textarea{ font-size:0.9rem;line-height:1.85;color:#ccc9c0;white-space:pre-wrap; width:100%;min-height:320px;background:var(--surface2); border:1px solid var(--border);outline:none;resize:vertical; font-family:'IBM Plex Sans',sans-serif;padding:1rem;border-radius:2px; transition:border-color 0.2s; } .script-textarea:focus{border-color:var(--accent);} .script-textarea.confirmed{border-color:#2a3a2a;background:#0d120d;color:#b8d4b8;} .script-textarea:disabled{opacity:0.7;cursor:default;} .action-btn{ font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.08em; padding:0.35rem 0.8rem;cursor:pointer;border-radius:2px;transition:all 0.2s; text-transform:uppercase;border:1px solid; } .btn-confirm{border-color:var(--accent);color:var(--accent);background:transparent;} .btn-confirm:hover{background:var(--accent);color:var(--bg);} .btn-confirm.active{background:var(--accent);color:var(--bg);} .btn-audio{border-color:var(--accent3);color:var(--accent3);background:transparent;} .btn-audio:hover:not(:disabled){background:var(--accent3);color:var(--bg);} .btn-audio:disabled{opacity:0.35;cursor:default;} .btn-visual{border-color:#9a7ab5;color:#9a7ab5;background:transparent;} .btn-visual:hover:not(:disabled){background:#9a7ab5;color:var(--bg);} .btn-visual:disabled{opacity:0.35;cursor:default;} .btn-copy{border-color:var(--border);color:var(--text-muted);background:transparent;} .btn-copy:hover{border-color:var(--accent2);color:var(--accent2);} .settings-panel{ background:var(--surface2);border:1px solid var(--border); border-radius:2px;padding:1rem;margin-bottom:1rem; display:none; } .settings-panel.open{display:block;} .settings-title{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;text-transform:uppercase; letter-spacing:0.12em;color:var(--accent);margin-bottom:0.8rem;} .settings-row{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.6rem;} .settings-label{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--text-muted);width:110px;flex-shrink:0;} .settings-slider{flex:1;accent-color:var(--accent);} .settings-value{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--accent);width:35px;text-align:right;} .settings-hint{font-family:'IBM Plex Mono',monospace;font-size:0.53rem;color:var(--text-dim);margin-top:0.4rem;} .visual-card{background:var(--surface);border:1px solid #1a1a2a;padding:1.4rem;border-radius:2px;} .visual-title{color:#9a7ab5;} .visual-loading{display:flex;align-items:center;gap:0.8rem;padding:1rem 0; font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text-dim);} .visual-grid{display:flex;flex-direction:column;gap:0.8rem;margin-top:1rem;} .prompt-card{background:var(--surface2);border:1px solid var(--border);border-radius:2px;overflow:hidden;} .prompt-card.mov-1{border-left:3px solid var(--accent);} .prompt-card.mov-2{border-left:3px solid var(--accent3);} .prompt-card.mov-3{border-left:3px solid var(--accent2);} .prompt-header{display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0.8rem;background:rgba(255,255,255,0.02);} .prompt-num{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-dim);width:20px;} .prompt-label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text);flex:1;font-weight:500;} .prompt-timing{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--accent);white-space:nowrap;} .prompt-mov-badge{font-family:'IBM Plex Mono',monospace;font-size:0.5rem;padding:0.1rem 0.4rem;border-radius:10px;} .prompt-mov-badge.m1{background:rgba(200,169,110,0.15);color:var(--accent);} .prompt-mov-badge.m2{background:rgba(106,180,200,0.15);color:var(--accent3);} .prompt-mov-badge.m3{background:rgba(224,92,75,0.15);color:var(--accent2);} .prompt-body{padding:0.6rem 0.8rem;padding-top:0;} .prompt-kb{font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--text-dim);margin-bottom:0.4rem;} .prompt-text{font-size:0.8rem;color:#b0aaa0;line-height:1.6;margin-bottom:0.5rem;} .prompt-copy-btn{font-family:'IBM Plex Mono',monospace;font-size:0.52rem;padding:0.2rem 0.6rem; border:1px solid var(--border);background:transparent;color:var(--text-dim); cursor:pointer;border-radius:2px;transition:all 0.15s;} .prompt-copy-btn:hover{border-color:#9a7ab5;color:#9a7ab5;} .visual-summary{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--text-dim); padding:0.5rem 0;border-bottom:1px solid var(--border);margin-bottom:0.8rem; display:flex;gap:1.5rem;} .visual-summary span{color:var(--text-muted);} .source-item{padding:0.55rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:start;gap:1rem;} .source-title-text{font-size:0.82rem;color:var(--text);flex:1;line-height:1.4;} .source-right{display:flex;flex-direction:column;align-items:flex-end;gap:0.2rem;white-space:nowrap;} .source-name{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--text-muted);} .source-link{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--accent2);text-decoration:none;} .source-link:hover{text-decoration:underline;} .error-msg{background:rgba(224,92,75,0.08);border:1px solid #3a1a1a;color:#e07060;padding:1rem;font-family:'IBM Plex Mono',monospace;font-size:0.75rem;border-radius:2px;} .section-content strong,.narrative-text strong{color:var(--text);font-weight:600;} .history-empty-filter{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-dim);text-align:center;padding:1rem 0;} ::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:var(--border);} @media(max-width:900px){ .layout{grid-template-columns:1fr;} .two-col{grid-template-columns:1fr;} aside{border-right:none;border-bottom:1px solid var(--border);position:static;height:auto;} .narrative-entry{grid-template-columns:1fr;} .narrative-persp-col{border-right:none;border-bottom:1px solid var(--border);} .section-nav{display:none!important;} } </style> </head> <body> <header> <div> <div class="logo">THEATRUM <span>BELLI</span></div> <div class="logo-sub">INTELLIGENCE LAB — ACCESSO RISERVATO</div> </div> <div class="header-right"> <a href="/" class="btn">← Dashboard</a> <a href="/admin/logout" class="btn btn-danger">Esci</a> </div> </header> <nav class="section-nav" id="section-nav"> <a href="#sec-narrative" class="nav-anchor">🗺 Narrative</a> <a href="#sec-convergenze" class="nav-anchor">✓ Convergenze</a> <a href="#sec-divergenze" class="nav-anchor">↔ Divergenze</a> <a href="#sec-diritto" class="nav-anchor">📜 Diritto</a> <a href="#sec-filo" class="nav-anchor">🔗 Filo</a> <a href="#sec-script" class="nav-anchor">📱 Script</a> <a href="#sec-visual" class="nav-anchor">🎬 Visivi</a> <a href="#sec-fonti" class="nav-anchor">📰 Fonti</a> </nav> <div class="layout"> <aside> <div style="margin-bottom:1.5rem"> <div class="sidebar-title">Keyword Analysis</div> <div class="keyword-tags" id="tags-container"></div> <div class="keyword-input-row"> <input type="text" id="kw-input" placeholder="es. Gaza, Iran..."> <button class="btn" style="border-color:var(--accent);color:var(--accent);padding:0.45rem 0.7rem" onclick="addTag()">+</button> </div> <div class="hint">Premi Enter o + per aggiungere.<br>Combina keyword per analisi trasversali.</div> <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">◆ GENERA ANALISI</button> </div> <div> <div class="sidebar-title">Analisi Precedenti</div> <div class="date-filter"> <button class="filter-btn active" data-days="7" onclick="setFilter(7,this)">7g</button> <button class="filter-btn" data-days="30" onclick="setFilter(30,this)">30g</button> <button class="filter-btn" data-days="0" onclick="setFilter(0,this)">Tutto</button> </div> <div id="history-list"><div style="font-size:0.7rem;color:var(--text-dim)">Caricamento...</div></div> </div> </aside> <main> <div class="empty-state" id="empty-state"> <div class="empty-icon">◆</div> <div class="empty-text"> Inserisci le keyword e genera un'analisi.<br><br> Il sistema mappa le narrative di<br>8 prospettive editoriali diverse<br>e mostra convergenze e conflitti. </div> </div> <div id="loading-state"> <div class="spinner"></div> <div class="loading-text">ANALISI IN CORSO</div> <div class="loading-sub" id="loading-sub">Elaborazione con Claude...</div> </div> <div id="result"></div> </main> </div> <script>
+  // ── STATE ────────────────────────────────────────────────────────────────────
+  let tags = [];
+  let pollInterval = null;
+  let scriptItText = '';
+  let allAnalyses = [];
+  let activeDays = 7;
+  let scriptConfirmed = false;
+  let currentVisualPrompts = null;
+  let currentAnalysisId = null;
+  let audioDuration = 132;
+  const POLL_TIMEOUT_S = 600;
+  const PERSP_LABELS = {
+    western_mainstream:"Mainstream Occidentale", italian_mainstream:"Stampa Italiana",
+    pro_israel:"Stampa Israeliana", arab_media:"Media Arabi",
+    alternative_left:"Critica Alternativa", russian_state:"Media Russi",
+    chinese_state:"Media Cinesi", think_tank:"Think Tank", other:"Altro"
   };
-  localStorage.setItem(EL_SETTINGS_KEY, JSON.stringify(s));
-  return s;
-}
 
-function initSettingsPanel() {
-  const s = loadElSettings();
-  const stEl = document.getElementById('el-stability');
-  const siEl = document.getElementById('el-similarity');
-  const spEl = document.getElementById('el-speed');
-  if (!stEl) return;
-  stEl.value = s.stability;  document.getElementById('el-stability-val').textContent  = s.stability.toFixed(2);
-  siEl.value = s.similarity; document.getElementById('el-similarity-val').textContent = s.similarity.toFixed(2);
-  spEl.value = s.speed;      document.getElementById('el-speed-val').textContent      = s.speed.toFixed(2);
-  stEl.addEventListener('input', () => { document.getElementById('el-stability-val').textContent  = parseFloat(stEl.value).toFixed(2); saveElSettings(); });
-  siEl.addEventListener('input', () => { document.getElementById('el-similarity-val').textContent = parseFloat(siEl.value).toFixed(2); saveElSettings(); });
-  spEl.addEventListener('input', () => { document.getElementById('el-speed-val').textContent      = parseFloat(spEl.value).toFixed(2); saveElSettings(); });
-}
+  // ── ELEVENLABS SETTINGS ──────────────────────────────────────────────────────
+  const EL_SETTINGS_KEY = 'tb_el_settings';
+  function loadElSettings() {
+    try { const s = JSON.parse(localStorage.getItem(EL_SETTINGS_KEY) || '{}');
+      return { stability: s.stability ?? 1.0, similarity: s.similarity ?? 0.75, speed: s.speed ?? 1.08 };
+    } catch { return {stability:1.0, similarity:0.75, speed:1.08}; }
+  }
+  function saveElSettings() {
+    const s = { stability: parseFloat(document.getElementById('el-stability').value),
+      similarity: parseFloat(document.getElementById('el-similarity').value),
+      speed: parseFloat(document.getElementById('el-speed').value) };
+    localStorage.setItem(EL_SETTINGS_KEY, JSON.stringify(s)); return s;
+  }
+  function initSettingsPanel() {
+    const s = loadElSettings();
+    const stEl = document.getElementById('el-stability');
+    const siEl = document.getElementById('el-similarity');
+    const spEl = document.getElementById('el-speed');
+    if (!stEl) return;
+    stEl.value = s.stability; document.getElementById('el-stability-val').textContent = s.stability.toFixed(2);
+    siEl.value = s.similarity; document.getElementById('el-similarity-val').textContent = s.similarity.toFixed(2);
+    spEl.value = s.speed; document.getElementById('el-speed-val').textContent = s.speed.toFixed(2);
+    stEl.addEventListener('input', () => { document.getElementById('el-stability-val').textContent = parseFloat(stEl.value).toFixed(2); saveElSettings(); });
+    siEl.addEventListener('input', () => { document.getElementById('el-similarity-val').textContent = parseFloat(siEl.value).toFixed(2); saveElSettings(); });
+    spEl.addEventListener('input', () => { document.getElementById('el-speed-val').textContent = parseFloat(spEl.value).toFixed(2); saveElSettings(); });
+  }
+  function toggleSettings() { document.getElementById('el-settings-panel').classList.toggle('open'); }
 
-function toggleSettings() {
-  const panel = document.getElementById('el-settings-panel');
-  panel.classList.toggle('open');
-}
-
-// ── TAGS ───────────────────────────────────────────────────────────────────
-function addTag() {
-  const input = document.getElementById("kw-input");
-  const parts = input.value.split(/[,;]+/).map(s=>s.trim().toLowerCase()).filter(s=>s);
-  parts.forEach(val => { if (val && !tags.includes(val)) tags.push(val); });
-  renderTags(); input.value = ""; input.focus();
-}
-document.getElementById("kw-input").addEventListener("keydown", e => { if(e.key==="Enter") addTag(); });
-function removeTag(tag) { tags = tags.filter(t=>t!==tag); renderTags(); }
-function renderTags() {
-  document.getElementById("tags-container").innerHTML =
-    tags.map(t=>`<div class="tag">${t} <button onclick="removeTag('${t}')">×</button></div>`).join("");
-}
-
-// ── UTILS ──────────────────────────────────────────────────────────────────
-function formatDate(d) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
-}
-function formatTime(d) {
-  if (!d) return "";
-  return new Date(d).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-}
-function secsToMMSS(s) {
-  const m = Math.floor(s/60); return `${m}:${String(s%60).padStart(2,'0')}`;
-}
-function renderMarkdown(text) {
-  if (!text) return '';
-  return text
-    .replace(/\*\*ITALIANO\*\*/gi,'').replace(/\*\*ENGLISH\*\*/gi,'')
-    .replace(/---+/g,'')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\n{3,}/g,'\n\n').replace(/\n/g,'<br>');
-}
-
-// ── FILTRO DATE ────────────────────────────────────────────────────────────
-function setFilter(days, btn) {
-  activeDays = days;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderHistory(allAnalyses);
-}
-function filterByDays(items, days) {
-  if (days===0) return items;
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
-  return items.filter(a => a.created_at && new Date(a.created_at) >= cutoff);
-}
-
-// ── SESSION STORAGE ────────────────────────────────────────────────────────
-function saveActiveJob(jobId, elapsed) {
-  sessionStorage.setItem('activeJobId', jobId);
-  sessionStorage.setItem('activeJobElapsed', elapsed||0);
-}
-function clearActiveJob() {
-  sessionStorage.removeItem('activeJobId');
-  sessionStorage.removeItem('activeJobElapsed');
-}
-function getActiveJob() {
-  return {jobId:sessionStorage.getItem('activeJobId'), elapsed:parseInt(sessionStorage.getItem('activeJobElapsed')||'0')};
-}
-
-// ── ANALISI ────────────────────────────────────────────────────────────────
-async function runAnalysis() {
-  if (tags.length===0) { alert("Inserisci almeno una keyword."); return; }
-  document.getElementById("empty-state").style.display="none";
-  document.getElementById("loading-state").style.display="flex";
-  document.getElementById("result").style.display="none";
-  document.getElementById("section-nav").classList.remove("visible");
-  document.getElementById("analyze-btn").disabled=true;
-  try {
-    const res = await fetch("/api/admin/analyze",{
-      method:"POST", credentials:"include",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({keywords:tags, days:activeDays})
-    });
-    if (!res.ok) throw new Error("Server error: "+res.status);
-    const data = await res.json();
-    if (data.error) { showError(data.error); return; }
-    saveActiveJob(data.job_id, 0);
-    pollJob(data.job_id, 0);
-  } catch(e) { showError("Errore: "+e.message); }
-}
-
-async function updateAnalysis(id) {
-  try {
-    const res = await fetch(`/api/admin/analyses/${id}`,{credentials:"include"});
-    const data = await res.json();
-    if (!data||!data.keywords) { alert("Impossibile caricare le keyword."); return; }
-    tags = data.keywords.split(",").map(k=>k.trim().toLowerCase()).filter(k=>k);
-    renderTags();
-    document.getElementById("kw-input").scrollIntoView({behavior:"smooth",block:"center"});
-    setTimeout(()=>runAnalysis(), 400);
-  } catch(e) { alert("Errore: "+e.message); }
-}
-
-function pollJob(jobId, startElapsed) {
-  if (pollInterval) clearInterval(pollInterval);
-  let elapsed = startElapsed||0;
-  document.getElementById("empty-state").style.display="none";
-  document.getElementById("loading-state").style.display="flex";
-  document.getElementById("result").style.display="none";
-  document.getElementById("analyze-btn").disabled=true;
-  pollInterval = setInterval(async()=>{
-    elapsed += 3; saveActiveJob(jobId, elapsed);
-    document.getElementById("loading-sub").textContent=`Claude sta elaborando... (${elapsed}s)`;
-    if (elapsed>=POLL_TIMEOUT_S) {
-      clearInterval(pollInterval); clearActiveJob();
-      showError(`Timeout dopo ${POLL_TIMEOUT_S}s.`); return;
-    }
-    try {
-      const res = await fetch(`/api/admin/job/${jobId}`,{credentials:"include"});
-      const job = await res.json();
-      if (job.status==="done") {
-        clearInterval(pollInterval); clearActiveJob();
-        document.getElementById("analyze-btn").disabled=false;
-        document.getElementById("loading-state").style.display="none";
-        renderResult(job.result); loadHistory();
-      } else if (job.status==="error") {
-        clearInterval(pollInterval); clearActiveJob();
-        showError("Errore: "+job.error);
-      }
-    } catch(e){}
-  }, 3000);
-}
-
-function showError(msg) {
-  clearInterval(pollInterval); clearActiveJob();
-  document.getElementById("analyze-btn").disabled=false;
-  document.getElementById("loading-state").style.display="none";
-  document.getElementById("result").style.display="block";
-  document.getElementById("result").innerHTML=`<div style="padding:2rem"><div class="error-msg">⚠ ${msg}</div></div>`;
-}
-
-// ── RENDER RISULTATO ───────────────────────────────────────────────────────
-function renderResult(data) {
-  scriptConfirmed = false;
-  currentVisualPrompts = null;
-
-  const result = document.getElementById("result");
-  result.style.display="block";
-  document.getElementById("section-nav").classList.add("visible");
-
-  const kwHeadline = data.keywords.map((k,i)=>
-    i<data.keywords.length-1 ? `${k}<span class="kw-sep">·</span>` : k
-  ).join('');
-
-  const perspBadges = Object.entries(data.perspectives_used||{}).map(
-    ([k,v])=>`<span class="persp-badge persp-${k}">${v}</span>`
-  ).join("");
-
-  const narrativeHtml = renderNarrativeMap(data.narrative_map||"");
-  scriptItText = (data.instagram_script||'').trim();
-
-  // Salva visual_prompts se già presenti nel risultato
-  if (data.visual_prompts) {
-    try { currentVisualPrompts = JSON.parse(data.visual_prompts); } catch{}
+  // ── TAGS ─────────────────────────────────────────────────────────────────────
+  function addTag() {
+    const input = document.getElementById("kw-input");
+    const parts = input.value.split(/[,;]+/).map(s=>s.trim().toLowerCase()).filter(s=>s);
+    parts.forEach(val => { if (val && !tags.includes(val)) tags.push(val); });
+    renderTags(); input.value = ""; input.focus();
+  }
+  document.getElementById("kw-input").addEventListener("keydown", e => { if(e.key==="Enter") addTag(); });
+  function removeTag(tag) { tags = tags.filter(t=>t!==tag); renderTags(); }
+  function renderTags() {
+    document.getElementById("tags-container").innerHTML = tags.map(t=>`<div class="tag">${t} <button onclick="removeTag('${t}')">×</button></div>`).join("");
   }
 
-  const articles    = data.articles||[];
-  const sourcesHtml = articles.length>0 ? `
-    <div class="section-block" id="sec-fonti">
-      <div class="section-title"><span class="icon">📰</span> Articoli Utilizzati (${data.article_count})</div>
-      ${articles.map(a=>`
-        <div class="source-item">
-          <div class="source-title-text">${a.title}</div>
-          <div class="source-right">
-            <span class="source-name">${a.source}</span>
-            <a href="${a.link}" target="_blank" class="source-link">leggi →</a>
+  // ── UTILS ────────────────────────────────────────────────────────────────────
+  function formatDate(d) { if (!d) return "—"; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}); }
+  function formatTime(d) { if (!d) return ""; return new Date(d).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}); }
+  function secsToMMSS(s) { const m = Math.floor(s/60); return `${m}:${String(s%60).padStart(2,'0')}`; }
+  function renderMarkdown(text) {
+    if (!text) return '';
+    return text.replace(/\*\*ITALIANO\*\*/gi,'').replace(/\*\*ENGLISH\*\*/gi,'')
+      .replace(/---+/g,'').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\n{3,}/g,'\n\n').replace(/\n/g,'<br>');
+  }
+
+  // ── FILTRO DATE ──────────────────────────────────────────────────────────────
+  function setFilter(days, btn) {
+    activeDays = days;
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); renderHistory(allAnalyses);
+  }
+  function filterByDays(items, days) {
+    if (days===0) return items;
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+    return items.filter(a => a.created_at && new Date(a.created_at) >= cutoff);
+  }
+
+  // ── SESSION STORAGE ──────────────────────────────────────────────────────────
+  function saveActiveJob(jobId, elapsed) { sessionStorage.setItem('activeJobId', jobId); sessionStorage.setItem('activeJobElapsed', elapsed||0); }
+  function clearActiveJob() { sessionStorage.removeItem('activeJobId'); sessionStorage.removeItem('activeJobElapsed'); }
+  function getActiveJob() { return {jobId:sessionStorage.getItem('activeJobId'), elapsed:parseInt(sessionStorage.getItem('activeJobElapsed')||'0')}; }
+
+  // ── ANALISI ──────────────────────────────────────────────────────────────────
+  async function runAnalysis() {
+    if (tags.length===0) { alert("Inserisci almeno una keyword."); return; }
+    document.getElementById("empty-state").style.display="none";
+    document.getElementById("loading-state").style.display="flex";
+    document.getElementById("result").style.display="none";
+    document.getElementById("section-nav").classList.remove("visible");
+    document.getElementById("analyze-btn").disabled=true;
+    try {
+      const res = await fetch("/api/admin/analyze",{
+        method:"POST", credentials:"include", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({keywords:tags, days:activeDays})
+      });
+      if (!res.ok) throw new Error("Server error: "+res.status);
+      const data = await res.json();
+      if (data.error) { showError(data.error); return; }
+      saveActiveJob(data.job_id, 0); pollJob(data.job_id, 0);
+    } catch(e) { showError("Errore: "+e.message); }
+  }
+
+  async function updateAnalysis(id) {
+    try {
+      const res = await fetch(`/api/admin/analyses/${id}`,{credentials:"include"});
+      const data = await res.json();
+      if (!data||!data.keywords) { alert("Impossibile caricare le keyword."); return; }
+      tags = data.keywords.split(",").map(k=>k.trim().toLowerCase()).filter(k=>k);
+      renderTags();
+      document.getElementById("kw-input").scrollIntoView({behavior:"smooth",block:"center"});
+      setTimeout(()=>runAnalysis(), 400);
+    } catch(e) { alert("Errore: "+e.message); }
+  }
+
+  function pollJob(jobId, startElapsed) {
+    if (pollInterval) clearInterval(pollInterval);
+    let elapsed = startElapsed||0;
+    document.getElementById("empty-state").style.display="none";
+    document.getElementById("loading-state").style.display="flex";
+    document.getElementById("result").style.display="none";
+    document.getElementById("analyze-btn").disabled=true;
+    pollInterval = setInterval(async()=>{
+      elapsed += 3; saveActiveJob(jobId, elapsed);
+      document.getElementById("loading-sub").textContent=`Claude sta elaborando... (${elapsed}s)`;
+      if (elapsed>=POLL_TIMEOUT_S) { clearInterval(pollInterval); clearActiveJob(); showError(`Timeout dopo ${POLL_TIMEOUT_S}s.`); return; }
+      try {
+        const res = await fetch(`/api/admin/job/${jobId}`,{credentials:"include"});
+        const job = await res.json();
+        if (job.status==="done") {
+          clearInterval(pollInterval); clearActiveJob();
+          document.getElementById("analyze-btn").disabled=false;
+          document.getElementById("loading-state").style.display="none";
+          renderResult(job.result);
+          loadHistory().then(()=>{ if(allAnalyses.length){ currentAnalysisId=allAnalyses[0].id; const b=document.getElementById('btn-genera-art'); if(b) b.disabled=false; } });
+        } else if (job.status==="error") { clearInterval(pollInterval); clearActiveJob(); showError("Errore: "+job.error); }
+      } catch(e){}
+    }, 3000);
+  }
+
+  function showError(msg) {
+    clearInterval(pollInterval); clearActiveJob();
+    document.getElementById("analyze-btn").disabled=false;
+    document.getElementById("loading-state").style.display="none";
+    document.getElementById("result").style.display="block";
+    document.getElementById("result").innerHTML=`<div style="padding:2rem"><div class="error-msg">⚠ ${msg}</div></div>`;
+  }
+
+  // ── RENDER RISULTATO ──────────────────────────────────────────────────────────
+  function renderResult(data) {
+    scriptConfirmed = false;
+    currentVisualPrompts = null;
+    currentAnalysisId = null;
+    const result = document.getElementById("result");
+    result.style.display="block";
+    document.getElementById("section-nav").classList.add("visible");
+    const kwHeadline = data.keywords.map((k,i)=> i<data.keywords.length-1 ? `${k}<span class="kw-sep">·</span>` : k ).join('');
+    const perspBadges = Object.entries(data.perspectives_used||{}).map(([k,v])=>`<span class="persp-badge persp-${k}">${v}</span>`).join("");
+    const narrativeHtml = renderNarrativeMap(data.narrative_map||"");
+    scriptItText = (data.instagram_script||'').trim();
+    if (data.visual_prompts) { try { currentVisualPrompts = JSON.parse(data.visual_prompts); } catch{} }
+    const articles = data.articles||[];
+    const sourcesHtml = articles.length>0 ? `
+      <div class="section-block" id="sec-fonti">
+        <div class="section-title"><span class="icon">📰</span> Articoli Utilizzati (${data.article_count})</div>
+        ${articles.map(a=>`
+          <div class="source-item">
+            <div class="source-title-text">${a.title}</div>
+            <div class="source-right">
+              <span class="source-name">${a.source}</span>
+              <a href="${a.link}" target="_blank" class="source-link">leggi →</a>
+            </div>
+          </div>`).join("")}
+      </div>` : `<div id="sec-fonti"></div>`;
+    const threadHtml = data.thread ? `
+      <div class="section-block" id="sec-filo">
+        <div class="thread-card">
+          <div class="section-title thread-title"><span class="icon">🔗</span> Filo Narrativo</div>
+          <div class="section-content">${renderMarkdown(data.thread)}</div>
+        </div>
+      </div>` : `<div id="sec-filo"></div>`;
+    result.innerHTML = `
+      <div class="main-content">
+        <div class="result-header">
+          <div class="result-kw-headline">${kwHeadline}</div>
+          <div class="result-meta">${data.article_count} articoli analizzati${data.has_history?' · con contesto storico':''}</div>
+          <div class="perspectives-bar">${perspBadges}</div>
+        </div>
+        <div class="section-block" id="sec-narrative">
+          <div class="section-title"><span class="icon">🗺</span> Mappa delle Narrative</div>
+          <div class="narrative-grid">${narrativeHtml}</div>
+        </div>
+        <div class="two-col section-block">
+          <div id="sec-convergenze">
+            <div class="section-card convergence-card">
+              <div class="section-title" style="color:#6ab56a"><span class="icon">✓</span> Convergenze</div>
+              <div class="section-content">${renderMarkdown(data.convergences||'')}</div>
+            </div>
           </div>
-        </div>`).join("")}
-    </div>` : `<div id="sec-fonti"></div>`;
-
-  const threadHtml = data.thread ? `
-    <div class="section-block" id="sec-filo">
-      <div class="thread-card">
-        <div class="section-title thread-title"><span class="icon">🔗</span> Filo Narrativo</div>
-        <div class="section-content">${renderMarkdown(data.thread)}</div>
-      </div>
-    </div>` : `<div id="sec-filo"></div>`;
-
-  result.innerHTML = `
-    <div class="main-content">
-      <div class="result-header">
-        <div class="result-kw-headline">${kwHeadline}</div>
-        <div class="result-meta">${data.article_count} articoli analizzati${data.has_history?' · con contesto storico':''}</div>
-        <div class="perspectives-bar">${perspBadges}</div>
-      </div>
-
-      <div class="section-block" id="sec-narrative">
-        <div class="section-title"><span class="icon">🗺</span> Mappa delle Narrative</div>
-        <div class="narrative-grid">${narrativeHtml}</div>
-      </div>
-
-      <div class="two-col section-block">
-        <div id="sec-convergenze">
-          <div class="section-card convergence-card">
-            <div class="section-title" style="color:#6ab56a"><span class="icon">✓</span> Convergenze</div>
-            <div class="section-content">${renderMarkdown(data.convergences||'')}</div>
+          <div id="sec-divergenze">
+            <div class="section-card divergence-card">
+              <div class="section-title" style="color:#c07070"><span class="icon">↔</span> Divergenze & Conflitti</div>
+              <div class="section-content">${renderMarkdown(data.divergences||'')}</div>
+            </div>
           </div>
         </div>
-        <div id="sec-divergenze">
-          <div class="section-card divergence-card">
-            <div class="section-title" style="color:#c07070"><span class="icon">↔</span> Divergenze & Conflitti</div>
-            <div class="section-content">${renderMarkdown(data.divergences||'')}</div>
+        <div class="section-block" id="sec-diritto">
+          <div class="legal-card">
+            <div class="section-title"><span class="icon">📜</span> Diritto Internazionale</div>
+            <div class="section-content">${renderMarkdown(data.legal||'')}</div>
           </div>
         </div>
-      </div>
-
-      <div class="section-block" id="sec-diritto">
-        <div class="legal-card">
-          <div class="section-title"><span class="icon">📜</span> Diritto Internazionale</div>
-          <div class="section-content">${renderMarkdown(data.legal||'')}</div>
-        </div>
-      </div>
-
-      ${threadHtml}
-
-      <!-- ── SCRIPT ──────────────────────────────────────────────────── -->
-      <div class="section-block" id="sec-script">
-        <div class="instagram-card">
-          <div class="instagram-header">
-            <div class="instagram-header-left">
-              <div class="section-title instagram-title" style="margin-bottom:0">
-                <span class="icon">📱</span> Script (2:12 · IT)
+        ${threadHtml}
+        <div class="section-block" id="sec-script">
+          <div class="instagram-card">
+            <div class="instagram-header">
+              <div class="instagram-header-left">
+                <div class="section-title instagram-title" style="margin-bottom:0">
+                  <span class="icon">📱</span> Script (2:12 · IT)
+                </div>
+              </div>
+              <div class="instagram-header-right">
+                <button class="action-btn btn-copy" onclick="copyScript()">COPIA</button>
+                <button class="action-btn btn-confirm" id="btn-confirm" onclick="confirmScript()">✓ CONFERMA</button>
+                <button class="action-btn btn-audio" id="btn-audio" onclick="generateAudio()" disabled>🔊 AUDIO</button>
+                <button class="action-btn btn-visual" id="btn-visual" onclick="generateVisual()" disabled>🎬 PROMPT VISIVI</button>
+                <button class="action-btn btn-copy" onclick="toggleSettings()" style="border-color:#555">⚙</button>
+                <button class="action-btn" id="btn-genera-art" onclick="generaArticolo()" style="border:1px solid rgba(200,169,110,0.4);color:var(--accent2);font-size:0.58rem;background:rgba(200,169,110,0.05);" disabled>📝 ARTICOLO</button>
               </div>
             </div>
-            <div class="instagram-header-right">
-              <button class="action-btn btn-copy" onclick="copyScript()">COPIA</button>
-              <button class="action-btn btn-confirm" id="btn-confirm" onclick="confirmScript()">✓ CONFERMA</button>
-              <button class="action-btn btn-audio"  id="btn-audio"  onclick="generateAudio()"   disabled>🔊 AUDIO</button>
-              <button class="action-btn btn-visual" id="btn-visual" onclick="generateVisual()"  disabled>🎬 PROMPT VISIVI</button>
-              <button class="action-btn btn-copy"   onclick="toggleSettings()" style="border-color:#555">⚙</button>
+            <div class="settings-panel" id="el-settings-panel">
+              <div class="settings-title">⚙ Settings ElevenLabs — salvati automaticamente</div>
+              <div class="settings-row">
+                <span class="settings-label">Stability</span>
+                <input type="range" class="settings-slider" id="el-stability" min="0" max="1" step="0.01">
+                <span class="settings-value" id="el-stability-val">1.00</span>
+              </div>
+              <div class="settings-row">
+                <span class="settings-label">Similarity Boost</span>
+                <input type="range" class="settings-slider" id="el-similarity" min="0" max="1" step="0.01">
+                <span class="settings-value" id="el-similarity-val">0.75</span>
+              </div>
+              <div class="settings-row">
+                <span class="settings-label">Speed</span>
+                <input type="range" class="settings-slider" id="el-speed" min="0.5" max="2.0" step="0.05">
+                <span class="settings-value" id="el-speed-val">1.08</span>
+              </div>
+              <div class="settings-hint">Le impostazioni vengono salvate nel browser e ricaricate automaticamente.</div>
             </div>
-          </div>
-
-          <!-- Settings ElevenLabs -->
-          <div class="settings-panel" id="el-settings-panel">
-            <div class="settings-title">⚙ Settings ElevenLabs — salvati automaticamente</div>
-            <div class="settings-row">
-              <span class="settings-label">Stability</span>
-              <input type="range" class="settings-slider" id="el-stability" min="0" max="1" step="0.01">
-              <span class="settings-value" id="el-stability-val">1.00</span>
-            </div>
-            <div class="settings-row">
-              <span class="settings-label">Similarity Boost</span>
-              <input type="range" class="settings-slider" id="el-similarity" min="0" max="1" step="0.01">
-              <span class="settings-value" id="el-similarity-val">0.75</span>
-            </div>
-            <div class="settings-row">
-              <span class="settings-label">Speed</span>
-              <input type="range" class="settings-slider" id="el-speed" min="0.5" max="2.0" step="0.05">
-              <span class="settings-value" id="el-speed-val">1.08</span>
-            </div>
-            <div class="settings-hint">Le impostazioni vengono salvate nel browser e ricaricate automaticamente.</div>
-          </div>
-
-          <textarea class="script-textarea" id="ig-script" spellcheck="false">${escapeHtml(scriptItText)}</textarea>
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--text-dim);margin-top:0.5rem;">
-            Modifica il testo, poi premi <strong style="color:var(--accent)">CONFERMA</strong> per sbloccare Audio e Prompt Visivi.
-          </div>
-        </div>
-      </div>
-
-      <!-- ── PROMPT VISIVI ───────────────────────────────────────────── -->
-      <div class="section-block" id="sec-visual">
-        <div class="visual-card">
-          <div class="section-title visual-title"><span class="icon">🎬</span> Prompt Visivi — 15 immagini con timeline</div>
-          <div id="visual-content">
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text-dim);padding:1rem 0;">
-              ${currentVisualPrompts ? '' : 'Conferma lo script e premi 🎬 PROMPT VISIVI per generare la timeline.'}
+            <textarea class="script-textarea" id="ig-script" spellcheck="false">${escapeHtml(scriptItText)}</textarea>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:var(--text-dim);margin-top:0.5rem;">
+              Modifica il testo, poi premi <strong style="color:var(--accent)">CONFERMA</strong> per sbloccare Audio, Prompt Visivi e Articolo.
             </div>
           </div>
         </div>
-      </div>
-
-      ${sourcesHtml}
-    </div>`;
-
-  // Init settings panel dopo il render
-  initSettingsPanel();
-
-  // Se visual_prompts già presenti (caricamento da storico), mostrali
-  if (currentVisualPrompts) renderVisualPrompts(currentVisualPrompts);
-}
-
-function escapeHtml(text) {
-  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// ── CONFERMA SCRIPT ────────────────────────────────────────────────────────
-function confirmScript() {
-  const textarea = document.getElementById('ig-script');
-  const btnConfirm = document.getElementById('btn-confirm');
-  const btnAudio   = document.getElementById('btn-audio');
-  const btnVisual  = document.getElementById('btn-visual');
-
-  if (!scriptConfirmed) {
-    // Conferma
-    scriptItText = textarea.value.trim();
-    textarea.classList.add('confirmed');
-    scriptConfirmed = true;
-    btnConfirm.textContent = '✏ MODIFICA';
-    btnConfirm.classList.add('active');
-    btnAudio.disabled  = false;
-    btnVisual.disabled = false;
-  } else {
-    // Torna in modifica
-    textarea.classList.remove('confirmed');
-    scriptConfirmed = false;
-    btnConfirm.textContent = '✓ CONFERMA';
-    btnConfirm.classList.remove('active');
-    btnAudio.disabled  = true;
-    btnVisual.disabled = true;
-  }
-}
-
-// ── COPY ───────────────────────────────────────────────────────────────────
-function copyScript() {
-  const el = document.getElementById("ig-script");
-  if (!el) return;
-  navigator.clipboard.writeText(el.value||el.textContent).then(()=>{
-    const btn = document.querySelector(".btn-copy");
-    if (btn) { btn.textContent="COPIATO ✓"; setTimeout(()=>btn.textContent="COPIA",2000); }
-  });
-}
-
-// ── GENERA AUDIO ───────────────────────────────────────────────────────────
-async function measureAudioDuration(blob) {
-  return new Promise((resolve) => {
-    const url    = URL.createObjectURL(blob);
-    const audio  = new Audio(url);
-    audio.addEventListener('loadedmetadata', () => {
-      const dur = Math.round(audio.duration);
-      URL.revokeObjectURL(url);
-      resolve(dur);
-    });
-    audio.addEventListener('error', () => { URL.revokeObjectURL(url); resolve(132); });
-    setTimeout(() => resolve(132), 5000); // fallback
-  });
-}
-
-async function generateAudio() {
-  if (!scriptConfirmed) { alert("Conferma prima lo script."); return; }
-  const btn  = document.getElementById('btn-audio');
-  const text = document.getElementById('ig-script').value.trim();
-  if (!text) { alert('Script vuoto.'); return; }
-  const settings = loadElSettings();
-  btn.textContent='⏳ GENERANDO...'; btn.disabled=true;
-  try {
-    const res = await fetch('/api/admin/tts',{
-      method:'POST', credentials:'include',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text, stability:settings.stability, similarity_boost:settings.similarity, speed:settings.speed})
-    });
-    if (!res.ok) { const err=await res.json(); alert('Errore: '+(err.error||res.status)); return; }
-    const blob = await res.blob();
-
-    // Misura durata reale
-    audioDuration = await measureAudioDuration(blob);
-
-    // Aggiorna badge durata nei prompt visivi se già generati
-    const durBadge = document.querySelector('.visual-summary span:nth-child(2)');
-    if (durBadge) durBadge.textContent = '⏱ ' + secsToMMSS(audioDuration) + ' totali (reale)';
-
-    // Reset prompt visivi se già generati con durata diversa
-    if (currentVisualPrompts && Math.abs((currentVisualPrompts.total_duration||132) - audioDuration) > 5) {
-      currentVisualPrompts = null;
-      const vc = document.getElementById('visual-content');
-      if (vc) vc.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text-dim);padding:1rem 0;">
-        Audio generato: <strong style="color:var(--accent)">${secsToMMSS(audioDuration)}</strong> — rigenera i prompt visivi per aggiornare il timing.
+        <div class="section-block" id="sec-visual">
+          <div class="visual-card">
+            <div class="section-title visual-title"><span class="icon">🎬</span> Prompt Visivi — 15 immagini con timeline</div>
+            <div id="visual-content">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text-dim);padding:1rem 0;">
+                ${currentVisualPrompts ? '' : 'Conferma lo script e premi 🎬 PROMPT VISIVI per generare la timeline.'}
+              </div>
+            </div>
+          </div>
+        </div>
+        ${sourcesHtml}
       </div>`;
+    initSettingsPanel();
+    if (currentVisualPrompts) renderVisualPrompts(currentVisualPrompts);
+    // Sblocca btn-genera-art se già abbiamo un id
+    if (currentAnalysisId) { const b=document.getElementById('btn-genera-art'); if(b) b.disabled=false; }
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── CONFERMA SCRIPT ──────────────────────────────────────────────────────────
+  function confirmScript() {
+    const textarea = document.getElementById('ig-script');
+    const btnConfirm = document.getElementById('btn-confirm');
+    const btnAudio = document.getElementById('btn-audio');
+    const btnVisual = document.getElementById('btn-visual');
+    const btnArt = document.getElementById('btn-genera-art');
+    if (!scriptConfirmed) {
+      scriptItText = textarea.value.trim();
+      textarea.classList.add('confirmed'); scriptConfirmed = true;
+      btnConfirm.textContent = '✏ MODIFICA'; btnConfirm.classList.add('active');
+      btnAudio.disabled = false; btnVisual.disabled = false;
+      if (btnArt && currentAnalysisId) btnArt.disabled = false;
+    } else {
+      textarea.classList.remove('confirmed'); scriptConfirmed = false;
+      btnConfirm.textContent = '✓ CONFERMA'; btnConfirm.classList.remove('active');
+      btnAudio.disabled = true; btnVisual.disabled = true;
+      if (btnArt) btnArt.disabled = true;
     }
-
-    // Download
-    const url = URL.createObjectURL(blob);
-    const a   = document.createElement('a');
-    a.href=url; a.download=`theatrum_belli_${audioDuration}s_${Date.now()}.mp3`; a.click();
-    URL.revokeObjectURL(url);
-
-    btn.textContent=`✓ ${secsToMMSS(audioDuration)}`;
-    setTimeout(()=>{ btn.textContent='🔊 AUDIO'; btn.disabled=false; }, 4000);
-  } catch(e) {
-    alert('Errore: '+e.message); btn.textContent='🔊 AUDIO'; btn.disabled=false;
-  }
-}
-
-// ── GENERA PROMPT VISIVI ───────────────────────────────────────────────────
-async function generateVisual() {
-  if (!scriptConfirmed) { alert("Conferma prima lo script."); return; }
-
-  // Se già generati, mostra/nascondi
-  if (currentVisualPrompts) {
-    renderVisualPrompts(currentVisualPrompts);
-    document.getElementById('sec-visual').scrollIntoView({behavior:'smooth'});
-    return;
   }
 
-  const btn = document.getElementById('btn-visual');
-  btn.textContent='⏳ GENERANDO...'; btn.disabled=true;
-
-  const visualContent = document.getElementById('visual-content');
-  visualContent.innerHTML=`<div class="visual-loading"><div class="spinner"></div> Claude sta generando i 15 prompt visivi con timeline...</div>`;
-
-  try {
-    const script = document.getElementById('ig-script').value.trim();
-    const res = await fetch('/api/admin/visual-prompts',{
-      method:'POST', credentials:'include',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({script_it: script, keywords: tags.join(', '), duration_seconds: audioDuration})
+  // ── COPY ─────────────────────────────────────────────────────────────────────
+  function copyScript() {
+    const el = document.getElementById("ig-script");
+    if (!el) return;
+    navigator.clipboard.writeText(el.value||el.textContent).then(()=>{
+      const btn = document.querySelector(".btn-copy");
+      if (btn) { btn.textContent="COPIATO ✓"; setTimeout(()=>btn.textContent="COPIA",2000); }
     });
-    if (!res.ok) { const err=await res.json(); throw new Error(err.error||res.status); }
-    const data = await res.json();
-    currentVisualPrompts = data;
-    renderVisualPrompts(data);
-    document.getElementById('sec-visual').scrollIntoView({behavior:'smooth'});
-  } catch(e) {
-    visualContent.innerHTML=`<div class="error-msg">⚠ Errore generazione prompt visivi: ${e.message}</div>`;
-  } finally {
-    btn.textContent='🎬 PROMPT VISIVI'; btn.disabled=false;
-  }
-}
-
-function renderVisualPrompts(data) {
-  const container = document.getElementById('visual-content');
-  if (!data||!data.prompts||!data.prompts.length) {
-    container.innerHTML='<div class="error-msg">⚠ Nessun prompt generato.</div>'; return;
   }
 
-  const movLabels = {1:'MOV.1 CRONACA', 2:'MOV.2 ANALISI', 3:'MOV.3 DISAGIO'};
-  const movClass  = {1:'m1', 2:'m2', 3:'m3'};
+  // ── GENERA AUDIO ─────────────────────────────────────────────────────────────
+  async function measureAudioDuration(blob) {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.addEventListener('loadedmetadata', () => { const dur = Math.round(audio.duration); URL.revokeObjectURL(url); resolve(dur); });
+      audio.addEventListener('error', () => { URL.revokeObjectURL(url); resolve(132); });
+      setTimeout(() => resolve(132), 5000);
+    });
+  }
 
-  const summaryHtml = `
-    <div class="visual-summary">
-      <span>📷 ${data.prompts.length} immagini</span>
-      <span>⏱ ${secsToMMSS(data.total_duration||audioDuration)} totali</span>
-      <span style="color:var(--accent)">MOV.1: 7</span>
-      <span style="color:var(--accent3)">MOV.2: 5</span>
-      <span style="color:var(--accent2)">MOV.3: 3</span>
-    </div>`;
+  async function generateAudio() {
+    if (!scriptConfirmed) { alert("Conferma prima lo script."); return; }
+    const btn = document.getElementById('btn-audio');
+    const text = document.getElementById('ig-script').value.trim();
+    if (!text) { alert('Script vuoto.'); return; }
+    const settings = loadElSettings();
+    btn.textContent='⏳ GENERANDO...'; btn.disabled=true;
+    try {
+      const res = await fetch('/api/admin/tts',{
+        method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({text, stability:settings.stability, similarity_boost:settings.similarity, speed:settings.speed})
+      });
+      if (!res.ok) { const err=await res.json(); alert('Errore: '+(err.error||res.status)); return; }
+      const blob = await res.blob();
+      audioDuration = await measureAudioDuration(blob);
+      const durBadge = document.querySelector('.visual-summary span:nth-child(2)');
+      if (durBadge) durBadge.textContent = '⏱ ' + secsToMMSS(audioDuration) + ' totali (reale)';
+      if (currentVisualPrompts && Math.abs((currentVisualPrompts.total_duration||132) - audioDuration) > 5) {
+        currentVisualPrompts = null;
+        const vc = document.getElementById('visual-content');
+        if (vc) vc.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--text-dim);padding:1rem 0;">Audio generato: <strong style="color:var(--accent)">${secsToMMSS(audioDuration)}</strong> — rigenera i prompt visivi per aggiornare il timing.</div>`;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=`theatrum_belli_${audioDuration}s_${Date.now()}.mp3`; a.click(); URL.revokeObjectURL(url);
+      btn.textContent=`✓ ${secsToMMSS(audioDuration)}`; setTimeout(()=>{ btn.textContent='🔊 AUDIO'; btn.disabled=false; }, 4000);
+    } catch(e) { alert('Errore: '+e.message); btn.textContent='🔊 AUDIO'; btn.disabled=false; }
+  }
 
-  const promptsHtml = data.prompts.map(p => {
-    const mc = movClass[p.movimento]||'m1';
-    const timing = `${secsToMMSS(p.timing_start)} → ${p.duration}s`;
-    return `
-      <div class="prompt-card mov-${p.movimento}">
+  // ── GENERA PROMPT VISIVI ──────────────────────────────────────────────────────
+  async function generateVisual() {
+    if (!scriptConfirmed) { alert("Conferma prima lo script."); return; }
+    if (currentVisualPrompts) { renderVisualPrompts(currentVisualPrompts); document.getElementById('sec-visual').scrollIntoView({behavior:'smooth'}); return; }
+    const btn = document.getElementById('btn-visual'); btn.textContent='⏳ GENERANDO...'; btn.disabled=true;
+    const visualContent = document.getElementById('visual-content');
+    visualContent.innerHTML=`<div class="visual-loading"><div class="spinner"></div> Claude sta generando i 15 prompt visivi con timeline...</div>`;
+    try {
+      const script = document.getElementById('ig-script').value.trim();
+      const res = await fetch('/api/admin/visual-prompts',{
+        method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({script_it: script, keywords: tags.join(', '), duration_seconds: audioDuration})
+      });
+      if (!res.ok) { const err=await res.json(); throw new Error(err.error||res.status); }
+      const data = await res.json(); currentVisualPrompts = data;
+      renderVisualPrompts(data); document.getElementById('sec-visual').scrollIntoView({behavior:'smooth'});
+    } catch(e) { visualContent.innerHTML=`<div class="error-msg">⚠ Errore: ${e.message}</div>`; }
+    finally { btn.textContent='🎬 PROMPT VISIVI'; btn.disabled=false; }
+  }
+
+  function renderVisualPrompts(data) {
+    const container = document.getElementById('visual-content');
+    if (!data||!data.prompts||!data.prompts.length) { container.innerHTML='<div class="error-msg">⚠ Nessun prompt generato.</div>'; return; }
+    const movLabels = {1:'MOV.1 CRONACA', 2:'MOV.2 ANALISI', 3:'MOV.3 DISAGIO'};
+    const movClass = {1:'m1', 2:'m2', 3:'m3'};
+    const summaryHtml = `<div class="visual-summary"><span>📷 ${data.prompts.length} immagini</span><span>⏱ ${secsToMMSS(data.total_duration||audioDuration)} totali</span><span style="color:var(--accent)">MOV.1: 7</span><span style="color:var(--accent3)">MOV.2: 5</span><span style="color:var(--accent2)">MOV.3: 3</span></div>`;
+    const promptsHtml = data.prompts.map(p => {
+      const mc = movClass[p.movimento]||'m1'; const timing = `${secsToMMSS(p.timing_start)} → ${p.duration}s`;
+      return `<div class="prompt-card mov-${p.movimento}">
         <div class="prompt-header">
           <span class="prompt-num">${String(p.id).padStart(2,'0')}</span>
           <span class="prompt-label">${p.label||''}</span>
@@ -797,179 +391,171 @@ function renderVisualPrompts(data) {
           <button class="prompt-copy-btn" onclick="copyPrompt(this, ${p.id})">COPIA PROMPT</button>
         </div>
       </div>`;
-  }).join('');
+    }).join('');
+    container.innerHTML = summaryHtml + `<div class="visual-grid">${promptsHtml}</div>`;
+  }
 
-  container.innerHTML = summaryHtml + `<div class="visual-grid">${promptsHtml}</div>`;
-}
+  function copyPrompt(btn, id) {
+    if (!currentVisualPrompts) return;
+    const p = currentVisualPrompts.prompts.find(x=>x.id===id);
+    if (!p) return;
+    navigator.clipboard.writeText(p.prompt_en).then(()=>{ btn.textContent='COPIATO ✓'; setTimeout(()=>btn.textContent='COPIA PROMPT', 2000); });
+  }
 
-function copyPrompt(btn, id) {
-  if (!currentVisualPrompts) return;
-  const p = currentVisualPrompts.prompts.find(x=>x.id===id);
-  if (!p) return;
-  navigator.clipboard.writeText(p.prompt_en).then(()=>{
-    btn.textContent='COPIATO ✓';
-    setTimeout(()=>btn.textContent='COPIA PROMPT', 2000);
-  });
-}
+  // ── GENERA ARTICOLO ──────────────────────────────────────────────────────────
+  async function generaArticolo() {
+    if (!currentAnalysisId) { alert("Carica prima un'analisi dallo storico o genera una nuova analisi."); return; }
+    const btn = document.getElementById('btn-genera-art');
+    if (!confirm('Generare articolo editoriale da questa analisi?\n(~30 secondi)')) return;
+    btn.textContent = '⏳ GENERANDO...'; btn.disabled = true;
+    try {
+      const res = await fetch('/api/admin/articoli/genera/' + currentAnalysisId, {
+        method: 'POST', credentials: 'include', headers: {'Content-Type': 'application/json'}
+      });
+      const data = await res.json();
+      if (data.success) {
+        btn.textContent = '✓ ARTICOLO CREATO';
+        btn.style.borderColor = 'rgba(200,169,110,0.8)'; btn.style.color = 'var(--accent)';
+        setTimeout(() => {
+          btn.textContent = '📝 ARTICOLO';
+          btn.style.borderColor = 'rgba(200,169,110,0.4)'; btn.style.color = 'var(--accent2)';
+          btn.disabled = false;
+        }, 3000);
+        window.open('/admin/articoli', '_blank');
+      } else { alert('Errore: ' + (data.error || 'sconosciuto')); btn.textContent = '📝 ARTICOLO'; btn.disabled = false; }
+    } catch(e) { alert('Errore: ' + e.message); btn.textContent = '📝 ARTICOLO'; btn.disabled = false; }
+  }
 
-// ── NARRATIVE MAP ──────────────────────────────────────────────────────────
-function renderNarrativeMap(text) {
-  if (!text) return '<div class="narrative-entry"><div class="narrative-text-col"><div class="narrative-text">Nessuna narrativa mappata.</div></div></div>';
-  const entries = text.split(/\n(?=\*\*)/);
-  return entries.map(entry=>{
-    const match = entry.match(/^\*\*(.+?)\*\*[:\s]+([\s\S]+)/);
-    if (match) return `<div class="narrative-entry">
-      <div class="narrative-persp-col"><div class="narrative-persp">${match[1]}</div></div>
-      <div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(match[2].trim())}</div></div>
-    </div>`;
-    const clean = entry.trim();
-    if (!clean) return '';
-    return `<div class="narrative-entry"><div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(clean)}</div></div></div>`;
-  }).join("");
-}
+  // ── NARRATIVE MAP ─────────────────────────────────────────────────────────────
+  function renderNarrativeMap(text) {
+    if (!text) return '<div class="narrative-entry"><div class="narrative-text-col"><div class="narrative-text">Nessuna narrativa mappata.</div></div></div>';
+    const entries = text.split(/\n(?=\*\*)/);
+    return entries.map(entry=>{
+      const match = entry.match(/^\*\*(.+?)\*\*[:\s]+([\s\S]+)/);
+      if (match) return `<div class="narrative-entry"><div class="narrative-persp-col"><div class="narrative-persp">${match[1]}</div></div><div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(match[2].trim())}</div></div></div>`;
+      const clean = entry.trim(); if (!clean) return '';
+      return `<div class="narrative-entry"><div class="narrative-text-col"><div class="narrative-text">${renderMarkdown(clean)}</div></div></div>`;
+    }).join("");
+  }
 
-// ── STORIA ─────────────────────────────────────────────────────────────────
-async function deleteAnalysis(id, btn) {
-  if (!confirm("Eliminare questa analisi?")) return;
-  try {
-    const res = await fetch(`/api/admin/analyses/${id}`,{method:"DELETE",credentials:"include"});
-    if (res.ok) { btn.closest(".history-item").remove(); allAnalyses=allAnalyses.filter(a=>a.id!==id); }
-  } catch(e) { alert("Errore durante l'eliminazione."); }
-}
+  // ── STORIA ────────────────────────────────────────────────────────────────────
+  async function deleteAnalysis(id, btn) {
+    if (!confirm("Eliminare questa analisi?")) return;
+    try {
+      const res = await fetch(`/api/admin/analyses/${id}`,{method:"DELETE",credentials:"include"});
+      if (res.ok) { btn.closest(".history-item").remove(); allAnalyses=allAnalyses.filter(a=>a.id!==id); }
+    } catch(e) { alert("Errore durante l'eliminazione."); }
+  }
 
-function normalizeKw(kwStr) {
-  return (kwStr||'').split(',').map(k=>k.trim().toLowerCase()).filter(k=>k).sort().join(', ');
-}
+  function normalizeKw(kwStr) { return (kwStr||'').split(',').map(k=>k.trim().toLowerCase()).filter(k=>k).sort().join(', '); }
 
-function groupByNormalizedKw(items) {
-  const chains = {};
-  items.forEach(a=>{ const key=normalizeKw(a.keywords); if(!chains[key]) chains[key]=[]; chains[key].push(a); });
-  Object.values(chains).forEach(chain=>chain.sort((a,b)=>b.created_at.localeCompare(a.created_at)));
-  return Object.entries(chains).sort((a,b)=>b[1][0].created_at.localeCompare(a[1][0].created_at));
-}
+  function groupByNormalizedKw(items) {
+    const chains = {}; items.forEach(a=>{ const key=normalizeKw(a.keywords); if(!chains[key]) chains[key]=[]; chains[key].push(a); });
+    Object.values(chains).forEach(chain=>chain.sort((a,b)=>b.created_at.localeCompare(a.created_at)));
+    return Object.entries(chains).sort((a,b)=>b[1][0].created_at.localeCompare(a[1][0].created_at));
+  }
 
-function tagColor(tag) {
-  const palette=["#c08040","#c06060","#c0a040","#60a060","#6080c0","#a060c0","#60b0a0","#c07080","#80a060","#9060a0"];
-  let hash=0;
-  for(let i=0;i<tag.length;i++) hash=(hash*31+tag.charCodeAt(i))&0xffff;
-  return palette[hash%palette.length];
-}
+  function tagColor(tag) {
+    const palette=["#c08040","#c06060","#c0a040","#60a060","#6080c0","#a060c0","#60b0a0","#c07080","#80a060","#9060a0"];
+    let hash=0; for(let i=0;i<tag.length;i++) hash=(hash*31+tag.charCodeAt(i))&0xffff; return palette[hash%palette.length];
+  }
 
-function renderChain(chain) {
-  return chain.map((a,i)=>{
-    if (i===0) {
-      const aggiornamenti = chain.length>1 ? ` · <span style="color:var(--accent3)">↺ ${chain.length-1}</span>` : '';
-      return `<div class="history-item" onclick="loadAnalysis(${a.id})">
-        <div class="history-kw">${a.keywords}</div>
-        <div class="history-meta">${a.article_count} art · ${formatTime(a.created_at)}${aggiornamenti}</div>
-        <button class="update-btn" title="Aggiorna" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
+  function renderChain(chain) {
+    return chain.map((a,i)=>{
+      if (i===0) {
+        const aggiornamenti = chain.length>1 ? ` · <span style="color:var(--accent3)">↺ ${chain.length-1}</span>` : '';
+        return `<div class="history-item" onclick="loadAnalysis(${a.id})">
+          <div class="history-kw">${a.keywords}</div>
+          <div class="history-meta">${a.article_count} art · ${formatTime(a.created_at)}${aggiornamenti}</div>
+          <button class="update-btn" title="Aggiorna" onclick="event.stopPropagation();updateAnalysis(${a.id})">↻</button>
+          <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
+        </div>`;
+      }
+      return `<div class="history-item" style="margin-left:0.8rem;border-left:2px solid var(--border);border-radius:0 2px 2px 0;padding-right:2rem;" onclick="loadAnalysis(${a.id})">
+        <div class="history-meta" style="color:var(--text-dim)">↺ ${formatDate(a.created_at)} · ${formatTime(a.created_at)}</div>
         <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
       </div>`;
+    }).join('');
+  }
+
+  function renderHistory(data) {
+    const list = document.getElementById("history-list");
+    const filtered = filterByDays(data, activeDays);
+    if (!filtered.length) {
+      const label = activeDays===0 ? 'nessuna analisi' : `nessuna analisi negli ultimi ${activeDays} giorni`;
+      list.innerHTML=`<div class="history-empty-filter">${label}</div>`; return;
     }
-    return `<div class="history-item" style="margin-left:0.8rem;border-left:2px solid var(--border);border-radius:0 2px 2px 0;padding-right:2rem;" onclick="loadAnalysis(${a.id})">
-      <div class="history-meta" style="color:var(--text-dim)">↺ ${formatDate(a.created_at)} · ${formatTime(a.created_at)}</div>
-      <button class="delete-btn" onclick="event.stopPropagation();deleteAnalysis(${a.id},this)">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function renderHistory(data) {
-  const list = document.getElementById("history-list");
-  const filtered = filterByDays(data, activeDays);
-  if (!filtered.length) {
-    const label = activeDays===0 ? 'nessuna analisi' : `nessuna analisi negli ultimi ${activeDays} giorni`;
-    list.innerHTML=`<div class="history-empty-filter">${label}</div>`; return;
-  }
-  const tagBuckets={};
-  filtered.forEach(a=>{
-    const tag=(a.theme_tag&&a.theme_tag.trim())?a.theme_tag.trim():"Altro";
-    if(!tagBuckets[tag]) tagBuckets[tag]=[];
-    tagBuckets[tag].push(a);
-  });
-  const sortedTags=Object.keys(tagBuckets).sort((a,b)=>{
-    if(a==="Altro") return 1; if(b==="Altro") return -1;
-    return tagBuckets[b][0].created_at.localeCompare(tagBuckets[a][0].created_at);
-  });
-  let html='';
-  sortedTags.forEach(tag=>{
-    const items=tagBuckets[tag];
-    const chains=groupByNormalizedKw(items);
-    const color=tagColor(tag);
-    html+=`<div class="dossier-group">
-      <div class="dossier-header open" onclick="toggleDossier(this)">
-        <div class="dossier-dot" style="background:${color}"></div>
-        <div class="dossier-label">${tag}</div>
-        <div class="dossier-count">${items.length}</div>
-        <div class="dossier-chevron">▶</div>
-      </div>
-      <div class="dossier-items">
-        ${chains.map(([key,chain])=>renderChain(chain)).join('')}
-      </div>
-    </div>`;
-  });
-  list.innerHTML=html;
-}
-
-async function loadHistory() {
-  try {
-    const res = await fetch("/api/admin/analyses",{credentials:"include"});
-    allAnalyses = await res.json();
-    if (!Array.isArray(allAnalyses)) allAnalyses=[];
-    renderHistory(allAnalyses);
-  } catch(e) {
-    document.getElementById("history-list").innerHTML='<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>';
-  }
-}
-
-function toggleDossier(header) {
-  header.nextElementSibling.classList.toggle('collapsed');
-  header.classList.toggle('open');
-}
-
-async function loadAnalysis(id) {
-  const res = await fetch(`/api/admin/analyses/${id}`,{credentials:"include"});
-  const data = await res.json();
-
-  let articles = [];
-  if (data.articles_json) {
-    try { articles = JSON.parse(data.articles_json); } catch{}
+    const tagBuckets={};
+    filtered.forEach(a=>{ const tag=(a.theme_tag&&a.theme_tag.trim())?a.theme_tag.trim():"Altro"; if(!tagBuckets[tag]) tagBuckets[tag]=[]; tagBuckets[tag].push(a); });
+    const sortedTags=Object.keys(tagBuckets).sort((a,b)=>{ if(a==="Altro") return 1; if(b==="Altro") return -1; return tagBuckets[b][0].created_at.localeCompare(tagBuckets[a][0].created_at); });
+    let html='';
+    sortedTags.forEach(tag=>{
+      const items=tagBuckets[tag]; const chains=groupByNormalizedKw(items); const color=tagColor(tag);
+      html+=`<div class="dossier-group">
+        <div class="dossier-header open" onclick="toggleDossier(this)">
+          <div class="dossier-dot" style="background:${color}"></div>
+          <div class="dossier-label">${tag}</div>
+          <div class="dossier-count">${items.length}</div>
+          <div class="dossier-chevron">▶</div>
+        </div>
+        <div class="dossier-items">${chains.map(([key,chain])=>renderChain(chain)).join('')}</div>
+      </div>`;
+    });
+    list.innerHTML=html;
   }
 
-  let vp = null;
-  if (data.visual_prompts) {
-    try { vp = JSON.parse(data.visual_prompts); } catch{}
+  async function loadHistory() {
+    try {
+      const res = await fetch("/api/admin/analyses",{credentials:"include"});
+      allAnalyses = await res.json();
+      if (!Array.isArray(allAnalyses)) allAnalyses=[];
+      renderHistory(allAnalyses);
+    } catch(e) { document.getElementById("history-list").innerHTML='<div style="font-size:0.7rem;color:var(--text-dim)">Errore caricamento.</div>'; }
   }
 
-  // Ricostruisci perspectives_used dagli articoli salvati
-  const perspUsed = {};
-  articles.forEach(a => { if(a.perspective) perspUsed[a.perspective] = PERSP_LABELS[a.perspective]||a.perspective; });
+  function toggleDossier(header) { header.nextElementSibling.classList.toggle('collapsed'); header.classList.toggle('open'); }
 
-  document.getElementById("empty-state").style.display="none";
-  document.getElementById("loading-state").style.display="none";
-  renderResult({
-    keywords: data.keywords.split(", "),
-    article_count: data.article_count,
-    articles: articles,
-    perspectives_used: perspUsed,
-    narrative_map:    data.narrative_map,
-    convergences:     data.convergences,
-    divergences:      data.divergences,
-    legal:            data.legal,
-    thread:           data.thread,
-    instagram_script: data.instagram_script,
-    has_history: false,
-    visual_prompts: data.visual_prompts||null,
-  });
-}
+  async function loadAnalysis(id) {
+    currentAnalysisId = id;
+    const res = await fetch(`/api/admin/analyses/${id}`,{credentials:"include"});
+    const data = await res.json();
+    let articles = [];
+    if (data.articles_json) { try { articles = JSON.parse(data.articles_json); } catch{} }
+    let vp = null;
+    if (data.visual_prompts) { try { vp = JSON.parse(data.visual_prompts); } catch{} }
+    const perspUsed = {};
+    articles.forEach(a => { if(a.perspective) perspUsed[a.perspective] = PERSP_LABELS[a.perspective]||a.perspective; });
+    document.getElementById("empty-state").style.display="none";
+    document.getElementById("loading-state").style.display="none";
+    const _artBtn = document.getElementById("btn-genera-art"); if(_artBtn) _artBtn.disabled = false;
+    renderResult({
+      keywords: data.keywords.split(", "),
+      article_count: data.article_count,
+      articles: articles,
+      perspectives_used: perspUsed,
+      narrative_map: data.narrative_map,
+      convergences: data.convergences,
+      divergences: data.divergences,
+      legal: data.legal,
+      thread: data.thread,
+      instagram_script: data.instagram_script,
+      has_history: false,
+      visual_prompts: data.visual_prompts||null,
+    });
+    // Re-set dopo renderResult (che lo azzera)
+    currentAnalysisId = id;
+    const artBtn2 = document.getElementById('btn-genera-art'); if(artBtn2) artBtn2.disabled = false;
+  }
 
-// ── RESTORE JOB ────────────────────────────────────────────────────────────
-(function restoreActiveJob(){
-  const {jobId, elapsed} = getActiveJob();
-  if (!jobId) return;
-  pollJob(jobId, elapsed);
-})();
+  // ── RESTORE JOB ───────────────────────────────────────────────────────────────
+  (function restoreActiveJob(){
+    const {jobId, elapsed} = getActiveJob();
+    if (!jobId) return;
+    pollJob(jobId, elapsed);
+  })();
 
-loadHistory();
+  loadHistory();
+
 </script>
 </body>
 </html>
