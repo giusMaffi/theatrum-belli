@@ -529,21 +529,16 @@ Rispondi SOLO con i due blocchi nel formato esatto sopra. Nient'altro."""
     raw_script = script_match.group(1).strip() if script_match else ""
     raw_articolo = raw_combined[:script_match.start()].strip() if script_match else raw_combined
 
-    visual_prompts_json = generate_visual_prompts(keywords_str, raw_script, raw_analysis, duration_seconds=132)
-
-    return (raw_analysis, raw_articolo, raw_script, visual_prompts_json, author)
+    # Visual prompts rimossi dal job automatico — generati on-demand dal bottone
+    return (raw_analysis, raw_articolo, raw_script, author)
 
 def run_analysis_job(job_id, keywords, articles, previous):
     jobs[job_id]["status"] = "running"
     try:
-        raw_analysis, raw_articolo, raw_script, visual_prompts, author = generate_analysis(keywords, articles, previous)
+        raw_analysis, raw_articolo, raw_script, author = generate_analysis(keywords, articles, previous)
 
         def extract_section(text, title):
             m = re.search(rf"## {re.escape(title)}\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
-            return m.group(1).strip() if m else ""
-
-        def extract_fuzzy(text, keyword):
-            m = re.search(rf"## [^\n]*{re.escape(keyword)}[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
             return m.group(1).strip() if m else ""
 
         narrative_map  = extract_section(raw_analysis, "1. MAPPA DELLE NARRATIVE")
@@ -561,7 +556,7 @@ def run_analysis_job(job_id, keywords, articles, previous):
         articles_compact = [{"source":a["source"],"title":a["title"],"link":a["link"]} for a in articles]
 
         save_analysis(", ".join(keywords), len(articles), narrative_map, convergences,
-                      divergences, legal, thread, raw_script, theme_tag, visual_prompts,
+                      divergences, legal, thread, raw_script, theme_tag, "",
                       json.dumps(articles_compact, ensure_ascii=False))
 
         jobs[job_id]["status"] = "done"
@@ -580,7 +575,7 @@ def run_analysis_job(job_id, keywords, articles, previous):
             "author": author,
             "has_history": len(previous) > 0,
             "theme_tag": theme_tag,
-            "visual_prompts": visual_prompts,
+            "visual_prompts": None,
         }
     except Exception as e:
         jobs[job_id]["status"] = "error"
