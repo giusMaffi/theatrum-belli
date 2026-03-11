@@ -192,10 +192,13 @@ def save_analysis(keywords, article_count, narrative_map, convergences, divergen
         INSERT INTO analyses (keywords,article_count,narrative_map,convergences,divergences,
             legal,thread,instagram_script,created_at,theme_tag,visual_prompts,articles_json)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        RETURNING id
     """, (keywords, article_count, narrative_map, convergences, divergences,
           legal, thread, instagram_script, datetime.now(timezone.utc).isoformat(),
           theme_tag, visual_prompts, articles_json))
+    new_id = c.fetchone()[0]
     conn.commit(); conn.close()
+    return new_id
 
 # ─────────────────────────────────────────────
 # FONTI RSS
@@ -547,13 +550,12 @@ def run_analysis_job(job_id, keywords, articles, previous):
         theme_tag = generate_theme_tag(keywords_str)
         articles_compact = [{"source":a["source"],"title":a["title"],"link":a["link"]} for a in articles]
 
-        # Salva analisi (instagram_script vuoto — verrà generato on-demand)
-        save_analysis(", ".join(keywords), len(articles), narrative_map, convergences,
+        # Salva analisi e ottieni il suo ID reale
+        analysis_id = save_analysis(", ".join(keywords), len(articles), narrative_map, convergences,
                       divergences, legal, thread, "", theme_tag, "",
                       json.dumps(articles_compact, ensure_ascii=False))
 
-        # Salva articolo direttamente come bozza
-        from datetime import datetime, timezone
+        # Salva articolo come bozza collegato all'analisi
         slug_base = make_slug(art_titolo or keywords_str)
         conn_art = get_conn(); c_art = conn_art.cursor()
         final_slug = slug_base; counter = 1
@@ -566,14 +568,12 @@ def run_analysis_job(job_id, keywords, articles, previous):
             INSERT INTO articoli (slug,titolo,categoria,tags,sezione_dati,sezione_analisi,
                 sezione_conseguenze,immagine_prompt,immagine_url,post_social,
                 autore_nome,autore_ruolo,analisi_id,status,created_at,published_at)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
-                (SELECT id FROM analyses ORDER BY id DESC LIMIT 1),
-                'bozza',%s,NULL)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'bozza',%s,NULL)
             RETURNING id
         """, (final_slug, art_titolo, categoria, keywords_str,
               art_dati, art_analisi, art_conseguenze,
               art_prompt_img, "", art_social,
-              author['nome'], author['ruolo'],
+              author['nome'], author['ruolo'], analysis_id,
               datetime.now(timezone.utc).isoformat()))
         art_id = c_art.fetchone()[0]
         conn_art.commit(); conn_art.close()
@@ -590,6 +590,7 @@ def run_analysis_job(job_id, keywords, articles, previous):
             "legal": legal,
             "thread": thread,
             "instagram_script": "",
+            "analysis_id": analysis_id,
             "articolo": {
                 "id": art_id,
                 "slug": final_slug,
@@ -929,9 +930,14 @@ Rispondi in questo formato esatto — niente altro."""
 @app.route("/api/admin/articoli")
 def api_admin_articoli_list():
     if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    analisi_id = request.args.get("analisi_id", type=int)
     conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
-    c.execute("""SELECT id,slug,titolo,categoria,status,created_at,published_at,autore_nome
-                 FROM articoli ORDER BY created_at DESC LIMIT 100""")
+    if analisi_id:
+        c.execute("""SELECT id,slug,titolo,categoria,status,created_at,published_at,autore_nome,autore_ruolo
+                     FROM articoli WHERE analisi_id=%s ORDER BY created_at DESC LIMIT 10""", (analisi_id,))
+    else:
+        c.execute("""SELECT id,slug,titolo,categoria,status,created_at,published_at,autore_nome
+                     FROM articoli ORDER BY created_at DESC LIMIT 100""")
     rows = [dict(r) for r in c.fetchall()]; conn.close()
     return jsonify(rows)
 
