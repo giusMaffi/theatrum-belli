@@ -469,18 +469,14 @@ Evoluzione rispetto ad analisi precedenti, o marcatori per il futuro. Max 150 pa
 Rispondi SOLO con le 5 sezioni."""
     raw_analysis = call_claude(prompt_analysis)
 
-    # ── 2. ARTICOLO + SCRIPT in una sola chiamata ────────────────────
+    # ── 2. ARTICOLO EDITORIALE ────────────────────────────────────────
+    # Script e visual prompts sono on-demand (bottoni separati)
     author = assign_author(keywords_str)
-    prompt_articolo_script = f"""Sei un giornalista geopolitico di lungo corso che lavora per Theatrum Belli.
-Devi produrre DUE output in una sola risposta: prima l'articolo editoriale, poi lo script audio.
+    prompt_articolo = f"""Sei un giornalista geopolitico di lungo corso. Scrivi un articolo editoriale completo per Theatrum Belli.
 
 TEMA: {keywords_str}
 ANALISI INTELLIGENCE:
 {raw_analysis}
-
-════════════════════════════════════
-PARTE 1 — ARTICOLO EDITORIALE
-════════════════════════════════════
 
 Scrivi UN SOLO titolo editoriale — non descrittivo, non scolastico, colpisci come un headline di guerra fredda, max 12 parole.
 Poi l'articolo in 3 sezioni esatte.
@@ -501,41 +497,22 @@ Voce: osservatore freddo che conosce la storia. Niente "dovremmo", niente morali
 Conseguenze concrete per il cittadino europeo/italiano. Catena causale geopolitica→economia domestica.
 Bollette, prezzi, lavoro, logistica. Numeri specifici dove possibile.
 Chiudi con UN fatto economico secco — titolo azionario, contratto firmato, percentuale.
-Poi, su una riga separata: "— {author['nome']} continua a monitorare."
+Poi su riga separata: "— {author['nome']} continua a monitorare."
 Tono: referto medico. 120-160 parole.
 
 POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — max 3 hashtag]
 
 PROMPT_IMMAGINE: [prompt inglese per Flux AI, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9]
 
-════════════════════════════════════
-PARTE 2 — SCRIPT AUDIO (2:12, italiano)
-════════════════════════════════════
+Rispondi in questo formato esatto — niente altro."""
 
-## SCRIPT AUDIO
-Versione parlata dell'articolo sopra — stessa voce, stessi fatti.
-Tre movimenti continui, senza titoli né markdown nel testo:
-
-MOVIMENTO 1 (220-250 parole): Cronaca respirata. Apri col fatto più anomalo. Cita le testate. Un riferimento storico preciso. Ritmo variabile.
-MOVIMENTO 2 (80-100 parole): Conseguenze concrete per italiani/europei. Catena causale geopolitica→economia. Numeri. Tono: diagnosi medica.
-MOVIMENTO 3 (20-30 parole): Chiusura umana — NON ripetere dati finanziari o azionari, quelli sono già stati detti. Una sola frase che chiude la prospettiva. Poi su riga separata: "— {author['nome']} continua a monitorare."
-
-Rispondi SOLO con i due blocchi nel formato esatto sopra. Nient'altro."""
-
-    raw_combined = call_claude(prompt_articolo_script, max_tokens=4500)
-
-    # Separa articolo e script
-    script_match = re.search(r'## SCRIPT AUDIO\n(.*?)$', raw_combined, re.DOTALL)
-    raw_script = script_match.group(1).strip() if script_match else ""
-    raw_articolo = raw_combined[:script_match.start()].strip() if script_match else raw_combined
-
-    # Visual prompts rimossi dal job automatico — generati on-demand dal bottone
-    return (raw_analysis, raw_articolo, raw_script, author)
+    raw_articolo = call_claude(prompt_articolo, max_tokens=3000)
+    return (raw_analysis, raw_articolo, author)
 
 def run_analysis_job(job_id, keywords, articles, previous):
     jobs[job_id]["status"] = "running"
     try:
-        raw_analysis, raw_articolo, raw_script, author = generate_analysis(keywords, articles, previous)
+        raw_analysis, raw_articolo, author = generate_analysis(keywords, articles, previous)
 
         def extract_section(text, title):
             m = re.search(rf"## {re.escape(title)}\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
@@ -547,6 +524,21 @@ def run_analysis_job(job_id, keywords, articles, previous):
         legal          = extract_section(raw_analysis, "4. PROSPETTIVA DEL DIRITTO INTERNAZIONALE")
         thread         = extract_section(raw_analysis, "5. FILO NARRATIVO")
 
+        # Estrai sezioni articolo per salvarle nel DB
+        def extract_art_sec(text, header):
+            m = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\nPOST_SOCIAL:|\nPROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
+            return m.group(1).strip() if m else ""
+
+        titolo_m = re.search(r'TITOLO:\s*(.+)', raw_articolo)
+        art_titolo = titolo_m.group(1).strip().strip('[]') if titolo_m else keywords_str
+        art_dati        = extract_art_sec(raw_articolo, "IL DATO CHE CONTA")
+        art_analisi     = extract_art_sec(raw_articolo, "THEATRUM BELLI — ANALISI")
+        art_conseguenze = extract_art_sec(raw_articolo, "COSA SIGNIFICA PER TE")
+        m_social = re.search(r'POST_SOCIAL:\s*(.*?)(?=\nPROMPT_IMMAGINE:|\Z)', raw_articolo, re.DOTALL)
+        art_social = m_social.group(1).strip().strip('[]') if m_social else ""
+        m_prompt = re.search(r'PROMPT_IMMAGINE:\s*(.*?)$', raw_articolo, re.DOTALL)
+        art_prompt_img = m_prompt.group(1).strip().strip('[]') if m_prompt else ""
+
         by_perspective = defaultdict(list)
         for a in articles:
             by_perspective[a.get('perspective','other')].append(a)
@@ -555,9 +547,36 @@ def run_analysis_job(job_id, keywords, articles, previous):
         theme_tag = generate_theme_tag(keywords_str)
         articles_compact = [{"source":a["source"],"title":a["title"],"link":a["link"]} for a in articles]
 
+        # Salva analisi (instagram_script vuoto — verrà generato on-demand)
         save_analysis(", ".join(keywords), len(articles), narrative_map, convergences,
-                      divergences, legal, thread, raw_script, theme_tag, "",
+                      divergences, legal, thread, "", theme_tag, "",
                       json.dumps(articles_compact, ensure_ascii=False))
+
+        # Salva articolo direttamente come bozza
+        from datetime import datetime, timezone
+        slug_base = make_slug(art_titolo or keywords_str)
+        conn_art = get_conn(); c_art = conn_art.cursor()
+        final_slug = slug_base; counter = 1
+        while True:
+            c_art.execute("SELECT id FROM articoli WHERE slug=%s", (final_slug,))
+            if not c_art.fetchone(): break
+            final_slug = f"{slug_base}-{counter}"; counter += 1
+        categoria = categorize(keywords_str)
+        c_art.execute("""
+            INSERT INTO articoli (slug,titolo,categoria,tags,sezione_dati,sezione_analisi,
+                sezione_conseguenze,immagine_prompt,immagine_url,post_social,
+                autore_nome,autore_ruolo,analisi_id,status,created_at,published_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                (SELECT id FROM analyses ORDER BY id DESC LIMIT 1),
+                'bozza',%s,NULL)
+            RETURNING id
+        """, (final_slug, art_titolo, categoria, keywords_str,
+              art_dati, art_analisi, art_conseguenze,
+              art_prompt_img, "", art_social,
+              author['nome'], author['ruolo'],
+              datetime.now(timezone.utc).isoformat()))
+        art_id = c_art.fetchone()[0]
+        conn_art.commit(); conn_art.close()
 
         jobs[job_id]["status"] = "done"
         jobs[job_id]["result"] = {
@@ -570,9 +589,17 @@ def run_analysis_job(job_id, keywords, articles, previous):
             "divergences": divergences,
             "legal": legal,
             "thread": thread,
-            "instagram_script": raw_script,
-            "articolo_raw": raw_articolo,
-            "author": author,
+            "instagram_script": "",
+            "articolo": {
+                "id": art_id,
+                "slug": final_slug,
+                "titolo": art_titolo,
+                "sezione_dati": art_dati,
+                "sezione_analisi": art_analisi,
+                "sezione_conseguenze": art_conseguenze,
+                "autore_nome": author['nome'],
+                "autore_ruolo": author['ruolo'],
+            },
             "has_history": len(previous) > 0,
             "theme_tag": theme_tag,
             "visual_prompts": None,
@@ -956,6 +983,55 @@ def api_delete_articolo(articolo_id):
     c.execute("DELETE FROM articoli WHERE id=%s", (articolo_id,))
     conn.commit(); conn.close()
     return jsonify({"deleted": articolo_id})
+
+@app.route("/api/admin/articoli/<int:articolo_id>/genera-script", methods=["POST"])
+def api_genera_script(articolo_id):
+    """Genera lo script audio on-demand dall'articolo già salvato."""
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM articoli WHERE id=%s", (articolo_id,))
+    art = c.fetchone(); conn.close()
+    if not art: return jsonify({"error":"Articolo non trovato"}), 404
+    art = dict(art)
+    autore_nome = art.get('autore_nome', 'Theatrum Belli')
+    articolo_testo = f"""TITOLO: {art.get('titolo','')}
+
+IL DATO CHE CONTA:
+{art.get('sezione_dati','')}
+
+THEATRUM BELLI — ANALISI:
+{art.get('sezione_analisi','')}
+
+COSA SIGNIFICA PER TE:
+{art.get('sezione_conseguenze','')}"""
+
+    prompt = f"""Sei un giornalista geopolitico con vent'anni di esperienza.
+Hai scritto questo articolo editoriale per Theatrum Belli:
+
+{articolo_testo}
+
+Trasformalo in uno script audio di 2 minuti e 12 secondi (132 secondi) per un reel Instagram.
+SOLO in italiano. Versione parlata dello stesso articolo — stessa voce, stessi fatti.
+
+Tre movimenti continui, senza titoli né markdown nel testo:
+
+MOVIMENTO 1 (220-250 parole): Cronaca respirata. Apri col fatto più anomalo. Cita le testate. Un riferimento storico preciso. Ritmo variabile.
+MOVIMENTO 2 (80-100 parole): Conseguenze concrete per italiani/europei. Catena causale geopolitica→economia. Numeri. Tono: diagnosi medica.
+MOVIMENTO 3 (20-30 parole): Chiusura umana — una sola frase che chiude la prospettiva. NON ripetere dati già detti. Poi su riga separata: "— {autore_nome} continua a monitorare."
+
+Rispondi SOLO con lo script. Nient'altro."""
+
+    try:
+        script = call_claude(prompt, max_tokens=2000)
+        # Salva lo script nell'analisi collegata se esiste
+        if art.get('analisi_id'):
+            conn2 = get_conn(); c2 = conn2.cursor()
+            c2.execute("UPDATE analyses SET instagram_script=%s WHERE id=%s",
+                       (script, art['analisi_id']))
+            conn2.commit(); conn2.close()
+        return jsonify({"success": True, "script": script})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────────
 # ELEVENLABS TTS
