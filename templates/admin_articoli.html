@@ -276,6 +276,21 @@
                 <label>Prompt Immagine AI</label>
                 <textarea id="edit-prompt" rows="3"></textarea>
             </div>
+            <div class="field">
+                <label>🖼 Immagine Hero (URL) — banner principale sopra il titolo</label>
+                <input type="text" id="edit-hero" placeholder="https://...immagine.jpg">
+                <div id="preview-hero" style="margin-top:0.5rem;display:none"><img id="img-hero" src="" style="max-width:100%;max-height:200px;object-fit:cover;border-radius:3px;opacity:0.85"></div>
+            </div>
+            <div class="field">
+                <label>🖼 Immagine 1 (URL) — tra "Il Dato" e "Analisi"</label>
+                <input type="text" id="edit-inline1" placeholder="https://...immagine.jpg">
+                <div id="preview-inline1" style="margin-top:0.5rem;display:none"><img id="img-inline1" src="" style="max-width:100%;max-height:160px;object-fit:cover;border-radius:3px;opacity:0.85"></div>
+            </div>
+            <div class="field">
+                <label>🖼 Immagine 2 (URL) — tra "Analisi" e "Cosa Significa"</label>
+                <input type="text" id="edit-inline2" placeholder="https://...immagine.jpg">
+                <div id="preview-inline2" style="margin-top:0.5rem;display:none"><img id="img-inline2" src="" style="max-width:100%;max-height:160px;object-fit:cover;border-radius:3px;opacity:0.85"></div>
+            </div>
             <div class="modal-actions">
                 <button class="btn btn-save" onclick="salvaModifiche()">Salva</button>
                 <button class="btn" onclick="closeModal()">Annulla</button>
@@ -307,6 +322,25 @@
                 document.getElementById('edit-conseguenze').value = art.sezione_conseguenze || '';
                 document.getElementById('edit-social').value = art.post_social || '';
                 document.getElementById('edit-prompt').value = art.immagine_prompt || '';
+                // Immagini
+                const setImg = (fieldId, previewId, imgId, url) => {
+                    document.getElementById(fieldId).value = url || '';
+                    if (url) {
+                        document.getElementById(imgId).src = url;
+                        document.getElementById(previewId).style.display = 'block';
+                    } else {
+                        document.getElementById(previewId).style.display = 'none';
+                    }
+                    // Aggiorna preview quando cambia URL
+                    document.getElementById(fieldId).oninput = function() {
+                        const v = this.value.trim();
+                        if(v){ document.getElementById(imgId).src=v; document.getElementById(previewId).style.display='block'; }
+                        else { document.getElementById(previewId).style.display='none'; }
+                    };
+                };
+                setImg('edit-hero','preview-hero','img-hero', art.immagine_hero);
+                setImg('edit-inline1','preview-inline1','img-inline1', art.immagine_inline1);
+                setImg('edit-inline2','preview-inline2','img-inline2', art.immagine_inline2);
                 document.getElementById('modal').classList.add('open');
             } catch(e) {
                 toast('Errore caricamento', 'err');
@@ -326,6 +360,9 @@
                 sezione_conseguenze: document.getElementById('edit-conseguenze').value,
                 post_social: document.getElementById('edit-social').value,
                 immagine_prompt: document.getElementById('edit-prompt').value,
+                immagine_hero: document.getElementById('edit-hero').value.trim(),
+                immagine_inline1: document.getElementById('edit-inline1').value.trim(),
+                immagine_inline2: document.getElementById('edit-inline2').value.trim(),
             };
             const r = await fetch(`/api/admin/articoli/${id}`, {
                 method: 'PUT',

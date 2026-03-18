@@ -141,6 +141,9 @@ def init_db():
     # Migrazione: aggiungi colonne autore se non esistono (per DB già esistenti)
     c.execute("ALTER TABLE articoli ADD COLUMN IF NOT EXISTS autore_nome TEXT")
     c.execute("ALTER TABLE articoli ADD COLUMN IF NOT EXISTS autore_ruolo TEXT")
+    c.execute("ALTER TABLE articoli ADD COLUMN IF NOT EXISTS immagine_hero TEXT DEFAULT ''")
+    c.execute("ALTER TABLE articoli ADD COLUMN IF NOT EXISTS immagine_inline1 TEXT DEFAULT ''")
+    c.execute("ALTER TABLE articoli ADD COLUMN IF NOT EXISTS immagine_inline2 TEXT DEFAULT ''")
 
     source_map = {
         "ANSA Mondo":"italian_mainstream","Repubblica Esteri":"italian_mainstream",
@@ -533,7 +536,7 @@ def run_analysis_job(job_id, keywords, articles, previous):
             return m.group(1).strip() if m else ""
 
         titolo_m = re.search(r'TITOLO:\s*(.+)', raw_articolo)
-        art_titolo = titolo_m.group(1).strip().strip('[]') if titolo_m else keywords_str
+        art_titolo = titolo_m.group(1).strip().strip('[]').strip('*').strip() if titolo_m else keywords_str
         art_dati        = extract_art_sec(raw_articolo, "IL DATO CHE CONTA")
         art_analisi     = extract_art_sec(raw_articolo, "THEATRUM BELLI — ANALISI")
         art_conseguenze = extract_art_sec(raw_articolo, "COSA SIGNIFICA PER TE")
@@ -628,7 +631,7 @@ def parse_articolo_response(raw, analisi_id, keywords_str, author):
     titolo = ""
     m = re.search(r'TITOLO:\s*(.+)', raw)
     if m:
-        titolo = m.group(1).strip().strip('[]')
+        titolo = m.group(1).strip().strip('[]').strip('*').strip()
 
     def extract_sec(text, header):
         m2 = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\nPOST_SOCIAL:|\nPROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
@@ -973,7 +976,7 @@ def api_update_articolo(articolo_id):
     data = request.json
     allowed = ['titolo','sezione_dati','sezione_analisi','sezione_conseguenze',
                'post_social','immagine_prompt','immagine_url','categoria','tags',
-               'autore_nome','autore_ruolo']
+               'autore_nome','autore_ruolo','immagine_hero','immagine_inline1','immagine_inline2']
     updates = {k: v for k, v in data.items() if k in allowed}
     if not updates: return jsonify({"error":"Nessun campo valido"}), 400
     set_clause = ", ".join([f"{k}=%s" for k in updates])
