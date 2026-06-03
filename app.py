@@ -1096,76 +1096,74 @@ def api_visual_prompts():
 # ─────────────────────────────────────────────
 # DIAGNOSTICA FEED (temporaneo — rimuovere dopo l'uso)
 # ─────────────────────────────────────────────
+FEED_CANDIDATES = {
+    "arab_media": [
+        ("Al Arabiya English", "https://english.alarabiya.net/feed/rss2/en.xml"),
+        ("The New Arab", "https://www.newarab.com/rss"),
+        ("Al-Monitor", "https://www.al-monitor.com/rss"),
+        ("Arab News", "https://www.arabnews.com/rss.xml"),
+        ("Egypt Independent", "https://egyptindependent.com/feed/"),
+    ],
+    "russian_state": [
+        ("Sputnik International", "https://sputnikglobe.com/export/rss2/archive/index.xml"),
+        ("Sputnik (alt)", "https://sputniknews.com/export/rss2/archive/index.xml"),
+        ("Kommersant EN", "https://www.kommersant.com/RSS/news.xml"),
+        ("The Moscow Times", "https://www.themoscowtimes.com/rss/news"),
+    ],
+    "chinese_state": [
+        ("Global Times", "https://www.globaltimes.cn/rss/outbrain.xml"),
+        ("People's Daily", "http://en.people.cn/rss/politics.xml"),
+        ("CGTN", "https://www.cgtn.com/subscribe/rss/section/world.xml"),
+        ("China Daily", "http://www.chinadaily.com.cn/rss/world_rss.xml"),
+    ],
+    "india": [
+        ("The Hindu Intl", "https://www.thehindu.com/news/international/feeder/default.rss"),
+        ("Times of India World", "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms"),
+        ("The Wire India", "https://thewire.in/rss"),
+        ("Hindustan Times World", "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml"),
+    ],
+    "turkey": [
+        ("TRT World", "https://www.trtworld.com/rss"),
+        ("Daily Sabah", "https://www.dailysabah.com/rssFeed/9"),
+        ("Hurriyet Daily News", "https://www.hurriyetdailynews.com/rss"),
+    ],
+    "iran": [
+        ("Press TV", "https://www.presstv.ir/rss.xml"),
+        ("Tehran Times", "https://www.tehrantimes.com/rss"),
+        ("Mehr News EN", "https://en.mehrnews.com/rss"),
+    ],
+    "latam": [
+        ("teleSUR English", "https://www.telesurenglish.net/rss/RssAllNews.xml"),
+        ("Buenos Aires Herald", "https://buenosairesherald.com/feed"),
+        ("MercoPress", "https://en.mercopress.com/rss/"),
+        ("Brasil de Fato EN", "https://www.brasildefato.com.br/rss2.xml"),
+    ],
+}
+
 @app.route("/api/admin/test-feeds")
 def api_test_feeds():
     if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
     import socket as _socket
-    candidates = {
-        "arab_media": [
-            ("Al Arabiya English", "https://english.alarabiya.net/feed/rss2/en.xml"),
-            ("The New Arab", "https://www.newarab.com/rss"),
-            ("Al-Monitor", "https://www.al-monitor.com/rss"),
-            ("Arab News", "https://www.arabnews.com/rss.xml"),
-            ("Egypt Independent", "https://egyptindependent.com/feed/"),
-        ],
-        "russian_state": [
-            ("Sputnik International", "https://sputnikglobe.com/export/rss2/archive/index.xml"),
-            ("Sputnik (alt)", "https://sputniknews.com/export/rss2/archive/index.xml"),
-            ("Kommersant EN", "https://www.kommersant.com/RSS/news.xml"),
-            ("The Moscow Times", "https://www.themoscowtimes.com/rss/news"),
-        ],
-        "chinese_state": [
-            ("Global Times", "https://www.globaltimes.cn/rss/outbrain.xml"),
-            ("People's Daily", "http://en.people.cn/rss/politics.xml"),
-            ("CGTN", "https://www.cgtn.com/subscribe/rss/section/world.xml"),
-            ("China Daily", "http://www.chinadaily.com.cn/rss/world_rss.xml"),
-        ],
-        "india": [
-            ("The Hindu Intl", "https://www.thehindu.com/news/international/feeder/default.rss"),
-            ("Times of India World", "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms"),
-            ("The Wire India", "https://thewire.in/rss"),
-            ("Hindustan Times World", "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml"),
-        ],
-        "turkey": [
-            ("TRT World", "https://www.trtworld.com/rss"),
-            ("Daily Sabah", "https://www.dailysabah.com/rssFeed/9"),
-            ("Hurriyet Daily News", "https://www.hurriyetdailynews.com/rss"),
-        ],
-        "iran": [
-            ("Press TV", "https://www.presstv.ir/rss.xml"),
-            ("Tehran Times", "https://www.tehrantimes.com/rss"),
-            ("Mehr News EN", "https://en.mehrnews.com/rss"),
-        ],
-        "latam": [
-            ("teleSUR English", "https://www.telesurenglish.net/rss/RssAllNews.xml"),
-            ("Buenos Aires Herald", "https://buenosairesherald.com/feed"),
-            ("MercoPress", "https://en.mercopress.com/rss/"),
-            ("Brasil de Fato EN", "https://www.brasildefato.com.br/rss2.xml"),
-        ],
-    }
-    _socket.setdefaulttimeout(8)
-    results = {}
-    for persp, lst in candidates.items():
-        results[persp] = []
-        for name, url in lst:
-            try:
-                f = feedparser.parse(url)
-                n = len(f.entries)
-                status = getattr(f, "status", None)
-                sample = f.entries[0].get("title", "")[:60] if n > 0 else ""
-                results[persp].append({
-                    "name": name, "url": url, "http": status,
-                    "entries": n, "alive": n > 0, "sample": sample
-                })
-            except Exception as e:
-                results[persp].append({
-                    "name": name, "url": url, "http": None,
-                    "entries": 0, "alive": False, "error": str(e)[:80]
-                })
+    gruppo = request.args.get("gruppo", "").strip()
+    if gruppo == "list" or not gruppo:
+        return jsonify({"gruppi_disponibili": list(FEED_CANDIDATES.keys()),
+                        "uso": "aggiungi ?gruppo=<nome> per testare un gruppo alla volta"})
+    if gruppo not in FEED_CANDIDATES:
+        return jsonify({"error": f"gruppo sconosciuto: {gruppo}", "disponibili": list(FEED_CANDIDATES.keys())}), 400
+    _socket.setdefaulttimeout(5)
+    out = []
+    for name, url in FEED_CANDIDATES[gruppo]:
+        try:
+            f = feedparser.parse(url)
+            n = len(f.entries)
+            out.append({"name": name, "url": url, "http": getattr(f, "status", None),
+                        "entries": n, "alive": n > 0,
+                        "sample": f.entries[0].get("title","")[:70] if n > 0 else ""})
+        except Exception as e:
+            out.append({"name": name, "url": url, "alive": False, "entries": 0, "error": str(e)[:90]})
     _socket.setdefaulttimeout(None)
-    total_alive = sum(1 for p in results.values() for r in p if r["alive"])
-    total = sum(len(p) for p in results.values())
-    return jsonify({"summary": f"{total_alive}/{total} feed vivi", "results": results})
+    alive = sum(1 for r in out if r.get("alive"))
+    return jsonify({"gruppo": gruppo, "vivi": f"{alive}/{len(out)}", "results": out})
 
 # ─────────────────────────────────────────────
 # STARTUP
