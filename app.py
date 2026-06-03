@@ -1145,25 +1145,31 @@ def api_test_feeds():
     if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
     import socket as _socket
     gruppo = request.args.get("gruppo", "").strip()
-    if gruppo == "list" or not gruppo:
-        return jsonify({"gruppi_disponibili": list(FEED_CANDIDATES.keys()),
-                        "uso": "aggiungi ?gruppo=<nome> per testare un gruppo alla volta"})
+    idx = request.args.get("i", type=int)
+    if not gruppo or gruppo == "list":
+        return jsonify({g: len(v) for g, v in FEED_CANDIDATES.items()})
     if gruppo not in FEED_CANDIDATES:
-        return jsonify({"error": f"gruppo sconosciuto: {gruppo}", "disponibili": list(FEED_CANDIDATES.keys())}), 400
+        return jsonify({"error": f"gruppo sconosciuto: {gruppo}"}), 400
+    feeds = FEED_CANDIDATES[gruppo]
+    # Se i non specificato, testa SOLO il primo e indica quanti ce ne sono
+    if idx is None:
+        return jsonify({"gruppo": gruppo, "totale_feed": len(feeds),
+                        "uso": f"aggiungi &i=0 .. &i={len(feeds)-1} per testare un feed alla volta"})
+    if idx < 0 or idx >= len(feeds):
+        return jsonify({"error": f"indice fuori range 0..{len(feeds)-1}"}), 400
+    name, url = feeds[idx]
     _socket.setdefaulttimeout(5)
-    out = []
-    for name, url in FEED_CANDIDATES[gruppo]:
-        try:
-            f = feedparser.parse(url)
-            n = len(f.entries)
-            out.append({"name": name, "url": url, "http": getattr(f, "status", None),
-                        "entries": n, "alive": n > 0,
-                        "sample": f.entries[0].get("title","")[:70] if n > 0 else ""})
-        except Exception as e:
-            out.append({"name": name, "url": url, "alive": False, "entries": 0, "error": str(e)[:90]})
+    try:
+        f = feedparser.parse(url)
+        n = len(f.entries)
+        res = {"name": name, "url": url, "http": getattr(f, "status", None),
+               "entries": n, "alive": n > 0,
+               "sample": f.entries[0].get("title","")[:70] if n > 0 else ""}
+    except Exception as e:
+        res = {"name": name, "url": url, "alive": False, "entries": 0, "error": str(e)[:90]}
     _socket.setdefaulttimeout(None)
-    alive = sum(1 for r in out if r.get("alive"))
-    return jsonify({"gruppo": gruppo, "vivi": f"{alive}/{len(out)}", "results": out})
+    res["gruppo"] = gruppo; res["i"] = idx; res["totale_feed"] = len(feeds)
+    return jsonify(res)
 
 # ─────────────────────────────────────────────
 # STARTUP
