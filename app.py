@@ -237,11 +237,8 @@ FEEDS = {
     "Tehran Times":("https://www.tehrantimes.com/rss","iran_media"),
     "Mehr News EN":("https://en.mehrnews.com/rss","iran_media"),
     "The Hindu Intl":("https://www.thehindu.com/news/international/feeder/default.rss","india_media"),
-    "Times of India World":("https://timesofindia.indiatimes.com/rssfeeds/296589292.cms","india_media"),
     "Hindustan Times World":("https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml","india_media"),
     "Daily Sabah":("https://www.dailysabah.com/rssFeed/9","turkey_media"),
-    "Buenos Aires Herald":("https://buenosairesherald.com/feed","latam_media"),
-    "MercoPress":("https://en.mercopress.com/rss/","latam_media"),
     "The Cradle":("https://thecradle.co/feed","alternative_left"),
     "MintPress News":("https://www.mintpressnews.com/feed/","alternative_left"),
     "Multipolarista":("https://multipolarista.com/feed/","alternative_left"),
@@ -267,7 +264,7 @@ PERSPECTIVE_LABELS = {
     "alternative_left":"Critica Alternativa","russian_state":"Media Russi",
     "chinese_state":"Media Cinesi/Asiatici","think_tank":"Think Tank & Analisi",
     "iran_media":"Stampa Iraniana","india_media":"Stampa Indiana","turkey_media":"Stampa Turca",
-    "latam_media":"America Latina","other":"Altro",
+    "other":"Altro",
 }
 
 KEYWORDS_IT = [
