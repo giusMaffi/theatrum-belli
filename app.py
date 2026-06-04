@@ -1116,6 +1116,115 @@ def api_visual_prompts():
         return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────────
+# AUTOMAZIONE: GENERAZIONE ANALISI SCHEDULATA
+# ─────────────────────────────────────────────
+CRON_TOKEN = os.environ.get("CRON_TOKEN", "")
+
+# Liste-filtro per asse tematico: pescano i titoli pertinenti dal DB.
+# Claude poi sceglie il tema caldo DENTRO questo sottoinsieme.
+ASSI = {
+    "geo": ["war","conflict","military","nato","russia","ukraine","china","taiwan",
+            "israel","iran","gaza","missile","troops","border","escalation","strike",
+            "defense","weapons","attack","invasion","ceasefire"],
+    "politico": ["election","government","summit","treaty","alliance","sanctions",
+                 "diplomacy","minister","parliament","vote","coup","protest","negotiation",
+                 "agreement","president","policy","resignation","referendum"],
+    "economico": ["oil","gas","energy","dollar","brics","trade","tariff","inflation",
+                  "market","sanctions","supply chain","semiconductor","commodities",
+                  "central bank","recession","export","gdp","debt","currency"],
+}
+
+def estrai_tema_caldo(asse, titoli):
+    """Claude sceglie il tema piu' rilevante del giorno tra i titoli filtrati per asse."""
+    if not titoli:
+        return None
+    titoli_txt = "\n".join(f"- {t}" for t in titoli[:60])
+    già_fatti = ""
+    prompt = (f"Sei un caporedattore di intelligence geopolitica. Dai seguenti titoli di oggi "
+              f"sull'asse '{asse}', identifica IL SINGOLO tema piu' rilevante e caldo per un'analisi.\n\n"
+              f"TITOLI:\n{titoli_txt}\n\n"
+              f"Rispondi SOLO con 2-4 parole chiave separate da virgola che catturano il tema "
+              f"(es. 'iran, nucleare, negoziati' oppure 'taiwan, cina, semiconduttori'). "
+              f"Nessuna spiegazione, solo le keyword.")
+    out = call_claude(prompt, max_tokens=50)
+    kws = [k.strip().lower() for k in out.split(",") if k.strip() and len(k.strip()) < 30]
+    return kws[:4] if kws else None
+
+@app.route("/api/cron/genera")
+def api_cron_genera():
+    # Autenticazione via token (non sessione: lo chiama una macchina)
+    token = request.headers.get("X-Cron-Token", "") or request.args.get("token", "")
+    if not CRON_TOKEN or token != CRON_TOKEN:
+        return jsonify({"error": "Token non valido"}), 403
+    asse = request.args.get("asse", "").strip().lower()
+    if asse not in ASSI:
+        return jsonify({"error": f"asse sconosciuto: {asse}", "disponibili": list(ASSI.keys())}), 400
+
+    filtro = ASSI[asse]
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+
+    # 1) Pesca titoli pertinenti all'asse nelle ultime 24h, con fallback a 48h se pochi
+    def pesca_titoli(ore):
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=ore)).isoformat()
+        cond = " OR ".join(["LOWER(title) LIKE %s" for _ in filtro])
+        params = [f"%{k}%" for k in filtro] + [cutoff]
+        c.execute(f"SELECT title FROM articles WHERE ({cond}) AND fetched_at >= %s ORDER BY id DESC LIMIT 80", params)
+        return [r["title"] for r in c.fetchall()]
+
+    titoli = pesca_titoli(24)
+    finestra = 24
+    if len(titoli) < 10:
+        titoli = pesca_titoli(48); finestra = 48
+
+    if len(titoli) < 5:
+        conn.close()
+        return jsonify({"error": "Troppo pochi titoli per l'asse", "asse": asse, "titoli": len(titoli)}), 200
+
+    # 2) Claude sceglie il tema caldo
+    keywords = estrai_tema_caldo(asse, titoli)
+    if not keywords:
+        conn.close()
+        return jsonify({"error": "Estrazione tema fallita", "asse": asse}), 200
+
+    # 3) Anti-doppione: evita temi già coperti oggi
+    oggi = datetime.now(timezone.utc).date().isoformat()
+    c.execute("SELECT keywords FROM analyses WHERE created_at >= %s", (oggi,))
+    temi_oggi = " ".join(r["keywords"].lower() for r in c.fetchall() if r["keywords"])
+    sovrapposte = [k for k in keywords if k in temi_oggi]
+    if len(sovrapposte) >= len(keywords):
+        conn.close()
+        return jsonify({"skip": True, "motivo": "tema già coperto oggi", "asse": asse, "keywords": keywords}), 200
+
+    # 4) Recupera articoli pertinenti al tema (stessa logica di api_analyze)
+    cond2 = " OR ".join(["(LOWER(title) LIKE %s OR LOWER(summary) LIKE %s)" for _ in keywords])
+    params2 = []
+    for kw in keywords: params2.extend([f"%{kw}%", f"%{kw}%"])
+    cutoff7 = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    params2.append(cutoff7)
+    c.execute(f"""SELECT source,title,link,summary,published,category,perspective
+                  FROM articles WHERE ({cond2}) AND fetched_at >= %s
+                  ORDER BY id DESC LIMIT 500""", params2)
+    all_articles = [dict(r) for r in c.fetchall()]
+    kw_cond = " OR ".join(["LOWER(keywords) LIKE %s" for _ in keywords])
+    c.execute(f"SELECT narrative_map,created_at FROM analyses WHERE {kw_cond} ORDER BY created_at DESC LIMIT 2",
+              [f"%{kw}%" for kw in keywords])
+    previous = [dict(r) for r in c.fetchall()]
+    conn.close()
+
+    if len(all_articles) < 3:
+        return jsonify({"skip": True, "motivo": "pochi articoli sul tema", "asse": asse,
+                        "keywords": keywords, "trovati": len(all_articles)}), 200
+
+    # 5) Lancia la pipeline (salva come BOZZA, esattamente come la generazione manuale)
+    articles = select_balanced_articles(all_articles, max_total=25, max_per_perspective=4)
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "pending"}
+    t = threading.Thread(target=run_analysis_job, args=(job_id, keywords, articles, previous))
+    t.daemon = True; t.start()
+    return jsonify({"ok": True, "asse": asse, "keywords": keywords, "finestra_ore": finestra,
+                    "articoli": len(all_articles), "selezionati": len(articles), "job_id": job_id}), 200
+
+# ─────────────────────────────────────────────
 # STARTUP
 # ─────────────────────────────────────────────
 init_db()
