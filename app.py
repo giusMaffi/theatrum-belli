@@ -554,7 +554,7 @@ def run_analysis_job(job_id, keywords, articles, previous):
 
         # Estrai sezioni articolo per salvarle nel DB
         def extract_art_sec(text, header):
-            m = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\nPOST_SOCIAL:|\nPROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
+            m = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\n\*{0,2}POST_SOCIAL:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
             return m.group(1).strip() if m else ""
 
         titolo_m = re.search(r'TITOLO:\s*(.+)', raw_articolo)
@@ -562,9 +562,685 @@ def run_analysis_job(job_id, keywords, articles, previous):
         art_dati        = extract_art_sec(raw_articolo, "IL DATO CHE CONTA")
         art_analisi     = extract_art_sec(raw_articolo, "THEATRUM BELLI — ANALISI")
         art_conseguenze = extract_art_sec(raw_articolo, "COSA SIGNIFICA PER TE")
-        m_social = re.search(r'POST_SOCIAL:\s*(.*?)(?=\nPROMPT_IMMAGINE:|\Z)', raw_articolo, re.DOTALL)
-        art_social = m_social.group(1).strip().strip('[]') if m_social else ""
-        m_prompt = re.search(r'PROMPT_IMMAGINE:\s*(.*?)$', raw_articolo, re.DOTALL)
+        m_social = re.search(r'\*{0,2}POST_SOCIAL:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_IMMAGINE:|\Z)', raw_articolo, re.DOTALL)
+        art_social = m_social.group(1).strip().strip('[]').strip('*').strip() if m_social else ""
+        m_prompt = re.search(r'\*{0,2}PROMPT_IMMAGINE:\*{0,2}\s*(.*?)
+        art_prompt_img = m_prompt.group(1).strip().strip('[]').strip('*').strip() if m_prompt else ""
+
+        by_perspective = defaultdict(list)
+        for a in articles:
+            by_perspective[a.get('perspective','other')].append(a)
+        perspectives_used = {p: PERSPECTIVE_LABELS.get(p,p) for p in by_perspective.keys()}
+        keywords_str = ", ".join(keywords)
+        theme_tag = generate_theme_tag(keywords_str)
+        articles_compact = [{"source":a["source"],"title":a["title"],"link":a["link"]} for a in articles]
+
+        # Salva analisi e ottieni il suo ID reale
+        analysis_id = save_analysis(", ".join(keywords), len(articles), narrative_map, convergences,
+                      divergences, legal, thread, "", theme_tag, "",
+                      json.dumps(articles_compact, ensure_ascii=False))
+
+        # Salva articolo come bozza collegato all'analisi
+        slug_base = make_slug(art_titolo or keywords_str)
+        conn_art = get_conn(); c_art = conn_art.cursor()
+        final_slug = slug_base; counter = 1
+        while True:
+            c_art.execute("SELECT id FROM articoli WHERE slug=%s", (final_slug,))
+            if not c_art.fetchone(): break
+            final_slug = f"{slug_base}-{counter}"; counter += 1
+        categoria = categorize(keywords_str)
+        c_art.execute("""
+            INSERT INTO articoli (slug,titolo,categoria,tags,sezione_dati,sezione_analisi,
+                sezione_conseguenze,immagine_prompt,immagine_url,post_social,
+                autore_nome,autore_ruolo,analisi_id,status,created_at,published_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'bozza',%s,NULL)
+            RETURNING id
+        """, (final_slug, art_titolo, categoria, keywords_str,
+              art_dati, art_analisi, art_conseguenze,
+              art_prompt_img, "", art_social,
+              author['nome'], author['ruolo'], analysis_id,
+              datetime.now(timezone.utc).isoformat()))
+        art_id = c_art.fetchone()[0]
+        conn_art.commit(); conn_art.close()
+
+        jobs[job_id]["status"] = "done"
+        jobs[job_id]["result"] = {
+            "keywords": keywords,
+            "article_count": len(articles),
+            "articles": articles[:15],
+            "perspectives_used": perspectives_used,
+            "narrative_map": narrative_map,
+            "convergences": convergences,
+            "divergences": divergences,
+            "legal": legal,
+            "thread": thread,
+            "instagram_script": "",
+            "analysis_id": analysis_id,
+            "articolo": {
+                "id": art_id,
+                "slug": final_slug,
+                "titolo": art_titolo,
+                "sezione_dati": art_dati,
+                "sezione_analisi": art_analisi,
+                "sezione_conseguenze": art_conseguenze,
+                "autore_nome": author['nome'],
+                "autore_ruolo": author['ruolo'],
+            },
+            "has_history": len(previous) > 0,
+            "theme_tag": theme_tag,
+            "visual_prompts": None,
+        }
+    except Exception as e:
+        jobs[job_id]["status"] = "error"
+        jobs[job_id]["error"] = str(e)
+        print(f"[ERROR] Job {job_id}: {e}")
+
+# ─────────────────────────────────────────────
+# SISTEMA EDITORIALE — helper functions
+# ─────────────────────────────────────────────
+def make_slug(titolo):
+    s = unicodedata.normalize('NFD', titolo)
+    s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
+    s = s.lower().strip()
+    s = re.sub(r'[^a-z0-9\s-]', '', s)
+    s = re.sub(r'[\s_-]+', '-', s)
+    s = s[:80].strip('-')
+    ts = datetime.now().strftime('%Y%m%d')
+    return f"{ts}-{s}"
+
+def parse_articolo_response(raw, analisi_id, keywords_str, author):
+    """Parsa la risposta Claude e restituisce dict con tutti i campi."""
+    titolo = ""
+    m = re.search(r'TITOLO:\s*(.+)', raw)
+    if m:
+        titolo = m.group(1).strip().strip('[]').strip('*').strip()
+
+    def extract_sec(text, header):
+        m2 = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\n\*{0,2}POST_SOCIAL:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
+        return m2.group(1).strip() if m2 else ""
+
+    sezione_dati        = extract_sec(raw, "IL DATO CHE CONTA")
+    sezione_analisi     = extract_sec(raw, "THEATRUM BELLI — ANALISI")
+    sezione_conseguenze = extract_sec(raw, "COSA SIGNIFICA PER TE")
+
+    m_social = re.search(r'POST_SOCIAL:\s*(.*?)(?=\nPROMPT_IMMAGINE:|\Z)', raw, re.DOTALL)
+    post_social = m_social.group(1).strip().strip('[]') if m_social else ""
+
+    m_prompt = re.search(r'PROMPT_IMMAGINE:\s*(.*?)$', raw, re.DOTALL)
+    immagine_prompt = m_prompt.group(1).strip().strip('[]') if m_prompt else ""
+
+    categoria = categorize(keywords_str)
+    slug = make_slug(titolo or keywords_str)
+
+    return {
+        "slug": slug,
+        "titolo": titolo,
+        "categoria": categoria,
+        "tags": keywords_str,
+        "sezione_dati": sezione_dati,
+        "sezione_analisi": sezione_analisi,
+        "sezione_conseguenze": sezione_conseguenze,
+        "immagine_prompt": immagine_prompt,
+        "immagine_url": "",
+        "post_social": post_social,
+        "autore_nome": author["nome"],
+        "autore_ruolo": author["ruolo"],
+        "analisi_id": analisi_id,
+        "status": "bozza",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "published_at": None,
+    }
+
+# ─────────────────────────────────────────────
+# ROUTES PUBBLICHE
+# ─────────────────────────────────────────────
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/api/news")
+def api_news():
+    category = request.args.get("category","all"); source = request.args.get("source","all")
+    limit = int(request.args.get("limit",60)); offset = int(request.args.get("offset",0))
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    query = "SELECT source,title,link,summary,published,category,fetched_at FROM articles WHERE 1=1"
+    params = []
+    if category != "all": query += " AND category=%s"; params.append(category)
+    if source != "all": query += " AND source=%s"; params.append(source)
+    query += " ORDER BY fetched_at DESC LIMIT %s OFFSET %s"; params.extend([limit, offset])
+    c.execute(query, params); rows = [dict(r) for r in c.fetchall()]; conn.close()
+    return jsonify(rows)
+
+@app.route("/api/stats")
+def api_stats():
+    conn = get_conn(); c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM articles"); total = c.fetchone()[0]
+    c.execute("SELECT category,COUNT(*) FROM articles GROUP BY category ORDER BY COUNT(*) DESC")
+    by_cat = {r[0]:r[1] for r in c.fetchall()}
+    c.execute("SELECT source,COUNT(*) FROM articles GROUP BY source ORDER BY COUNT(*) DESC")
+    by_source = {r[0]:r[1] for r in c.fetchall()}
+    c.execute("SELECT MAX(fetched_at) FROM articles"); last_update = c.fetchone()[0]
+    conn.close()
+    return jsonify({"total":total,"by_category":by_cat,"by_source":by_source,"last_update":last_update})
+
+@app.route("/api/refresh", methods=["POST"])
+def manual_refresh():
+    t = threading.Thread(target=fetch_all); t.daemon=True; t.start()
+    return jsonify({"status":"refresh started"})
+
+@app.route("/api/categories")
+def api_categories():
+    return jsonify(list(CATEGORY_TAGS.keys()))
+
+@app.route("/api/sources")
+def api_sources():
+    return jsonify(list(FEEDS.keys()))
+
+@app.route("/articoli")
+def articoli_lista():
+    categoria = request.args.get("categoria", "all")
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    if categoria != "all":
+        c.execute("""SELECT id,slug,titolo,categoria,tags,created_at,published_at,immagine_url,autore_nome
+                     FROM articoli WHERE status='pubblicato' AND categoria=%s
+                     ORDER BY published_at DESC LIMIT 50""", (categoria,))
+    else:
+        c.execute("""SELECT id,slug,titolo,categoria,tags,created_at,published_at,immagine_url,autore_nome
+                     FROM articoli WHERE status='pubblicato'
+                     ORDER BY published_at DESC LIMIT 50""")
+    rows = [dict(r) for r in c.fetchall()]; conn.close()
+    return render_template("articoli_lista.html", articoli=rows,
+                           categoria_filtro=categoria, categorie=list(CATEGORY_TAGS.keys()))
+
+@app.route("/articoli/<slug>")
+def articolo_detail(slug):
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM articoli WHERE slug=%s AND status='pubblicato'", (slug,))
+    row = c.fetchone(); conn.close()
+    if not row: return "Articolo non trovato", 404
+    return render_template("articolo_detail.html", articolo=dict(row))
+
+# ─────────────────────────────────────────────
+# ROUTES ADMIN
+# ─────────────────────────────────────────────
+@app.route("/admin")
+def admin():
+    if not session.get("admin"): return redirect(url_for("admin_login"))
+    return render_template("analisi.html")
+
+@app.route("/admin/login", methods=["GET","POST"])
+def admin_login():
+    error = ""
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASSWORD:
+            session["admin"] = True; session.permanent = True
+            return redirect(url_for("admin"))
+        error = "Password errata."
+    return render_template("login.html", error=error)
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin", None); return redirect(url_for("index"))
+
+@app.route("/admin/articoli")
+def admin_articoli():
+    if not session.get("admin"): return redirect(url_for("admin_login"))
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("""SELECT id,slug,titolo,categoria,status,created_at,published_at,autore_nome
+                 FROM articoli ORDER BY created_at DESC LIMIT 100""")
+    rows = [dict(r) for r in c.fetchall()]; conn.close()
+    return render_template("admin_articoli.html", articoli=rows)
+
+@app.route("/api/admin/analyze", methods=["POST"])
+def api_analyze():
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    data = request.json
+    keywords = [k.strip().lower() for k in data.get("keywords",[]) if k.strip()]
+    if not keywords: return jsonify({"error":"Inserisci almeno una keyword"}), 400
+    days = int(data.get("days", 7))
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    conditions = " OR ".join(["(LOWER(title) LIKE %s OR LOWER(summary) LIKE %s)" for _ in keywords])
+    params = []
+    for kw in keywords: params.extend([f"%{kw}%", f"%{kw}%"])
+    date_filter = ""
+    if days > 0:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        date_filter = " AND fetched_at >= %s"; params.append(cutoff)
+    c.execute(f"""SELECT source,title,link,summary,published,category,perspective
+                  FROM articles WHERE ({conditions}){date_filter}
+                  ORDER BY id DESC LIMIT 500""", params)
+    all_articles = [dict(r) for r in c.fetchall()]
+    kw_conditions = " OR ".join(["LOWER(keywords) LIKE %s" for _ in keywords])
+    kw_params = [f"%{kw}%" for kw in keywords]
+    c.execute(f"SELECT narrative_map,created_at FROM analyses WHERE {kw_conditions} ORDER BY created_at DESC LIMIT 2", kw_params)
+    previous = [dict(r) for r in c.fetchall()]
+    conn.close()
+    if not all_articles:
+        return jsonify({"error":f"Nessun articolo trovato per: {', '.join(keywords)}"}), 404
+    articles = select_balanced_articles(all_articles, max_total=25, max_per_perspective=4)
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status":"pending"}
+    t = threading.Thread(target=run_analysis_job, args=(job_id, keywords, articles, previous))
+    t.daemon = True; t.start()
+    return jsonify({"job_id":job_id,"article_count":len(all_articles),"selected":len(articles)})
+
+@app.route("/api/admin/job/<job_id>")
+def api_job_status(job_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    job = jobs.get(job_id)
+    if not job: return jsonify({"error":"Job non trovato"}), 404
+    return jsonify(job)
+
+@app.route("/api/admin/analyses")
+def api_analyses_history():
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT id,keywords,article_count,created_at,theme_tag FROM analyses ORDER BY created_at DESC LIMIT 50")
+    rows = [dict(r) for r in c.fetchall()]; conn.close()
+    return jsonify(rows)
+
+@app.route("/api/admin/analyses/<int:analysis_id>")
+def api_analysis_detail(analysis_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM analyses WHERE id=%s", (analysis_id,))
+    row = c.fetchone(); conn.close()
+    if not row: return jsonify({"error":"Non trovata"}), 404
+    return jsonify(dict(row))
+
+@app.route("/api/admin/analyses/<int:analysis_id>", methods=["DELETE"])
+def api_analysis_delete(analysis_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor()
+    c.execute("DELETE FROM analyses WHERE id=%s", (analysis_id,))
+    conn.commit(); conn.close()
+    return jsonify({"deleted":analysis_id})
+
+@app.route("/api/admin/articoli/genera/<int:analisi_id>", methods=["POST"])
+def api_genera_articolo(analisi_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM analyses WHERE id=%s", (analisi_id,))
+    analisi = c.fetchone()
+    if not analisi: conn.close(); return jsonify({"error":"Analisi non trovata"}), 404
+    analisi = dict(analisi)
+    keywords_str = analisi.get('keywords', '')
+    conn.close()
+    try:
+        author = assign_author(keywords_str, analisi.get('theme_tag',''))
+        prompt_articolo = f"""Sei un giornalista geopolitico di lungo corso. Scrivi un articolo editoriale completo per Theatrum Belli.
+
+TEMA: {keywords_str}
+
+MAPPA NARRATIVE:
+{analisi.get('narrative_map','')}
+
+CONVERGENZE:
+{analisi.get('convergences','')}
+
+DIVERGENZE:
+{analisi.get('divergences','')}
+
+DIRITTO INTERNAZIONALE:
+{analisi.get('legal','')}
+
+FILO NARRATIVO:
+{analisi.get('thread','')}
+
+Scrivi UN SOLO titolo editoriale — non descrittivo, non scolastico, colpisci come un headline di guerra fredda, max 12 parole.
+Poi l'articolo in 3 sezioni esatte.
+
+TITOLO: [titolo impattante]
+
+## IL DATO CHE CONTA
+Fatti nudi incrociati da più fonti. Apri con il dato più anomalo o inatteso.
+Cita le testate esplicitamente. Almeno un riferimento storico preciso.
+Niente interpretazioni — solo fatti verificati e la tensione tra di essi. 200-280 parole.
+
+## THEATRUM BELLI — ANALISI
+Meccanismi nascosti, contraddizioni strutturali, paradossi di potere.
+Chi guadagna, chi perde, quali architetture di interesse sono in gioco.
+Voce: osservatore freddo che conosce la storia. Niente "dovremmo", niente moralismo. 200-280 parole.
+
+## COSA SIGNIFICA PER TE
+Conseguenze concrete per il cittadino europeo/italiano. Catena causale geopolitica→economia domestica.
+Bollette, prezzi, lavoro, logistica. Numeri specifici dove possibile.
+Chiudi con UN fatto economico secco — titolo azionario, contratto firmato, percentuale.
+Poi su riga separata: "— {author['nome']} continua a monitorare."
+Tono: referto medico. 120-160 parole.
+
+POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — max 3 hashtag]
+
+PROMPT_IMMAGINE: [prompt inglese per Flux AI, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9]
+
+Rispondi in questo formato esatto — niente altro."""
+
+        raw = call_claude(prompt_articolo, max_tokens=3000)
+        art = parse_articolo_response(raw, analisi_id, keywords_str, author)
+
+        conn2 = get_conn(); c2 = conn2.cursor()
+        base_slug = art['slug']; final_slug = base_slug; counter = 1
+        while True:
+            c2.execute("SELECT id FROM articoli WHERE slug=%s", (final_slug,))
+            if not c2.fetchone(): break
+            final_slug = f"{base_slug}-{counter}"; counter += 1
+        art['slug'] = final_slug
+
+        c2.execute("""
+            INSERT INTO articoli (slug,titolo,categoria,tags,sezione_dati,sezione_analisi,
+                sezione_conseguenze,immagine_prompt,immagine_url,post_social,
+                autore_nome,autore_ruolo,analisi_id,status,created_at,published_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id
+        """, (art['slug'], art['titolo'], art['categoria'], art['tags'],
+              art['sezione_dati'], art['sezione_analisi'], art['sezione_conseguenze'],
+              art['immagine_prompt'], art['immagine_url'], art['post_social'],
+              art['autore_nome'], art['autore_ruolo'],
+              art['analisi_id'], art['status'], art['created_at'], art['published_at']))
+        new_id = c2.fetchone()[0]
+        conn2.commit(); conn2.close()
+
+        return jsonify({
+            "success": True,
+            "articolo_id": new_id,
+            "slug": final_slug,
+            "titolo": art['titolo'],
+            "autore_nome": art['autore_nome'],
+            "autore_ruolo": art['autore_ruolo'],
+        })
+    except Exception as e:
+        print(f"[ERROR] genera_articolo: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/admin/articoli")
+def api_admin_articoli_list():
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    analisi_id = request.args.get("analisi_id", type=int)
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    if analisi_id:
+        c.execute("""SELECT id,slug,titolo,categoria,status,created_at,published_at,autore_nome,autore_ruolo
+                     FROM articoli WHERE analisi_id=%s ORDER BY created_at DESC LIMIT 10""", (analisi_id,))
+    else:
+        c.execute("""SELECT id,slug,titolo,categoria,status,created_at,published_at,autore_nome
+                     FROM articoli ORDER BY created_at DESC LIMIT 100""")
+    rows = [dict(r) for r in c.fetchall()]; conn.close()
+    return jsonify(rows)
+
+@app.route("/api/admin/articoli/<int:articolo_id>")
+def api_admin_articolo_detail(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM articoli WHERE id=%s", (articolo_id,))
+    row = c.fetchone(); conn.close()
+    if not row: return jsonify({"error":"Non trovato"}), 404
+    return jsonify(dict(row))
+
+@app.route("/api/admin/articoli/<int:articolo_id>/pubblica", methods=["POST"])
+def api_pubblica_articolo(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor()
+    c.execute("UPDATE articoli SET status='pubblicato', published_at=%s WHERE id=%s",
+              (datetime.now(timezone.utc).isoformat(), articolo_id))
+    conn.commit(); conn.close()
+    return jsonify({"success": True, "status": "pubblicato"})
+
+@app.route("/api/admin/articoli/<int:articolo_id>/archivia", methods=["POST"])
+def api_archivia_articolo(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor()
+    c.execute("UPDATE articoli SET status='archiviato' WHERE id=%s", (articolo_id,))
+    conn.commit(); conn.close()
+    return jsonify({"success": True, "status": "archiviato"})
+
+@app.route("/api/admin/articoli/<int:articolo_id>", methods=["PUT"])
+def api_update_articolo(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    data = request.json
+    allowed = ['titolo','sezione_dati','sezione_analisi','sezione_conseguenze',
+               'post_social','immagine_prompt','immagine_url','categoria','tags',
+               'autore_nome','autore_ruolo','immagine_hero','immagine_inline1','immagine_inline2']
+    updates = {k: v for k, v in data.items() if k in allowed}
+    if not updates: return jsonify({"error":"Nessun campo valido"}), 400
+    set_clause = ", ".join([f"{k}=%s" for k in updates])
+    conn = get_conn(); c = conn.cursor()
+    c.execute(f"UPDATE articoli SET {set_clause} WHERE id=%s", list(updates.values()) + [articolo_id])
+    conn.commit(); conn.close()
+    return jsonify({"success": True})
+
+@app.route("/api/admin/articoli/<int:articolo_id>", methods=["DELETE"])
+def api_delete_articolo(articolo_id):
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor()
+    c.execute("DELETE FROM articoli WHERE id=%s", (articolo_id,))
+    conn.commit(); conn.close()
+    return jsonify({"deleted": articolo_id})
+
+@app.route("/api/admin/articoli/<int:articolo_id>/genera-script", methods=["POST"])
+def api_genera_script(articolo_id):
+    """Genera lo script audio on-demand dall'articolo già salvato."""
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+    c.execute("SELECT * FROM articoli WHERE id=%s", (articolo_id,))
+    art = c.fetchone(); conn.close()
+    if not art: return jsonify({"error":"Articolo non trovato"}), 404
+    art = dict(art)
+    autore_nome = art.get('autore_nome', 'Theatrum Belli')
+    articolo_testo = f"""TITOLO: {art.get('titolo','')}
+
+IL DATO CHE CONTA:
+{art.get('sezione_dati','')}
+
+THEATRUM BELLI — ANALISI:
+{art.get('sezione_analisi','')}
+
+COSA SIGNIFICA PER TE:
+{art.get('sezione_conseguenze','')}"""
+
+    prompt = f"""Sei un giornalista geopolitico con vent'anni di esperienza.
+Hai scritto questo articolo editoriale per Theatrum Belli:
+
+{articolo_testo}
+
+Trasformalo in uno script audio di 2 minuti e 12 secondi (132 secondi) per un reel Instagram.
+SOLO in italiano. Versione parlata dello stesso articolo — stessa voce, stessi fatti.
+
+Tre movimenti continui, senza titoli né markdown nel testo:
+
+MOVIMENTO 1 (220-250 parole): Cronaca respirata. Apri col fatto più anomalo. Cita le testate. Un riferimento storico preciso. Ritmo variabile.
+MOVIMENTO 2 (80-100 parole): Conseguenze concrete per italiani/europei. Catena causale geopolitica→economia. Numeri. Tono: diagnosi medica.
+MOVIMENTO 3 (20-30 parole): Chiusura umana — una sola frase che chiude la prospettiva. NON ripetere dati già detti. Poi su riga separata: "— {autore_nome} continua a monitorare."
+
+Rispondi SOLO con lo script. Nient'altro."""
+
+    try:
+        script = call_claude(prompt, max_tokens=2000)
+        # Salva lo script nell'analisi collegata se esiste
+        if art.get('analisi_id'):
+            conn2 = get_conn(); c2 = conn2.cursor()
+            c2.execute("UPDATE analyses SET instagram_script=%s WHERE id=%s",
+                       (script, art['analisi_id']))
+            conn2.commit(); conn2.close()
+        return jsonify({"success": True, "script": script})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────────────────────
+# ELEVENLABS TTS
+# ─────────────────────────────────────────────
+@app.route("/api/admin/tts", methods=["POST"])
+def api_tts():
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    if not ELEVENLABS_API_KEY: return jsonify({"error":"ElevenLabs API key non configurata"}), 500
+    if not ELEVENLABS_VOICE_ID: return jsonify({"error":"ElevenLabs Voice ID non configurato"}), 500
+    data = request.json
+    text = (data.get("text") or "").strip()
+    stability = float(data.get("stability", 0.5))
+    similarity = float(data.get("similarity_boost", 0.75))
+    speed = float(data.get("speed", 1.15))
+    if not text: return jsonify({"error":"Testo vuoto"}), 400
+    try:
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
+        headers = {"xi-api-key":ELEVENLABS_API_KEY,"Content-Type":"application/json","Accept":"audio/mpeg"}
+        payload = {
+            "text": text,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {"stability":stability,"similarity_boost":similarity,"speed":speed}
+        }
+        r = req_lib.post(url, json=payload, headers=headers, timeout=60)
+        if r.status_code != 200:
+            return jsonify({"error":f"ElevenLabs error {r.status_code}: {r.text[:200]}"}), 500
+        return Response(r.content, mimetype="audio/mpeg",
+                        headers={"Content-Disposition":"attachment; filename=theatrum_belli_script.mp3"})
+    except Exception as e:
+        print(f"TTS error: {e}"); return jsonify({"error":str(e)}), 500
+
+# ─────────────────────────────────────────────
+# VISUAL PROMPTS (on-demand)
+# ─────────────────────────────────────────────
+@app.route("/api/admin/visual-prompts", methods=["POST"])
+def api_visual_prompts():
+    if not session.get("admin"): return jsonify({"error":"Non autorizzato"}), 403
+    data = request.json
+    script_it = (data.get("script_it") or "").strip()
+    keywords = (data.get("keywords") or "").strip()
+    duration = int(data.get("duration_seconds", 132))
+    if not script_it: return jsonify({"error":"Script vuoto"}), 400
+    try:
+        raw_json = generate_visual_prompts(keywords, script_it, "", duration_seconds=duration)
+        parsed = json.loads(raw_json)
+        return jsonify(parsed)
+    except json.JSONDecodeError:
+        return jsonify({"error":"Risposta JSON non valida da Claude", "raw": raw_json[:500]}), 500
+    except Exception as e:
+        print(f"Visual prompts error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────────────────────
+# AUTOMAZIONE: GENERAZIONE ANALISI SCHEDULATA
+# ─────────────────────────────────────────────
+CRON_TOKEN = os.environ.get("CRON_TOKEN", "")
+
+# Liste-filtro per asse tematico: pescano i titoli pertinenti dal DB.
+# Claude poi sceglie il tema caldo DENTRO questo sottoinsieme.
+ASSI = {
+    "geo": ["war","conflict","military","nato","russia","ukraine","china","taiwan",
+            "israel","iran","gaza","missile","troops","border","escalation","strike",
+            "defense","weapons","attack","invasion","ceasefire"],
+    "politico": ["election","government","summit","treaty","alliance","sanctions",
+                 "diplomacy","minister","parliament","vote","coup","protest","negotiation",
+                 "agreement","president","policy","resignation","referendum"],
+    "economico": ["oil","gas","energy","dollar","brics","trade","tariff","inflation",
+                  "market","sanctions","supply chain","semiconductor","commodities",
+                  "central bank","recession","export","gdp","debt","currency"],
+}
+
+def estrai_tema_caldo(asse, titoli):
+    """Claude sceglie il tema piu' rilevante del giorno tra i titoli filtrati per asse."""
+    if not titoli:
+        return None
+    titoli_txt = "\n".join(f"- {t}" for t in titoli[:60])
+    già_fatti = ""
+    prompt = (f"Sei un caporedattore di intelligence geopolitica. Dai seguenti titoli di oggi "
+              f"sull'asse '{asse}', identifica IL SINGOLO tema piu' rilevante e caldo per un'analisi.\n\n"
+              f"TITOLI:\n{titoli_txt}\n\n"
+              f"Rispondi SOLO con 2-4 parole chiave separate da virgola che catturano il tema "
+              f"(es. 'iran, nucleare, negoziati' oppure 'taiwan, cina, semiconduttori'). "
+              f"Nessuna spiegazione, solo le keyword.")
+    out = call_claude(prompt, max_tokens=50)
+    kws = [k.strip().lower() for k in out.split(",") if k.strip() and len(k.strip()) < 30]
+    return kws[:4] if kws else None
+
+@app.route("/api/cron/genera")
+def api_cron_genera():
+    # Autenticazione via token (non sessione: lo chiama una macchina)
+    token = request.headers.get("X-Cron-Token", "") or request.args.get("token", "")
+    if not CRON_TOKEN or token != CRON_TOKEN:
+        return jsonify({"error": "Token non valido"}), 403
+    asse = request.args.get("asse", "").strip().lower()
+    if asse not in ASSI:
+        return jsonify({"error": f"asse sconosciuto: {asse}", "disponibili": list(ASSI.keys())}), 400
+
+    filtro = ASSI[asse]
+    conn = get_conn(); c = conn.cursor(cursor_factory=RealDictCursor)
+
+    # 1) Pesca titoli pertinenti all'asse nelle ultime 24h, con fallback a 48h se pochi
+    def pesca_titoli(ore):
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=ore)).isoformat()
+        cond = " OR ".join(["LOWER(title) LIKE %s" for _ in filtro])
+        params = [f"%{k}%" for k in filtro] + [cutoff]
+        c.execute(f"SELECT title FROM articles WHERE ({cond}) AND fetched_at >= %s ORDER BY id DESC LIMIT 80", params)
+        return [r["title"] for r in c.fetchall()]
+
+    titoli = pesca_titoli(24)
+    finestra = 24
+    if len(titoli) < 10:
+        titoli = pesca_titoli(48); finestra = 48
+
+    if len(titoli) < 5:
+        conn.close()
+        return jsonify({"error": "Troppo pochi titoli per l'asse", "asse": asse, "titoli": len(titoli)}), 200
+
+    # 2) Claude sceglie il tema caldo
+    keywords = estrai_tema_caldo(asse, titoli)
+    if not keywords:
+        conn.close()
+        return jsonify({"error": "Estrazione tema fallita", "asse": asse}), 200
+
+    # 3) Anti-doppione: evita temi già coperti oggi
+    oggi = datetime.now(timezone.utc).date().isoformat()
+    c.execute("SELECT keywords FROM analyses WHERE created_at >= %s", (oggi,))
+    temi_oggi = " ".join(r["keywords"].lower() for r in c.fetchall() if r["keywords"])
+    sovrapposte = [k for k in keywords if k in temi_oggi]
+    if len(sovrapposte) >= len(keywords):
+        conn.close()
+        return jsonify({"skip": True, "motivo": "tema già coperto oggi", "asse": asse, "keywords": keywords}), 200
+
+    # 4) Recupera articoli pertinenti al tema (stessa logica di api_analyze)
+    cond2 = " OR ".join(["(LOWER(title) LIKE %s OR LOWER(summary) LIKE %s)" for _ in keywords])
+    params2 = []
+    for kw in keywords: params2.extend([f"%{kw}%", f"%{kw}%"])
+    cutoff7 = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    params2.append(cutoff7)
+    c.execute(f"""SELECT source,title,link,summary,published,category,perspective
+                  FROM articles WHERE ({cond2}) AND fetched_at >= %s
+                  ORDER BY id DESC LIMIT 500""", params2)
+    all_articles = [dict(r) for r in c.fetchall()]
+    kw_cond = " OR ".join(["LOWER(keywords) LIKE %s" for _ in keywords])
+    c.execute(f"SELECT narrative_map,created_at FROM analyses WHERE {kw_cond} ORDER BY created_at DESC LIMIT 2",
+              [f"%{kw}%" for kw in keywords])
+    previous = [dict(r) for r in c.fetchall()]
+    conn.close()
+
+    if len(all_articles) < 3:
+        return jsonify({"skip": True, "motivo": "pochi articoli sul tema", "asse": asse,
+                        "keywords": keywords, "trovati": len(all_articles)}), 200
+
+    # 5) Lancia la pipeline (salva come BOZZA, esattamente come la generazione manuale)
+    articles = select_balanced_articles(all_articles, max_total=25, max_per_perspective=4)
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "pending"}
+    t = threading.Thread(target=run_analysis_job, args=(job_id, keywords, articles, previous))
+    t.daemon = True; t.start()
+    return jsonify({"ok": True, "asse": asse, "keywords": keywords, "finestra_ore": finestra,
+                    "articoli": len(all_articles), "selezionati": len(articles), "job_id": job_id}), 200
+
+# ─────────────────────────────────────────────
+# STARTUP
+# ─────────────────────────────────────────────
+init_db()
+_startup_thread = threading.Thread(target=fetch_all)
+_startup_thread.daemon = True
+_startup_thread.start()
+
+_scheduler = BackgroundScheduler()
+_scheduler.add_job(fetch_all, "interval", hours=1, id="fetch_feeds")
+_scheduler.start()
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
+
+, raw_articolo, re.DOTALL)
         art_prompt_img = m_prompt.group(1).strip().strip('[]') if m_prompt else ""
 
         by_perspective = defaultdict(list)
@@ -656,7 +1332,7 @@ def parse_articolo_response(raw, analisi_id, keywords_str, author):
         titolo = m.group(1).strip().strip('[]').strip('*').strip()
 
     def extract_sec(text, header):
-        m2 = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\nPOST_SOCIAL:|\nPROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
+        m2 = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\n\*{0,2}POST_SOCIAL:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
         return m2.group(1).strip() if m2 else ""
 
     sezione_dati        = extract_sec(raw, "IL DATO CHE CONTA")
