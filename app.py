@@ -293,17 +293,24 @@ CATEGORY_TAGS = {
     "⚪ Altro":[],
 }
 
+def _kw_match(keyword, text):
+    # Match per parola intera quando la keyword e' alfabetica e senza spazi/trattini,
+    # altrimenti (frasi tipo "south china sea", "middle east", "indo-pacific") match diretto.
+    if " " in keyword or "-" in keyword or not keyword.isalpha():
+        return keyword in text
+    return re.search(r"\b" + re.escape(keyword) + r"\b", text) is not None
+
 def categorize(text):
     t = text.lower()
     for cat, keys in CATEGORY_TAGS.items():
         if cat == "⚪ Altro": continue
         for k in keys:
-            if k in t: return cat
+            if _kw_match(k, t): return cat
     return "⚪ Altro"
 
 def is_relevant(title, summary=""):
     text = (title + " " + summary).lower()
-    return any(kw in text for kw in ALL_KEYWORDS)
+    return any(_kw_match(kw, text) for kw in ALL_KEYWORDS)
 
 # ─────────────────────────────────────────────
 # FETCH RSS
