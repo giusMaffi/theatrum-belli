@@ -1159,17 +1159,51 @@ ASSI = {
                   "central bank","recession","export","gdp","debt","currency"],
 }
 
-@app.route("/api/admin/_test-together", methods=["GET"])
-def api_test_together():
-    """DIAGNOSTICO TEMPORANEO — da rimuovere dopo il test."""
+def _prompt_to_flux_string(raw):
+    if not raw or not str(raw).strip():
+        return None
+    raw = str(raw).strip()
+    try:
+        data = json.loads(raw)
+    except Exception:
+        return raw
+    if isinstance(data, str):
+        return data
+    if isinstance(data, dict):
+        parti = []
+        for k in ("scene", "main_subject", "secondary_subjects", "lighting",
+                  "color_palette", "composition", "mood", "constraints"):
+            v = data.get(k)
+            if not v:
+                continue
+            if isinstance(v, list):
+                v = ", ".join(str(x) for x in v)
+            parti.append(str(v))
+        appiattito = ", ".join(parti).strip()
+        return appiattito if appiattito else raw
+    return raw
+
+
+@app.route("/api/admin/articoli/<int:art_id>/genera-immagine", methods=["POST"])
+def api_genera_immagine(art_id):
     if not session.get("admin"):
         return jsonify({"error": "Non autorizzato"}), 403
     api_key = os.environ.get("TOGETHER_API_KEY", "")
     if not api_key:
-        return jsonify({"error": "TOGETHER_API_KEY non presente in env"}), 500
+        return jsonify({"error": "TOGETHER_API_KEY non configurata su Render"}), 500
+    conn = get_conn(); c = conn.cursor()
+    c.execute("SELECT immagine_prompt FROM articoli WHERE id = %s", (art_id,))
+    row = c.fetchone()
+    if not row:
+        c.close(); conn.close()
+        return jsonify({"error": "Articolo non trovato"}), 404
+    flux_prompt = _prompt_to_flux_string(row[0])
+    if not flux_prompt:
+        c.close(); conn.close()
+        return jsonify({"error": "Nessun prompt immagine presente per questo articolo"}), 400
     payload = {
         "model": "black-forest-labs/FLUX.1-schnell",
-        "prompt": "A dark cinematic geopolitical scene, dramatic lighting, war room atmosphere",
+        "prompt": flux_prompt,
         "width": 768, "height": 1152, "steps": 4, "n": 1,
         "response_format": "b64_json",
     }
@@ -1177,23 +1211,31 @@ def api_test_together():
         r = req_lib.post(
             "https://api.together.xyz/v1/images/generations",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json=payload, timeout=60,
+            json=payload, timeout=90,
         )
     except Exception as e:
-        return jsonify({"stage": "request", "error": str(e)}), 502
+        c.close(); conn.close()
+        return jsonify({"error": f"Chiamata Together fallita: {e}"}), 502
+    if r.status_code != 200:
+        try:
+            dettaglio = json.dumps(r.json())[:300]
+        except Exception:
+            dettaglio = r.text[:300]
+        c.close(); conn.close()
+        return jsonify({"error": "Together ha risposto con errore",
+                        "http_status": r.status_code, "dettaglio": dettaglio}), 502
     try:
-        body = r.json()
+        b64 = r.json()["data"][0]["b64_json"]
     except Exception:
-        return jsonify({"http_status": r.status_code, "raw_text": r.text[:500]}), 200
-    def truncate_b64(obj):
-        if isinstance(obj, dict):
-            return {k: truncate_b64(v) for k, v in obj.items()}
-        if isinstance(obj, list):
-            return [truncate_b64(x) for x in obj]
-        if isinstance(obj, str) and len(obj) > 80:
-            return obj[:80] + f"...[troncato, len={len(obj)}]"
-        return obj
-    return jsonify({"http_status": r.status_code, "body_structure": truncate_b64(body)}), 200
+        c.close(); conn.close()
+        return jsonify({"error": "Risposta Together senza b64_json atteso"}), 502
+    if not b64:
+        c.close(); conn.close()
+        return jsonify({"error": "b64_json vuoto"}), 502
+    c.execute("UPDATE articoli SET immagine_hero = %s WHERE id = %s", (b64, art_id))
+    conn.commit()
+    c.close(); conn.close()
+    return jsonify({"success": True, "prompt_usato": flux_prompt[:200], "bytes_b64": len(b64)}), 200
 
 def estrai_tema_caldo(asse, titoli):
     """Claude sceglie il tema piu' rilevante del giorno tra i titoli filtrati per asse."""
