@@ -1159,6 +1159,42 @@ ASSI = {
                   "central bank","recession","export","gdp","debt","currency"],
 }
 
+@app.route("/api/admin/_test-together", methods=["GET"])
+def api_test_together():
+    """DIAGNOSTICO TEMPORANEO — da rimuovere dopo il test."""
+    if not session.get("admin"):
+        return jsonify({"error": "Non autorizzato"}), 403
+    api_key = os.environ.get("TOGETHER_API_KEY", "")
+    if not api_key:
+        return jsonify({"error": "TOGETHER_API_KEY non presente in env"}), 500
+    payload = {
+        "model": "black-forest-labs/FLUX.1-schnell",
+        "prompt": "A dark cinematic geopolitical scene, dramatic lighting, war room atmosphere",
+        "width": 768, "height": 1152, "steps": 4, "n": 1,
+        "response_format": "b64_json",
+    }
+    try:
+        r = req_lib.post(
+            "https://api.together.xyz/v1/images/generations",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=payload, timeout=60,
+        )
+    except Exception as e:
+        return jsonify({"stage": "request", "error": str(e)}), 502
+    try:
+        body = r.json()
+    except Exception:
+        return jsonify({"http_status": r.status_code, "raw_text": r.text[:500]}), 200
+    def truncate_b64(obj):
+        if isinstance(obj, dict):
+            return {k: truncate_b64(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [truncate_b64(x) for x in obj]
+        if isinstance(obj, str) and len(obj) > 80:
+            return obj[:80] + f"...[troncato, len={len(obj)}]"
+        return obj
+    return jsonify({"http_status": r.status_code, "body_structure": truncate_b64(body)}), 200
+
 def estrai_tema_caldo(asse, titoli):
     """Claude sceglie il tema piu' rilevante del giorno tra i titoli filtrati per asse."""
     if not titoli:
