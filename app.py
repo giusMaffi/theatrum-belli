@@ -567,7 +567,7 @@ def run_analysis_job(job_id, keywords, articles, previous):
 
         # Estrai sezioni articolo per salvarle nel DB
         def extract_art_sec(text, header):
-            m = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\n\*{0,2}POST_SOCIAL:|\n\*{0,2}PROMPT_HEADER:|\n\*{0,2}PROMPT_MIDBODY:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
+            m = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\n?\*{{0,2}}POST_SOCIAL:|\n?\*{{0,2}}PROMPT_HEADER:|\n?\*{{0,2}}PROMPT_MIDBODY:|\n?\*{{0,2}}PROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
             return m.group(1).strip() if m else ""
 
         titolo_m = re.search(r'TITOLO:\s*(.+)', raw_articolo)
@@ -575,11 +575,11 @@ def run_analysis_job(job_id, keywords, articles, previous):
         art_dati        = extract_art_sec(raw_articolo, "IL DATO CHE CONTA")
         art_analisi     = extract_art_sec(raw_articolo, "THEATRUM BELLI — ANALISI")
         art_conseguenze = extract_art_sec(raw_articolo, "COSA SIGNIFICA PER TE")
-        m_social = re.search(r'\*{0,2}POST_SOCIAL:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_HEADER:|\n\*{0,2}PROMPT_MIDBODY:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)', raw_articolo, re.DOTALL)
+        m_social = re.search(r'\*{0,2}POST_SOCIAL:\*{0,2}\s*(.*?)(?=\n?\*{0,2}PROMPT_HEADER:|\n?\*{0,2}PROMPT_MIDBODY:|\n?\*{0,2}PROMPT_IMMAGINE:|\Z)', raw_articolo, re.DOTALL)
         art_social = m_social.group(1).strip().strip('[]').strip('*').strip() if m_social else ""
-        m_prompt = re.search(r'\*{0,2}PROMPT_HEADER:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_MIDBODY:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)', raw_articolo, re.DOTALL)
+        m_prompt = re.search(r'\*{0,2}PROMPT_HEADER:\*{0,2}\s*(.*?)(?=\n?\*{0,2}PROMPT_MIDBODY:|\n?\*{0,2}PROMPT_IMMAGINE:|\Z)', raw_articolo, re.DOTALL)
         if not m_prompt:
-            m_prompt = re.search(r'\*{0,2}PROMPT_IMMAGINE:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_MIDBODY:|\Z)', raw_articolo, re.DOTALL)
+            m_prompt = re.search(r'\*{0,2}PROMPT_IMMAGINE:\*{0,2}\s*(.*?)(?=\n?\*{0,2}PROMPT_MIDBODY:|\Z)', raw_articolo, re.DOTALL)
         art_prompt_img = clean_image_prompt(m_prompt.group(1)) if m_prompt else ""
         m_prompt_mid = re.search(r'\*{0,2}PROMPT_MIDBODY:\*{0,2}\s*(.*?)\Z', raw_articolo, re.DOTALL)
         art_prompt_mid = clean_image_prompt(m_prompt_mid.group(1)) if m_prompt_mid else ""
@@ -673,19 +673,19 @@ def parse_articolo_response(raw, analisi_id, keywords_str, author):
         titolo = m.group(1).strip().strip('[]').strip('*').strip()
 
     def extract_sec(text, header):
-        m2 = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\n\*{0,2}POST_SOCIAL:|\n\*{0,2}PROMPT_HEADER:|\n\*{0,2}PROMPT_MIDBODY:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
+        m2 = re.search(rf"## {re.escape(header)}\n(.*?)(?=\n## |\n?\*{{0,2}}POST_SOCIAL:|\n?\*{{0,2}}PROMPT_HEADER:|\n?\*{{0,2}}PROMPT_MIDBODY:|\n?\*{{0,2}}PROMPT_IMMAGINE:|\Z)", text, re.DOTALL)
         return m2.group(1).strip() if m2 else ""
 
     sezione_dati        = extract_sec(raw, "IL DATO CHE CONTA")
     sezione_analisi     = extract_sec(raw, "THEATRUM BELLI — ANALISI")
     sezione_conseguenze = extract_sec(raw, "COSA SIGNIFICA PER TE")
 
-    m_social = re.search(r'\*{0,2}POST_SOCIAL:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_HEADER:|\n\*{0,2}PROMPT_MIDBODY:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)', raw, re.DOTALL)
+    m_social = re.search(r'\*{0,2}POST_SOCIAL:\*{0,2}\s*(.*?)(?=\n?\*{0,2}PROMPT_HEADER:|\n?\*{0,2}PROMPT_MIDBODY:|\n?\*{0,2}PROMPT_IMMAGINE:|\Z)', raw, re.DOTALL)
     post_social = m_social.group(1).strip().strip('[]').strip('*').strip() if m_social else ""
 
-    m_prompt = re.search(r'\*{0,2}PROMPT_HEADER:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_MIDBODY:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)', raw, re.DOTALL)
+    m_prompt = re.search(r'\*{0,2}PROMPT_HEADER:\*{0,2}\s*(.*?)(?=\n?\*{0,2}PROMPT_MIDBODY:|\n?\*{0,2}PROMPT_IMMAGINE:|\Z)', raw, re.DOTALL)
     if not m_prompt:
-        m_prompt = re.search(r'\*{0,2}PROMPT_IMMAGINE:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_MIDBODY:|\Z)', raw, re.DOTALL)
+        m_prompt = re.search(r'\*{0,2}PROMPT_IMMAGINE:\*{0,2}\s*(.*?)(?=\n?\*{0,2}PROMPT_MIDBODY:|\Z)', raw, re.DOTALL)
     immagine_prompt = clean_image_prompt(m_prompt.group(1)) if m_prompt else ""
 
     m_prompt_mid = re.search(r'\*{0,2}PROMPT_MIDBODY:\*{0,2}\s*(.*?)\Z', raw, re.DOTALL)
