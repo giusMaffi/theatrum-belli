@@ -316,22 +316,23 @@
                 document.getElementById('edit-analisi').value = art.sezione_analisi || '';
                 document.getElementById('edit-conseguenze').value = art.sezione_conseguenze || '';
                 // Immagini
-                const setImg = (fieldId, previewId, imgId, url) => {
-                    document.getElementById(fieldId).value = url || '';
+                const setImg = (fieldId, previewId, imgId, url, isHero=false) => {
+                    const isB64 = url && !url.startsWith('http');
+                    // campo testo: per l'hero in b64 lo lasciamo vuoto (resta per URL manuali)
+                    document.getElementById(fieldId).value = (isHero && isB64) ? '' : (url || '');
                     if (url) {
-                        document.getElementById(imgId).src = (imgId === 'img-hero') ? heroSrc(url) : url;
+                        document.getElementById(imgId).src = isHero ? heroSrc(url) : url;
                         document.getElementById(previewId).style.display = 'block';
                     } else {
                         document.getElementById(previewId).style.display = 'none';
                     }
-                    // Aggiorna preview quando cambia URL
                     document.getElementById(fieldId).oninput = function() {
                         const v = this.value.trim();
-                        if(v){ document.getElementById(imgId).src = (imgId === 'img-hero') ? heroSrc(v) : v; document.getElementById(previewId).style.display='block'; }
+                        if(v){ document.getElementById(imgId).src = isHero ? heroSrc(v) : v; document.getElementById(previewId).style.display='block'; }
                         else { document.getElementById(previewId).style.display='none'; }
                     };
                 };
-                setImg('edit-hero','preview-hero','img-hero', art.immagine_hero);
+                setImg('edit-hero','preview-hero','img-hero', art.immagine_hero, true);
                 setImg('edit-inline1','preview-inline1','img-inline1', art.immagine_inline1);
                 setImg('edit-inline2','preview-inline2','img-inline2', art.immagine_inline2);
                 document.getElementById('modal').classList.add('open');
