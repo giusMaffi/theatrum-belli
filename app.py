@@ -1201,9 +1201,13 @@ def api_genera_immagine(art_id):
     if not flux_prompt:
         c.close(); conn.close()
         return jsonify({"error": "Nessun prompt immagine presente per questo articolo"}), 400
+    STILE_FOTO = ("photorealistic, realistic photography, shot on a full-frame DSLR, 35mm lens, "
+                  "natural lighting, fine detail, photojournalism, documentary style, "
+                  "no illustration, no painting, no 3d render, no cartoon")
+    prompt_finale = f"{flux_prompt}. {STILE_FOTO}"
     payload = {
         "model": "black-forest-labs/FLUX.1-schnell",
-        "prompt": flux_prompt,
+        "prompt": prompt_finale,
         "width": 1344, "height": 768, "steps": 4, "n": 1,
         "response_format": "b64_json",
     }
