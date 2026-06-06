@@ -531,14 +531,24 @@ Tono: referto medico. 120-160 parole.
 
 POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — max 3 hashtag]
 
-PROMPT_HEADER: [prompt inglese per immagine hero in cima all'articolo, panoramica d'impatto sul tema, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9]
+PROMPT_HEADER: [UNA SOLA RIGA di JSON valido (nessun a-capo dentro le graffe), valori in inglese, per l'immagine hero in cima all'articolo — panoramica d'impatto sul tema. Schema esatto: {{"scene":"...","main_subject":"...","secondary_subjects":["...","..."],"lighting":"...","color_palette":["...","..."],"composition":"cinematic wide shot, 16:9","mood":"...","constraints":["no faces","no readable text","no logos"]}}. main_subject = soggetto concreto dominante della scena. dark aesthetic, 16:9, niente volti, niente testo leggibile, niente loghi.]
 
-PROMPT_MIDBODY: [prompt inglese per immagine a metà articolo, dettaglio complementare alla hero (scena specifica o oggetto-simbolo), 60-80 parole, dark aesthetic, no faces, no readable text, 16:9]
+PROMPT_MIDBODY: [UNA SOLA RIGA di JSON valido (nessun a-capo dentro le graffe), valori in inglese, stesso schema di PROMPT_HEADER {{"scene":"...","main_subject":"...","secondary_subjects":["...","..."],"lighting":"...","color_palette":["...","..."],"composition":"cinematic wide shot, 16:9","mood":"...","constraints":["no faces","no readable text","no logos"]}}, per l'immagine a metà articolo — dettaglio complementare alla hero (scena specifica o oggetto-simbolo). main_subject = soggetto concreto dominante della scena. dark aesthetic, 16:9, niente volti, niente testo leggibile, niente loghi.]
 
 Rispondi in questo formato esatto — niente altro."""
 
     raw_articolo = call_claude(prompt_articolo, max_tokens=3000)
     return (raw_analysis, raw_articolo, author)
+
+def clean_image_prompt(captured):
+    """Pulisce il blocco PROMPT_HEADER/PROMPT_MIDBODY catturato.
+    Se e' JSON valido lo normalizza su riga singola; altrimenti ritorna la stringa grezza (fallback)."""
+    s = captured.strip().strip('[]').strip('*').strip()
+    try:
+        return json.dumps(json.loads(s), ensure_ascii=False)
+    except (ValueError, TypeError):
+        return s
+
 
 def run_analysis_job(job_id, keywords, articles, previous):
     jobs[job_id]["status"] = "running"
@@ -570,9 +580,9 @@ def run_analysis_job(job_id, keywords, articles, previous):
         m_prompt = re.search(r'\*{0,2}PROMPT_HEADER:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_MIDBODY:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)', raw_articolo, re.DOTALL)
         if not m_prompt:
             m_prompt = re.search(r'\*{0,2}PROMPT_IMMAGINE:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_MIDBODY:|\Z)', raw_articolo, re.DOTALL)
-        art_prompt_img = m_prompt.group(1).strip().strip('[]').strip('*').strip() if m_prompt else ""
+        art_prompt_img = clean_image_prompt(m_prompt.group(1)) if m_prompt else ""
         m_prompt_mid = re.search(r'\*{0,2}PROMPT_MIDBODY:\*{0,2}\s*(.*?)\Z', raw_articolo, re.DOTALL)
-        art_prompt_mid = m_prompt_mid.group(1).strip().strip('[]').strip('*').strip() if m_prompt_mid else ""
+        art_prompt_mid = clean_image_prompt(m_prompt_mid.group(1)) if m_prompt_mid else ""
 
         by_perspective = defaultdict(list)
         for a in articles:
@@ -676,10 +686,10 @@ def parse_articolo_response(raw, analisi_id, keywords_str, author):
     m_prompt = re.search(r'\*{0,2}PROMPT_HEADER:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_MIDBODY:|\n\*{0,2}PROMPT_IMMAGINE:|\Z)', raw, re.DOTALL)
     if not m_prompt:
         m_prompt = re.search(r'\*{0,2}PROMPT_IMMAGINE:\*{0,2}\s*(.*?)(?=\n\*{0,2}PROMPT_MIDBODY:|\Z)', raw, re.DOTALL)
-    immagine_prompt = m_prompt.group(1).strip().strip('[]').strip('*').strip() if m_prompt else ""
+    immagine_prompt = clean_image_prompt(m_prompt.group(1)) if m_prompt else ""
 
     m_prompt_mid = re.search(r'\*{0,2}PROMPT_MIDBODY:\*{0,2}\s*(.*?)\Z', raw, re.DOTALL)
-    immagine_prompt_mid = m_prompt_mid.group(1).strip().strip('[]').strip('*').strip() if m_prompt_mid else ""
+    immagine_prompt_mid = clean_image_prompt(m_prompt_mid.group(1)) if m_prompt_mid else ""
 
     categoria = categorize(keywords_str)
     slug = make_slug(titolo or keywords_str)
@@ -924,9 +934,9 @@ Tono: referto medico. 120-160 parole.
 
 POST_SOCIAL: [post Instagram 150 parole max, stesso tono, chiudi con "🔗 theatrumbelli.com" — max 3 hashtag]
 
-PROMPT_HEADER: [prompt inglese per immagine hero in cima all'articolo, panoramica d'impatto sul tema, 60-80 parole, dark aesthetic, no faces, no readable text, 16:9]
+PROMPT_HEADER: [UNA SOLA RIGA di JSON valido (nessun a-capo dentro le graffe), valori in inglese, per l'immagine hero in cima all'articolo — panoramica d'impatto sul tema. Schema esatto: {{"scene":"...","main_subject":"...","secondary_subjects":["...","..."],"lighting":"...","color_palette":["...","..."],"composition":"cinematic wide shot, 16:9","mood":"...","constraints":["no faces","no readable text","no logos"]}}. main_subject = soggetto concreto dominante della scena. dark aesthetic, 16:9, niente volti, niente testo leggibile, niente loghi.]
 
-PROMPT_MIDBODY: [prompt inglese per immagine a metà articolo, dettaglio complementare alla hero (scena specifica o oggetto-simbolo), 60-80 parole, dark aesthetic, no faces, no readable text, 16:9]
+PROMPT_MIDBODY: [UNA SOLA RIGA di JSON valido (nessun a-capo dentro le graffe), valori in inglese, stesso schema di PROMPT_HEADER {{"scene":"...","main_subject":"...","secondary_subjects":["...","..."],"lighting":"...","color_palette":["...","..."],"composition":"cinematic wide shot, 16:9","mood":"...","constraints":["no faces","no readable text","no logos"]}}, per l'immagine a metà articolo — dettaglio complementare alla hero (scena specifica o oggetto-simbolo). main_subject = soggetto concreto dominante della scena. dark aesthetic, 16:9, niente volti, niente testo leggibile, niente loghi.]
 
 Rispondi in questo formato esatto — niente altro."""
 
