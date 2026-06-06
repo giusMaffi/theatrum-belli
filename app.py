@@ -1204,7 +1204,7 @@ def api_genera_immagine(art_id):
     payload = {
         "model": "black-forest-labs/FLUX.1-schnell",
         "prompt": flux_prompt,
-        "width": 768, "height": 1152, "steps": 4, "n": 1,
+        "width": 1344, "height": 768, "steps": 4, "n": 1,
         "response_format": "b64_json",
     }
     try:
