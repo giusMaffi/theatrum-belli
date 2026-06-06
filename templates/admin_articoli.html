@@ -272,6 +272,7 @@
                 <label>🖼 Immagine Hero (URL) — banner principale sopra il titolo</label>
                 <input type="text" id="edit-hero" placeholder="https://...immagine.jpg">
                 <div id="preview-hero" style="margin-top:0.5rem;display:none"><img id="img-hero" src="" style="max-width:100%;max-height:200px;object-fit:cover;border-radius:3px;opacity:0.85"></div>
+                <button type="button" class="btn" id="btn-gen-hero" onclick="generaHero()" style="margin-top:0.5rem">⚡ Genera immagine hero</button>
             </div>
             <div class="field">
                 <label>🖼 Immagine 1 (URL) — tra "Il Dato" e "Analisi"</label>
@@ -295,6 +296,8 @@
     <script>
         let articoliCache = {};
 
+        function heroSrc(v){ return v && v.startsWith('http') ? v : 'data:image/jpeg;base64,'+v; }
+
         function toast(msg, type='ok') {
             const t = document.getElementById('toast');
             t.textContent = msg;
@@ -316,7 +319,7 @@
                 const setImg = (fieldId, previewId, imgId, url) => {
                     document.getElementById(fieldId).value = url || '';
                     if (url) {
-                        document.getElementById(imgId).src = url;
+                        document.getElementById(imgId).src = (imgId === 'img-hero') ? heroSrc(url) : url;
                         document.getElementById(previewId).style.display = 'block';
                     } else {
                         document.getElementById(previewId).style.display = 'none';
@@ -324,7 +327,7 @@
                     // Aggiorna preview quando cambia URL
                     document.getElementById(fieldId).oninput = function() {
                         const v = this.value.trim();
-                        if(v){ document.getElementById(imgId).src=v; document.getElementById(previewId).style.display='block'; }
+                        if(v){ document.getElementById(imgId).src = (imgId === 'img-hero') ? heroSrc(v) : v; document.getElementById(previewId).style.display='block'; }
                         else { document.getElementById(previewId).style.display='none'; }
                     };
                 };
@@ -343,15 +346,17 @@
 
         async function salvaModifiche() {
             const id = document.getElementById('edit-id').value;
+            const heroVal = document.getElementById('edit-hero').value.trim();
             const data = {
                 titolo: document.getElementById('edit-titolo').value,
                 sezione_dati: document.getElementById('edit-dati').value,
                 sezione_analisi: document.getElementById('edit-analisi').value,
                 sezione_conseguenze: document.getElementById('edit-conseguenze').value,
-                immagine_hero: document.getElementById('edit-hero').value.trim(),
                 immagine_inline1: document.getElementById('edit-inline1').value.trim(),
                 immagine_inline2: document.getElementById('edit-inline2').value.trim(),
             };
+            // edit-hero vuoto NON deve sovrascrivere un b64 gia' salvato: ometti la chiave
+            if (heroVal) { data.immagine_hero = heroVal; }
             const r = await fetch(`/api/admin/articoli/${id}`, {
                 method: 'PUT',
                 headers: {'Content-Type':'application/json'},
@@ -365,6 +370,27 @@
             } else {
                 toast(res.error || 'Errore', 'err');
             }
+        }
+
+        async function generaHero(){
+            const id = document.getElementById('edit-id').value;
+            const btn = document.getElementById('btn-gen-hero');
+            btn.disabled = true; const txt = btn.textContent; btn.textContent = '⏳ Generazione...';
+            try {
+                const r = await fetch(`/api/admin/articoli/${id}/genera-immagine`, {method:'POST'});
+                const res = await r.json();
+                if(res.success){
+                    const art = articoliCache[id] || {}; art.immagine_hero = ''; // forziamo reload preview da server
+                    const rr = await fetch(`/api/admin/articoli/${id}`); const a2 = await rr.json();
+                    document.getElementById('img-hero').src = heroSrc(a2.immagine_hero);
+                    document.getElementById('preview-hero').style.display = 'block';
+                    document.getElementById('edit-hero').value = '';
+                    toast('Immagine generata');
+                } else {
+                    toast(res.error || 'Errore generazione', 'err');
+                }
+            } catch(e){ toast('Errore rete', 'err'); }
+            finally { btn.disabled = false; btn.textContent = txt; }
         }
 
         async function pubblicaArticolo(id) {

@@ -136,7 +136,7 @@
 
   {% if articolo.immagine_hero %}
   <div class="hero-image-block">
-    <img src="{{ articolo.immagine_hero }}" alt="{{ articolo.titolo }}" class="hero-image">
+    <img src="{% if articolo.immagine_hero.startswith('http') %}{{ articolo.immagine_hero }}{% else %}data:image/jpeg;base64,{{ articolo.immagine_hero }}{% endif %}" alt="{{ articolo.titolo }}" class="hero-image">
   </div>
   {% endif %}
 
