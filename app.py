@@ -620,6 +620,21 @@ def run_analysis_job(job_id, keywords, articles, previous):
         art_id = c_art.fetchone()[0]
         conn_art.commit(); conn_art.close()
 
+        # Fase 2: genera hero automaticamente (non-bloccante: se fallisce, bozza resta senza immagine)
+        try:
+            _hero_flux = _prompt_to_flux_string(art_prompt_img)
+            if _hero_flux:
+                _hero_b64 = _genera_hero_b64(_hero_flux)
+                if _hero_b64:
+                    _conn_h = get_conn(); _c_h = _conn_h.cursor()
+                    _c_h.execute("UPDATE articoli SET immagine_hero = %s WHERE id = %s", (_hero_b64, art_id))
+                    _conn_h.commit(); _c_h.close()
+                    print(f"[HERO] generata per articolo {art_id}")
+                else:
+                    print(f"[HERO] generazione fallita per articolo {art_id}, bozza senza immagine")
+        except Exception as _e:
+            print(f"[HERO] errore non-bloccante articolo {art_id}: {_e}")
+
         jobs[job_id]["status"] = "done"
         jobs[job_id]["result"] = {
             "keywords": keywords,
@@ -1184,26 +1199,20 @@ def _prompt_to_flux_string(raw):
     return raw
 
 
-@app.route("/api/admin/articoli/<int:art_id>/genera-immagine", methods=["POST"])
-def api_genera_immagine(art_id):
-    if not session.get("admin"):
-        return jsonify({"error": "Non autorizzato"}), 403
+STILE_FOTO = ("photorealistic, realistic photography, shot on a full-frame DSLR, 35mm lens, "
+              "natural lighting, fine detail, photojournalism, documentary style, "
+              "no illustration, no painting, no 3d render, no cartoon")
+
+
+def _genera_hero_b64(flux_prompt):
+    """Genera l'hero via Together FLUX.1-schnell. Ritorna b64 (str) o None.
+    Helper puro: niente DB, niente request/session. Usato da endpoint e job."""
+    if not flux_prompt:
+        return None
     api_key = os.environ.get("TOGETHER_API_KEY", "")
     if not api_key:
-        return jsonify({"error": "TOGETHER_API_KEY non configurata su Render"}), 500
-    conn = get_conn(); c = conn.cursor()
-    c.execute("SELECT immagine_prompt FROM articoli WHERE id = %s", (art_id,))
-    row = c.fetchone()
-    if not row:
-        c.close(); conn.close()
-        return jsonify({"error": "Articolo non trovato"}), 404
-    flux_prompt = _prompt_to_flux_string(row[0])
-    if not flux_prompt:
-        c.close(); conn.close()
-        return jsonify({"error": "Nessun prompt immagine presente per questo articolo"}), 400
-    STILE_FOTO = ("photorealistic, realistic photography, shot on a full-frame DSLR, 35mm lens, "
-                  "natural lighting, fine detail, photojournalism, documentary style, "
-                  "no illustration, no painting, no 3d render, no cartoon")
+        print("[HERO] TOGETHER_API_KEY non configurata")
+        return None
     prompt_finale = f"{flux_prompt}. {STILE_FOTO}"
     payload = {
         "model": "black-forest-labs/FLUX.1-schnell",
@@ -1218,28 +1227,41 @@ def api_genera_immagine(art_id):
             json=payload, timeout=90,
         )
     except Exception as e:
-        c.close(); conn.close()
-        return jsonify({"error": f"Chiamata Together fallita: {e}"}), 502
+        print(f"[HERO] chiamata Together fallita: {e}")
+        return None
     if r.status_code != 200:
-        try:
-            dettaglio = json.dumps(r.json())[:300]
-        except Exception:
-            dettaglio = r.text[:300]
-        c.close(); conn.close()
-        return jsonify({"error": "Together ha risposto con errore",
-                        "http_status": r.status_code, "dettaglio": dettaglio}), 502
+        print(f"[HERO] Together status {r.status_code}: {r.text[:200]}")
+        return None
     try:
         b64 = r.json()["data"][0]["b64_json"]
     except Exception:
+        print("[HERO] risposta senza b64_json atteso")
+        return None
+    return b64 or None
+
+
+@app.route("/api/admin/articoli/<int:art_id>/genera-immagine", methods=["POST"])
+def api_genera_immagine(art_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Non autorizzato"}), 403
+    conn = get_conn(); c = conn.cursor()
+    c.execute("SELECT immagine_prompt FROM articoli WHERE id = %s", (art_id,))
+    row = c.fetchone()
+    if not row:
         c.close(); conn.close()
-        return jsonify({"error": "Risposta Together senza b64_json atteso"}), 502
+        return jsonify({"error": "Articolo non trovato"}), 404
+    flux_prompt = _prompt_to_flux_string(row[0])
+    if not flux_prompt:
+        c.close(); conn.close()
+        return jsonify({"error": "Nessun prompt immagine presente per questo articolo"}), 400
+    b64 = _genera_hero_b64(flux_prompt)
     if not b64:
         c.close(); conn.close()
-        return jsonify({"error": "b64_json vuoto"}), 502
+        return jsonify({"error": "Generazione immagine fallita (vedi log server)"}), 502
     c.execute("UPDATE articoli SET immagine_hero = %s WHERE id = %s", (b64, art_id))
     conn.commit()
     c.close(); conn.close()
-    return jsonify({"success": True, "prompt_usato": flux_prompt[:200], "bytes_b64": len(b64)}), 200
+    return jsonify({"success": True, "bytes_b64": len(b64)}), 200
 
 def estrai_tema_caldo(asse, titoli):
     """Claude sceglie il tema piu' rilevante del giorno tra i titoli filtrati per asse."""
