@@ -553,6 +553,7 @@ def clean_image_prompt(captured):
 def run_analysis_job(job_id, keywords, articles, previous):
     jobs[job_id]["status"] = "running"
     try:
+        keywords_str = ", ".join(keywords)
         raw_analysis, raw_articolo, author = generate_analysis(keywords, articles, previous)
 
         def extract_section(text, title):
@@ -588,7 +589,6 @@ def run_analysis_job(job_id, keywords, articles, previous):
         for a in articles:
             by_perspective[a.get('perspective','other')].append(a)
         perspectives_used = {p: PERSPECTIVE_LABELS.get(p,p) for p in by_perspective.keys()}
-        keywords_str = ", ".join(keywords)
         theme_tag = generate_theme_tag(keywords_str)
         articles_compact = [{"source":a["source"],"title":a["title"],"link":a["link"]} for a in articles]
 
