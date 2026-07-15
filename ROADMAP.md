@@ -45,7 +45,7 @@ ATTENZIONE: il cron NON e' da costruire - esiste gia'. Verificato sul codice liv
 - Funzioni esistenti: api_cron_genera() + estrai_tema_caldo(asse, titoli). Logica hot-topic gia' implementata.
 - Assi esistenti: dizionario ASSI con 3 assi (geo, politico, economico). Si chiama /api/cron/genera?asse=geo (o politico/economico).
 - Modifica da fare: portare a 3/giorno (una per asse) agli orari 07:00 / 13:00 / 17:00. Orari e frequenza vivono su cron-job.org (esterno), NON nel codice - li configura Beppe.
-- Da verificare: se la generazione hero (Fase 1) va agganciata al cron, cosi' le bozze automatiche nascono gia' con l'immagine; e confermare il salvataggio in bozza. Leggere api_cron_genera() fino in fondo.
+- VERIFICATO: il cron lancia run_analysis_job (riga 1351), dove vive l'aggancio hero non-bloccante. Le bozze del cron nascono gia' con l'immagine. Nessun secondo aggancio necessario. Salvataggio in bozza confermato.
 - Nota infra: il dict jobs in memoria regge solo con 1 worker (render.yaml/Procfile allineati a 1). Riverificare prima di scalare.
 
 ## FASE 3 - Pipeline social
@@ -64,3 +64,4 @@ Obiettivo: dopo la pubblicazione sul sito, preparare la bozza del post social.
 - 7/6: formato hero orizzontale 16:9 (generazione 1344x768, CSS aspect-ratio 16/9).
 - 7/6: suffisso fotorealistico (STILE_FOTO) appeso al prompt prima dell'invio a FLUX. Da riverificare su soggetti umani.
 - 7/6: TOGETHER_API_KEY presente e verificata nelle env var di Render.
+- 8/6: hero automatico agganciato a run_analysis_job (helper _genera_hero_b64, non-bloccante). Copre sia cron sia manuale: verificato che api_cron_genera lancia run_analysis_job.
